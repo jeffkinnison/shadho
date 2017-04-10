@@ -12,6 +12,11 @@ py2path=`dirname $py2path`
 py3path=`dirname $py3path`
 py3path=`dirname $py3path`
 
+if [ ! -f "$py3path/bin/2to3" ]; then
+    echo $'#!/usr/bin/env python3\nimport sys\nfrom lib2to3.main import main\n\nsys.exit(main("lib2to3.fixes"))' > "$py3path/bin/2to3"
+    chmod 755 "$py3path/bin/2to3"
+fi
+
 # Configure, make, and install
 cd cctools
 ./configure \

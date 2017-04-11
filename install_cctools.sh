@@ -19,7 +19,7 @@ fi
 
 if [ ! -f "$py3path/bin/python3-config" ]; then
     sed -i "s@prefix_build=PREFIXBUILD@prefix_build=\"$py3path\"@" "./python3-config"
-    mv "./python3-config" $py3path
+    mv "./python3-config" "$py3path/bin"
     chmod 755 "$py3path/bin/python3-config"
 fi
 

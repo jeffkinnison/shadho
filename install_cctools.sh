@@ -25,6 +25,7 @@ fi
 
 # Configure, make, and install
 cd cctools
+export CPATH="$py3path/include/python${TRAVIS_PYTHON_VERSION}m:$CPATH"
 ./configure \
     --with-python-path=$py2path \
     --with-python3-path=$py3path

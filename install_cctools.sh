@@ -27,7 +27,7 @@ fi
 cd cctools
 export CPATH="$py3path/include/python${TRAVIS_PYTHON_VERSION}m:$CPATH"
 export LD_LIBRARY_PATH="$py3path/lib:$py3path/lib64:$LD_LIBRARY_PATH"
-./configure \
+LDFLAGS="-L$py3path/lib" CFLAGS="-I$py3path/include/python${TRAVIS_PYTHON_VERSION}m" ./configure \
     --with-python-path=$py2path \
     --with-python3-path=$py3path
 

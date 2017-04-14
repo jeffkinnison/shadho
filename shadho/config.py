@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Helper objects for configuring and using Work Queue.
 """
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Helper functions to standardize scaling search spaces.
 
 Functions

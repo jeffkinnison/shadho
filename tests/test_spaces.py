@@ -218,4 +218,4 @@ class TestDiscreteSpace(object):
         assert_equal(sp.complexity(), 1, msg='Complexity calculation is wrong')
 
         sp = DiscreteSpace(values=[1, 2, 3, 4, 5])
-        assert_equal(sp.complexity(), 1 + (4/5), msg='Complexity calculation is wrong')
+        assert_equal(sp.complexity(), 1.0 + (4.0 / 5.0), msg='Complexity calculation is wrong')

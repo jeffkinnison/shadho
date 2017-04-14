@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Implementation of the Ordered Search Forest (OSF) data structure.
 
 The OSF is a collection of trees on which an ordering is imposed. These trees

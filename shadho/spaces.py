@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Search space definitions for specifying hyperparameters.
 
 Classes
@@ -124,8 +125,8 @@ class ContinuousSpace(BaseSpace):
 
     """
 
-    def __init__(self, *args, distribution='uniform', strategy='random',
-                 scaling='linear', rng=None, seed=None, **kwargs):
+    def __init__(self, distribution='uniform', strategy='random',
+                 scaling='linear', rng=None, seed=None, *args, **kwargs):
         # Get the scipy distribution by attribute name. If not an existing
         # attribute, check to see if a subclass of scipy.stats.rv_continuous.
         #
@@ -161,8 +162,8 @@ class ContinuousSpace(BaseSpace):
         search strategy and scaled by the scaling function.
         """
         return self.scale(self.strategy(self.distribution,
-                                        *self.dist_args,
                                         random_state=self.rng,
+                                        *self.dist_args,
                                         **self.dist_kwargs))
 
     def to_spec(self):
@@ -225,8 +226,8 @@ class DiscreteSpace(BaseSpace):
         Arbitrary additional key/value pairs for use with the probability
         distribution.
     """
-    def __init__(self, *args, values=None, strategy='random', scaling='linear',
-                 rng=None, seed=None, **kwargs):
+    def __init__(self, values=None, strategy='random', scaling='linear',
+                 rng=None, seed=None, *args, **kwargs):
         self.values = values if values is not None else []
 
         self.distribution = scipy.stats.randint
@@ -247,8 +248,8 @@ class DiscreteSpace(BaseSpace):
         if len(self.values) == 0:
             return None
         idx = self.strategy(self.distribution,
-                            *self.dist_args,
                             random_state=self.rng,
+                            *self.dist_args,
                             **self.dist_kwargs)
         return self.scale(self.values[idx])
 
@@ -273,7 +274,8 @@ class DiscreteSpace(BaseSpace):
         ..math::
             1 + |self.values|
         """
-        return 1 + (1 - (1 / len(self.values))) if len(self.values) > 0 else 1
+        return 1.0 + (1.0 - (1.0 / float(len(self.values)))) \
+            if len(self.values) > 0 else 1
 
     def __str__(self):
         return str(self.to_spec())

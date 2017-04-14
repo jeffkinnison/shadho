@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Nodes for a search tree.
 """
 

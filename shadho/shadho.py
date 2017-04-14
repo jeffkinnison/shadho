@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Main driver for distributed hyperparameter search.
 
 Classes

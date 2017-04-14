@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Helper functions for instantiating hyperparameter spaces.
 
 Functions
@@ -295,7 +296,7 @@ def randint(low, high, step=1, strategy='random', rng=None, seed=None):
         by step.
     """
     r = sorted([low, high])
-    return DiscreteSpace(values=list(range(*r, step)),
+    return DiscreteSpace(values=list(range(r[0], r[1], step)),
                          strategy=strategy,
                          scaling='linear',
                          rng=rng,
@@ -328,7 +329,7 @@ def log10_randint(low, high, step=1, strategy='random', rng=None, seed=None):
         by step, scaled by 10^x.
     """
     r = sorted([low, high])
-    return DiscreteSpace(values=list(range(*r, step)),
+    return DiscreteSpace(values=list(range(r[0], r[1], step)),
                          strategy=strategy,
                          scaling='log10',
                          rng=rng,
@@ -361,7 +362,7 @@ def log2_randint(low, high, step=1, strategy='random', rng=None, seed=None):
         by step, scaled by 2^x.
     """
     r = sorted([low, high])
-    return DiscreteSpace(values=list(range(*r, step)),
+    return DiscreteSpace(values=list(range(r[0], r[1], step)),
                          strategy=strategy,
                          scaling='log2',
                          rng=rng,

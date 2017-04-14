@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Package-level imports for SHADHO.
 
 Modules

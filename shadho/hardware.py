@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Helper for grouping similar hardware.
 
 Classes

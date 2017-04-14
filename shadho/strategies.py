@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Strategies for exploring search spaces.
 
 This module implements strategies for searching individual spaces. Strategies

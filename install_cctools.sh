@@ -27,8 +27,9 @@ fi
 # Configure, make, and install
 cd cctools
 libpy=`find /opt -name "libpython${TRAVIS_PYTHON_VERSION}m.so"`
+echo $libpy
 export CPATH="$py3path/include/python${TRAVIS_PYTHON_VERSION}m:$CPATH"
-export LD_LIBRARY_PATH="$py3path/lib:$py3path/lib64:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="$libpy:$py3path/lib:$py3path/lib64:$LD_LIBRARY_PATH"
 libpydir=`dirname $libpy`
 libpybase=`basename $libpy`
 LDFLAGS="-L$libpydir -l$libpybase" CFLAGS="-I$py3path/include/python${TRAVIS_PYTHON_VERSION}m" ./configure \

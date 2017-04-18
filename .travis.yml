@@ -11,5 +11,5 @@ before_install:
   - sudo apt-get install -y libperl-dev
 install:
   - pip install .
-  - bash ./install_cctools.sh
+  - bash ./travis_helpers/install_cctools.sh
 script: PYTHONPATH=$HOME/cctools/lib/python$TRAVIS_PYTHON_VERSION/site-packages:$PYTHONPATH nosetests

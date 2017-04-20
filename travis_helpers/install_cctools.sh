@@ -18,8 +18,8 @@ if [ ! -f "$py3path/bin/2to3" ]; then
 fi
 
 if [ ! -f "$py3path/bin/python3-config" ]; then
-    sed -i "s@prefix_build=PREFIXBUILD@prefix_build=\"$py3path\"@" "./python3-config"
-    sed -i "s@VERSION=\"3.5\"@VERSION=\"$TRAVIS_PYTHON_VERSION\"@" "./python3-config"
+    sed -i "s@prefix_build=PREFIXBUILD@prefix_build=\"$py3path\"@" "./travis_helpers/python3-config"
+    sed -i "s@VERSION=\"3.5\"@VERSION=\"$TRAVIS_PYTHON_VERSION\"@" "./travis_helpers/python3-config"
     mv "./travis_helpers/python3-config" "$py3path/bin"
     chmod 755 "$py3path/bin/python3-config"
 fi

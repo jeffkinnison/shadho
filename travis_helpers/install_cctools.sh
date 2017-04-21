@@ -12,6 +12,14 @@ py2path=`dirname $py2path`
 py3path=`dirname $py3path`
 py3path=`dirname $py3path`
 
+libpy=`find /opt -name "libpython${TRAVIS_PYTHON_VERSION}m.so"`
+echo $libpy
+libpydir=`dirname $libpy`
+libpybase=`basename $libpy`
+
+export CPATH="$py3path/include/python${TRAVIS_PYTHON_VERSION}m:$CPATH"
+export LD_LIBRARY_PATH="$libpydir:$py3path/lib:$py3path/lib64:$LD_LIBRARY_PATH"
+
 if [ ! -f "$py3path/bin/2to3" ]; then
     echo $'#!/usr/bin/env python3\nimport sys\nfrom lib2to3.main import main\n\nsys.exit(main("lib2to3.fixes"))' > "$py3path/bin/2to3"
     chmod 755 "$py3path/bin/2to3"
@@ -24,15 +32,12 @@ if [ ! -f "$py3path/bin/python3-config" ]; then
     chmod 755 "$py3path/bin/python3-config"
 fi
 
+if [ ! -f "$py3path/$libpybase" ]; then
+    cp $libpy $py3path
+fi
+
 # Configure, make, and install
 cd cctools
-libpy=`find /opt -name "libpython${TRAVIS_PYTHON_VERSION}m.so"`
-echo $libpy
-libpydir=`dirname $libpy`
-libpybase=`basename $libpy`
-
-export CPATH="$py3path/include/python${TRAVIS_PYTHON_VERSION}m:$CPATH"
-export LD_LIBRARY_PATH="$libpydir:$py3path/lib:$py3path/lib64:$LD_LIBRARY_PATH"
 
 LDFLAGS="-L$libpydir -l$libpybase" CFLAGS="-I$py3path/include/python${TRAVIS_PYTHON_VERSION}m" ./configure \
     --with-python-path=$py2path \

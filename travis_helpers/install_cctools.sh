@@ -26,20 +26,23 @@ if [ ! -f "$py3path/bin/2to3" ]; then
 fi
 
 if [ ! -f "$py3path/bin/python3-config" ]; then
+    maj=`echo "$TRAVIS_PYTHON_VERSION" | cut -d'.' -f1 | read maj`
+    min=`echo "$TRAVIS_PYTHON_VERSION" | cut -d'.' -f2 | read maj`
     sed -i "s@prefix_build=PREFIXBUILD@prefix_build=\"$py3path\"@" "./travis_helpers/python3-config"
     sed -i "s@VERSION=\"3.5\"@VERSION=\"$TRAVIS_PYTHON_VERSION\"@" "./travis_helpers/python3-config"
+    sed -i "s@/lib/python3.5/config-@/lib/python${TRAVIS_PYTHON_VERSION}/config-@" "./travis_helpers/python3-config"
+    sed -i "s@SO=\".cpython-35m-x86_64-linux-gnu.so\"@SO=\".cpython-${maj}${min}m-x86_64-linux-gnu.so\"@" "./travis_helpers/python3-config"
     mv "./travis_helpers/python3-config" "$py3path/bin"
     chmod 755 "$py3path/bin/python3-config"
 fi
 
 if [ ! -f "$py3path/$libpybase" ]; then
-    cp $libpy $py3path
+    cp "$libpy" "$py3path"
 fi
 
 # Configure, make, and install
 cd cctools
-
-LDFLAGS="-L$libpydir -l$libpybase" CFLAGS="-I$py3path/include/python${TRAVIS_PYTHON_VERSION}m" ./configure \
+CFLAGS="-I$py3path/include/python${TRAVIS_PYTHON_VERSION}m" ./configure \
     --with-python-path=$py2path \
     --with-python3-path=$py3path
 

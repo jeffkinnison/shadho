@@ -36,13 +36,13 @@ if [ ! -f "$py3path/bin/python3-config" ]; then
     chmod 755 "$py3path/bin/python3-config"
 fi
 
-if [ ! -f "$py3path/$libpybase" ]; then
+if [ ! -f "$py3path/lib/$libpybase" ]; then
     cp "$libpy" "$py3path"
 fi
 
 # Configure, make, and install
 cd cctools
-CFLAGS="-I$py3path/include/python${TRAVIS_PYTHON_VERSION}m" ./configure \
+LDFLAGS="-L$py3path/lib" CFLAGS="-I$py3path/include/python${TRAVIS_PYTHON_VERSION}m" ./configure \
     --with-python-path=$py2path \
     --with-python3-path=$py3path
 

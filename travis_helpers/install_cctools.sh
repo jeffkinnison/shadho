@@ -37,7 +37,7 @@ if [ ! -f "$py3path/bin/python3-config" ]; then
 fi
 
 if [ ! -f "$py3path/lib/$libpybase" ]; then
-    cp "$libpy" "$py3path"
+    cp "$libpy" "$py3path/lib"
 fi
 
 # Configure, make, and install

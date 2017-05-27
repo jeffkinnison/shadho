@@ -65,7 +65,7 @@ class HyperparameterSearch(object):
                             exclusive=self.wq_config['exclusive'],
                             shutdown=self.wq_config['shutdown']
                             )
-        self.forest = SearchForest(spec)
+        self.forest = OrderedSearchForest(spec)
         self.ccs = [] if ccs is None else ccs
         self.use_complexity = use_complexity
         self.use_priority = use_priority

@@ -189,10 +189,10 @@ class HyperparameterSearch(object):
 
         # larger, smaller = (trees, self.ccs) \
         #     if len(trees) > len(self.ccs) else (self.ccs, trees)
-        # x = float(len(larger)) / float(len(smaller))
-        # y = x - 1
-        # j = 0
-        # n = len(larger) / 2
+        x = float(len(larger)) / float(len(smaller))
+        y = x - 1
+        j = 0
+        n = len(larger) / 2
 
         for i in range(len(trees)):
             if i > np.ceil(y):

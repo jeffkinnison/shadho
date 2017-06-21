@@ -1,0 +1,441 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Library Reference &mdash; SHADHO 0.1a1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="SHADHO 0.1a1 documentation" href="index.html"/>
+        <link rel="next" title="shadho.HyperparameterSearch" href="generated/shadho.HyperparameterSearch.html"/>
+        <link rel="prev" title="Compute Classes" href="ccs.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> SHADHO
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1a1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="hyperparam.html">The Hyperparameter Optimization Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spec.html">Search Space Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ccs.html">Compute Classes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Library Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#core">Core</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.HyperparameterSearch.html">shadho.HyperparameterSearch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.OrderedSearchForest.html">shadho.OrderedSearchForest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.ComputeClass.html">shadho.ComputeClass</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.WQConfig.html">shadho.WQConfig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.WQFile.html">shadho.WQFile</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#specification-helpers">Specification Helpers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.uniform.html">shadho.uniform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.ln_uniform.html">shadho.ln_uniform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.log10_uniform.html">shadho.log10_uniform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.log2_uniform.html">shadho.log2_uniform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.normal.html">shadho.normal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.ln_normal.html">shadho.ln_normal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.log10_normal.html">shadho.log10_normal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.log2_normal.html">shadho.log2_normal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.randint.html">shadho.randint</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.log10_randint.html">shadho.log10_randint</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.log2_randint.html">shadho.log2_randint</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.choose.html">shadho.choose</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tree">Tree</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.tree.SearchTree.html">shadho.tree.SearchTree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.tree.SearchTreeNode.html">shadho.tree.SearchTreeNode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.tree.SearchTreeLeaf.html">shadho.tree.SearchTreeLeaf</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#search-spaces">Search Spaces</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.spaces.BaseSpace.html">shadho.spaces.BaseSpace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.spaces.ConstantSpace.html">shadho.spaces.ConstantSpace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.spaces.ContinuousSpace.html">shadho.spaces.ContinuousSpace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.spaces.DiscreteSpace.html">shadho.spaces.DiscreteSpace</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#search-strategies">Search Strategies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.strategies.random.html">shadho.strategies.random</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#scaling-functions">Scaling Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.scales.linear.html">shadho.scales.linear</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.scales.ln.html">shadho.scales.ln</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.scales.log10.html">shadho.scales.log10</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/shadho.scales.log2.html">shadho.scales.log2</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SHADHO</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Library Reference</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/reference.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="library-reference">
+<h1>Library Reference<a class="headerlink" href="#library-reference" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="core">
+<h2>Core<a class="headerlink" href="#core" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.HyperparameterSearch.html#shadho.HyperparameterSearch" title="shadho.HyperparameterSearch"><code class="xref py py-obj docutils literal"><span class="pre">HyperparameterSearch</span></code></a>(spec,&nbsp;ccs,&nbsp;wq_config[,&nbsp;…])</td>
+<td>Perform distributed hyperparameter search.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/shadho.OrderedSearchForest.html#shadho.OrderedSearchForest" title="shadho.OrderedSearchForest"><code class="xref py py-obj docutils literal"><span class="pre">OrderedSearchForest</span></code></a>(spec)</td>
+<td>A collection of trees containing spaces to search.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.ComputeClass.html#shadho.ComputeClass" title="shadho.ComputeClass"><code class="xref py py-obj docutils literal"><span class="pre">ComputeClass</span></code></a>(name,&nbsp;resource,&nbsp;value,&nbsp;max_tasks)</td>
+<td>Group distributed compute nodes by hardware properties.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/shadho.WQConfig.html#shadho.WQConfig" title="shadho.WQConfig"><code class="xref py py-obj docutils literal"><span class="pre">WQConfig</span></code></a>(name[,&nbsp;port,&nbsp;catalog,&nbsp;exclusive,&nbsp;…])</td>
+<td>Data store for WorkQueue master and task configuration information.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.WQFile.html#shadho.WQFile" title="shadho.WQFile"><code class="xref py py-obj docutils literal"><span class="pre">WQFile</span></code></a>(localpath[,&nbsp;remotepath,&nbsp;type,&nbsp;cache])</td>
+<td>Representation of a file to send to/receive from a remote worker.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="specification-helpers">
+<h2>Specification Helpers<a class="headerlink" href="#specification-helpers" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.uniform.html#shadho.uniform" title="shadho.uniform"><code class="xref py py-obj docutils literal"><span class="pre">uniform</span></code></a>(low,&nbsp;high[,&nbsp;strategy,&nbsp;rng,&nbsp;seed])</td>
+<td>Create a uniform distribution over the given range.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/shadho.ln_uniform.html#shadho.ln_uniform" title="shadho.ln_uniform"><code class="xref py py-obj docutils literal"><span class="pre">ln_uniform</span></code></a>(low,&nbsp;high[,&nbsp;strategy,&nbsp;rng,&nbsp;seed])</td>
+<td>Create a uniform distribution over the given range scaled by e^x.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.log10_uniform.html#shadho.log10_uniform" title="shadho.log10_uniform"><code class="xref py py-obj docutils literal"><span class="pre">log10_uniform</span></code></a>(low,&nbsp;high[,&nbsp;strategy,&nbsp;rng,&nbsp;seed])</td>
+<td>Create a uniform distribution over the given range scaled by 10^x.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/shadho.log2_uniform.html#shadho.log2_uniform" title="shadho.log2_uniform"><code class="xref py py-obj docutils literal"><span class="pre">log2_uniform</span></code></a>(low,&nbsp;high[,&nbsp;strategy,&nbsp;rng,&nbsp;seed])</td>
+<td>Create a uniform distribution over the given range scaled by 2^x.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.normal.html#shadho.normal" title="shadho.normal"><code class="xref py py-obj docutils literal"><span class="pre">normal</span></code></a>(mu,&nbsp;sigma[,&nbsp;strategy,&nbsp;rng,&nbsp;seed])</td>
+<td>Create a normal distribution over the given range.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/shadho.ln_normal.html#shadho.ln_normal" title="shadho.ln_normal"><code class="xref py py-obj docutils literal"><span class="pre">ln_normal</span></code></a>(mu,&nbsp;sigma[,&nbsp;strategy,&nbsp;rng,&nbsp;seed])</td>
+<td>Create a normal distribution over the given range and scaled by e^x.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.log10_normal.html#shadho.log10_normal" title="shadho.log10_normal"><code class="xref py py-obj docutils literal"><span class="pre">log10_normal</span></code></a>(mu,&nbsp;sigma[,&nbsp;strategy,&nbsp;rng,&nbsp;seed])</td>
+<td>Create a normal distribution over the given range and scaled by 10^x.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/shadho.log2_normal.html#shadho.log2_normal" title="shadho.log2_normal"><code class="xref py py-obj docutils literal"><span class="pre">log2_normal</span></code></a>(mu,&nbsp;sigma[,&nbsp;strategy,&nbsp;rng,&nbsp;seed])</td>
+<td>Create a normal distribution over the given range and scaled by 2^x.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.randint.html#shadho.randint" title="shadho.randint"><code class="xref py py-obj docutils literal"><span class="pre">randint</span></code></a>(low,&nbsp;high[,&nbsp;step,&nbsp;strategy,&nbsp;rng,&nbsp;seed])</td>
+<td>Draw random integers from the given range.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/shadho.log10_randint.html#shadho.log10_randint" title="shadho.log10_randint"><code class="xref py py-obj docutils literal"><span class="pre">log10_randint</span></code></a>(low,&nbsp;high[,&nbsp;step,&nbsp;strategy,&nbsp;…])</td>
+<td>Draw random integers from the given range, scaled by 10^x.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.log2_randint.html#shadho.log2_randint" title="shadho.log2_randint"><code class="xref py py-obj docutils literal"><span class="pre">log2_randint</span></code></a>(low,&nbsp;high[,&nbsp;step,&nbsp;strategy,&nbsp;…])</td>
+<td>Draw random integers from the given range, scaled by 2^x.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/shadho.choose.html#shadho.choose" title="shadho.choose"><code class="xref py py-obj docutils literal"><span class="pre">choose</span></code></a>(values[,&nbsp;strategy,&nbsp;rng,&nbsp;seed])</td>
+<td>Choose one of n categorical values.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="tree">
+<h2>Tree<a class="headerlink" href="#tree" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.tree.SearchTree.html#shadho.tree.SearchTree" title="shadho.tree.SearchTree"><code class="xref py py-obj docutils literal"><span class="pre">SearchTree</span></code></a>([root,&nbsp;values,&nbsp;priority])</td>
+<td>Container for search trees and their metrics.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/shadho.tree.SearchTreeNode.html#shadho.tree.SearchTreeNode" title="shadho.tree.SearchTreeNode"><code class="xref py py-obj docutils literal"><span class="pre">SearchTreeNode</span></code></a>(name[,&nbsp;children,&nbsp;exclusive,&nbsp;…])</td>
+<td>Interior n-ary tree nodes.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.tree.SearchTreeLeaf.html#shadho.tree.SearchTreeLeaf" title="shadho.tree.SearchTreeLeaf"><code class="xref py py-obj docutils literal"><span class="pre">SearchTreeLeaf</span></code></a>(name[,&nbsp;value,&nbsp;exclusive,&nbsp;…])</td>
+<td>Values to generate during the search.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="search-spaces">
+<h2>Search Spaces<a class="headerlink" href="#search-spaces" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.spaces.BaseSpace.html#shadho.spaces.BaseSpace" title="shadho.spaces.BaseSpace"><code class="xref py py-obj docutils literal"><span class="pre">BaseSpace</span></code></a></td>
+<td>Base class for other spaces.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/shadho.spaces.ConstantSpace.html#shadho.spaces.ConstantSpace" title="shadho.spaces.ConstantSpace"><code class="xref py py-obj docutils literal"><span class="pre">ConstantSpace</span></code></a>(value)</td>
+<td>A search space containing a single value.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.spaces.ContinuousSpace.html#shadho.spaces.ContinuousSpace" title="shadho.spaces.ContinuousSpace"><code class="xref py py-obj docutils literal"><span class="pre">ContinuousSpace</span></code></a>([distribution,&nbsp;strategy,&nbsp;…])</td>
+<td>A continuous real interval fit to a probability distribution.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/shadho.spaces.DiscreteSpace.html#shadho.spaces.DiscreteSpace" title="shadho.spaces.DiscreteSpace"><code class="xref py py-obj docutils literal"><span class="pre">DiscreteSpace</span></code></a>([values,&nbsp;strategy,&nbsp;scaling,&nbsp;…])</td>
+<td>A set of categorical values to be searched.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="search-strategies">
+<h2>Search Strategies<a class="headerlink" href="#search-strategies" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.strategies.random.html#shadho.strategies.random" title="shadho.strategies.random"><code class="xref py py-obj docutils literal"><span class="pre">random</span></code></a>(distribution,&nbsp;*args,&nbsp;**kwargs)</td>
+<td>Randomly search a probability distribution.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="scaling-functions">
+<h2>Scaling Functions<a class="headerlink" href="#scaling-functions" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.scales.linear.html#shadho.scales.linear" title="shadho.scales.linear"><code class="xref py py-obj docutils literal"><span class="pre">linear</span></code></a>(x[,&nbsp;coeff,&nbsp;degree])</td>
+<td>Scale x linearly.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/shadho.scales.ln.html#shadho.scales.ln" title="shadho.scales.ln"><code class="xref py py-obj docutils literal"><span class="pre">ln</span></code></a>(x)</td>
+<td>Scale exponentially to base e.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="generated/shadho.scales.log10.html#shadho.scales.log10" title="shadho.scales.log10"><code class="xref py py-obj docutils literal"><span class="pre">log10</span></code></a>(x)</td>
+<td>Scale exponentially to base 10.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/shadho.scales.log2.html#shadho.scales.log2" title="shadho.scales.log2"><code class="xref py py-obj docutils literal"><span class="pre">log2</span></code></a>(x)</td>
+<td>Scale exponentially to base 2.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="generated/shadho.HyperparameterSearch.html" class="btn btn-neutral float-right" title="shadho.HyperparameterSearch" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="ccs.html" class="btn btn-neutral" title="Compute Classes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Jeff Kinnison.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1a1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

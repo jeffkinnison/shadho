@@ -1,0 +1,479 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>shadho.shadho &mdash; SHADHO 0.1a1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="SHADHO 0.1a1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> SHADHO
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1a1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../hyperparam.html">The Hyperparameter Optimization Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../spec.html">Search Space Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ccs.html">Compute Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference.html">Library Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">SHADHO</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>shadho.shadho</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for shadho.shadho</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Main driver for distributed hyperparameter search.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">HyperparameterSearch: perform hyperparameter search with or without decisions</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">.forest</span> <span class="k">import</span> <span class="n">OrderedSearchForest</span>
+<span class="kn">from</span> <span class="nn">.config</span> <span class="k">import</span> <span class="n">WQConfig</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">tarfile</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">work_queue</span>
+<span class="kn">from</span> <span class="nn">work_queue</span> <span class="k">import</span> <span class="n">WorkQueue</span>
+
+
+<div class="viewcode-block" id="HyperparameterSearch"><a class="viewcode-back" href="../../generated/shadho.HyperparameterSearch.html#shadho.HyperparameterSearch">[docs]</a><span class="k">class</span> <span class="nc">HyperparameterSearch</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Perform distributed hyperparameter search.</span>
+
+<span class="sd">    This class conducts and manages distributed hyperparameter search using the</span>
+<span class="sd">    data structures, heuristics, and techniques described in REFERENCE. The</span>
+<span class="sd">    search is fully configurable, meaning users may define the expected runtime</span>
+<span class="sd">    environments, whether to direct the search using complexity and priority</span>
+<span class="sd">    heuristics, and stopping conditions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    spec : dict</span>
+<span class="sd">        Specification to build an OrderedSearchForest.</span>
+<span class="sd">    ccs : list(shadho.ComputeClass)</span>
+<span class="sd">        The ordered list of compute classes that will connect.</span>
+<span class="sd">    wq_config : {dict, shadho.WQConfig}</span>
+<span class="sd">        Work Queue master and task configurations.</span>
+<span class="sd">    use_complexity: {True, False}, optional</span>
+<span class="sd">        If True, use the complexity heuristic to adjust search proportions.</span>
+<span class="sd">    use_priority: {True, False}, optional</span>
+<span class="sd">        If True, use the priority heuristic to adjust search proportions.</span>
+<span class="sd">    timeout: {600, int}, optional</span>
+<span class="sd">        Search timeout in seconds.</span>
+<span class="sd">    max_tasks: {100, int}, optional</span>
+<span class="sd">        The maximum number of concurrent searches to maintain.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HyperparameterSearch.__init__"><a class="viewcode-back" href="../../generated/shadho.HyperparameterSearch.html#shadho.HyperparameterSearch.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">ccs</span><span class="p">,</span> <span class="n">wq_config</span><span class="p">,</span> <span class="n">use_complexity</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">use_priority</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">max_tasks</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wq_config</span> <span class="o">=</span> <span class="n">WQConfig</span><span class="p">(</span><span class="o">**</span><span class="n">wq_config</span><span class="p">)</span> \
+                            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wq_config</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">wq_config</span>
+        <span class="n">work_queue</span><span class="o">.</span><span class="n">cctools_debug_flags_set</span><span class="p">(</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
+        <span class="n">work_queue</span><span class="o">.</span><span class="n">cctools_debug_config_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wq_config</span><span class="p">[</span><span class="s1">&#39;debug&#39;</span><span class="p">])</span>
+        <span class="n">work_queue</span><span class="o">.</span><span class="n">cctools_debug_config_file_size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wq</span> <span class="o">=</span> <span class="n">WorkQueue</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wq_config</span><span class="p">[</span><span class="s1">&#39;port&#39;</span><span class="p">]),</span>
+                            <span class="n">name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wq_config</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]),</span>
+                            <span class="n">catalog</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wq_config</span><span class="p">[</span><span class="s1">&#39;catalog&#39;</span><span class="p">],</span>
+                            <span class="n">exclusive</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wq_config</span><span class="p">[</span><span class="s1">&#39;exclusive&#39;</span><span class="p">],</span>
+                            <span class="n">shutdown</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wq_config</span><span class="p">[</span><span class="s1">&#39;shutdown&#39;</span><span class="p">]</span>
+                            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forest</span> <span class="o">=</span> <span class="n">SearchForest</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ccs</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">ccs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ccs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_complexity</span> <span class="o">=</span> <span class="n">use_complexity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_priority</span> <span class="o">=</span> <span class="n">use_priority</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_tasks</span> <span class="o">=</span> <span class="n">max_tasks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wq</span><span class="o">.</span><span class="n">specify_log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wq_config</span><span class="p">[</span><span class="s1">&#39;logfile&#39;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="HyperparameterSearch.optimize"><a class="viewcode-back" href="../../generated/shadho.HyperparameterSearch.html#shadho.HyperparameterSearch.optimize">[docs]</a>    <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run the distributed hyperparameter search.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assign_to_ccs</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cc</span><span class="p">))</span>
+        <span class="k">while</span> <span class="n">elapsed</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">:</span>
+            <span class="n">n_tasks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_tasks</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">wq</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">tasks_waiting</span>
+            <span class="n">tasks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__generate_tasks</span><span class="p">(</span><span class="n">n_tasks</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">wq</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+            <span class="n">task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wq</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">task</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">result</span> <span class="o">==</span> <span class="n">work_queue</span><span class="o">.</span><span class="n">WORK_QUEUE_RESULT_SUCCESS</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__success</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__failure</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+            <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cc</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">forest</span><span class="o">.</span><span class="n">write_all</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">__generate_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_tasks</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate values to search.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_tasks : int</span>
+<span class="sd">            The number of tasks to generate.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tasks : list(work_queue.Task)</span>
+<span class="sd">            The tasks to submit to Work Queue.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tasks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">forest</span><span class="o">.</span><span class="n">set_ranks</span><span class="p">(</span><span class="n">use_priority</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_priority</span><span class="p">,</span>
+                                  <span class="n">use_complexity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_complexity</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_tasks</span><span class="p">):</span>
+                <span class="n">task</span> <span class="o">=</span> <span class="n">work_queue</span><span class="o">.</span><span class="n">Task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wq_config</span><span class="p">[</span><span class="s1">&#39;command&#39;</span><span class="p">])</span>
+
+                <span class="n">tid</span><span class="p">,</span> <span class="n">spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forest</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
+                <span class="n">tag</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span> <span class="n">tid</span><span class="p">])</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">specify_tag</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wq_config</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">]:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">add_to_task</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+                                  <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">work_queue</span><span class="o">.</span><span class="n">WORK_QUEUE_INPUT</span>
+                                  <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">tag</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">))</span>
+
+                <span class="n">task</span><span class="o">.</span><span class="n">specify_buffer</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">spec</span><span class="p">)),</span>
+                                    <span class="n">remote_name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="s1">&#39;hyperparameters.json&#39;</span><span class="p">),</span>
+                                    <span class="n">flags</span><span class="o">=</span><span class="n">work_queue</span><span class="o">.</span><span class="n">WORK_QUEUE_NOCACHE</span>
+                                    <span class="p">)</span>
+                <span class="n">tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assign_to_ccs</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">:</span>
+                <span class="n">specs</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
+                    <span class="n">tid</span><span class="p">,</span> <span class="n">spec</span> <span class="o">=</span> <span class="n">s</span>
+                    <span class="n">task</span> <span class="o">=</span> <span class="n">work_queue</span><span class="o">.</span><span class="n">Task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wq_config</span><span class="p">[</span><span class="s1">&#39;command&#39;</span><span class="p">])</span>
+
+                    <span class="n">tag</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span> <span class="n">cc</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">tid</span><span class="p">])</span>
+                    <span class="n">task</span><span class="o">.</span><span class="n">specify_tag</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">cc</span><span class="o">.</span><span class="n">resource</span> <span class="o">==</span> <span class="s1">&#39;cores&#39;</span><span class="p">:</span>
+                        <span class="n">task</span><span class="o">.</span><span class="n">specify_cores</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+                    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wq_config</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">]:</span>
+                        <span class="n">f</span><span class="o">.</span><span class="n">add_to_task</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+                                      <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">work_queue</span><span class="o">.</span><span class="n">WORK_QUEUE_INPUT</span>
+                                      <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">tag</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">))</span>
+
+                    <span class="n">task</span><span class="o">.</span><span class="n">specify_buffer</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">spec</span><span class="p">)),</span>
+                                        <span class="n">remote_name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="s1">&#39;hyperparameters.json&#39;</span><span class="p">),</span>
+                                        <span class="n">flags</span><span class="o">=</span><span class="n">work_queue</span><span class="o">.</span><span class="n">WORK_QUEUE_NOCACHE</span>
+                                        <span class="p">)</span>
+                    <span class="n">tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tasks</span>
+
+<div class="viewcode-block" id="HyperparameterSearch.assign_to_ccs"><a class="viewcode-back" href="../../generated/shadho.HyperparameterSearch.html#shadho.HyperparameterSearch.assign_to_ccs">[docs]</a>    <span class="k">def</span> <span class="nf">assign_to_ccs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Assign hyperparameter search spaces to compute classes.</span>
+
+<span class="sd">        This function iterates over the set of trees five times and over the</span>
+<span class="sd">        compute classes twice. If we can reduce this, that would be suuuuper.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: Reduce the number of times iterating over things</span>
+        <span class="c1"># TODO: Make the assignments agnostic to the number of trees and ccs</span>
+        <span class="c1"># Clear the assignments within both trees and Compute Classes</span>
+        <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">:</span>
+            <span class="n">cc</span><span class="o">.</span><span class="n">clear_assignments</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">forest</span><span class="o">.</span><span class="n">set_ranks</span><span class="p">(</span><span class="n">use_priority</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_priority</span><span class="p">,</span>
+                              <span class="n">use_complexity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_complexity</span><span class="p">)</span>
+        <span class="n">trees</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">forest</span><span class="o">.</span><span class="n">trees</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">forest</span><span class="o">.</span><span class="n">trees</span><span class="p">]</span>
+        <span class="n">trees</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">rank</span><span class="p">)</span>
+
+        <span class="n">larger</span><span class="p">,</span> <span class="n">smaller</span> <span class="o">=</span> <span class="p">(</span><span class="n">trees</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">)</span> \
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">trees</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">,</span> <span class="n">trees</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">larger</span><span class="p">))</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">smaller</span><span class="p">))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">larger</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">larger</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+                <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">y</span> <span class="o">+=</span> <span class="n">x</span>
+            <span class="n">larger</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">smaller</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+            <span class="n">smaller</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">larger</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">n</span><span class="p">:</span>
+                <span class="n">larger</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">smaller</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="n">smaller</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">larger</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="n">n</span><span class="p">:</span>
+                <span class="n">larger</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">smaller</span><span class="p">[</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="n">smaller</span><span class="p">[</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">larger</span><span class="p">[</span><span class="n">i</span><span class="p">])</span></div>
+
+    <span class="k">def</span> <span class="nf">__success</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Default handling for successful task completion.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Task tag is unique and contains information about the tree its values</span>
+        <span class="c1"># came from and the compute class it was assigned to.</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">tag</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Task </span><span class="si">{}</span><span class="s1"> was successful&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tag</span><span class="p">))</span>
+        <span class="n">ids</span> <span class="o">=</span> <span class="n">tag</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Get the correct tree from the OSF</span>
+        <span class="n">tree_id</span> <span class="o">=</span> <span class="n">ids</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forest</span><span class="o">.</span><span class="n">trees</span><span class="p">[</span><span class="n">tree_id</span><span class="p">]</span>
+
+        <span class="c1"># Extract the results from the output tar file.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">tag</span><span class="p">,</span> <span class="s1">&#39;out.tar.gz&#39;</span><span class="p">]),</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+            <span class="n">resultstring</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">extractfile</span><span class="p">(</span><span class="s1">&#39;performance.json&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Error opening task </span><span class="si">{}</span><span class="s1"> result&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tag</span><span class="p">))</span>
+
+        <span class="c1"># Load the results from file and store them to the correct tree</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">resultstring</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;task_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">id</span>
+        <span class="n">tree</span><span class="o">.</span><span class="n">add_result</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">],</span>
+                        <span class="n">result</span><span class="p">,</span>
+                        <span class="n">update_priority</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_priority</span><span class="p">)</span>
+
+        <span class="c1"># If using Compute Classes, update task statistics.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ccid</span> <span class="o">=</span> <span class="n">ids</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cc</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">ccid</span><span class="p">:</span>
+                    <span class="n">cc</span><span class="o">.</span><span class="n">submitted_tasks</span> <span class="o">-=</span> <span class="mi">1</span>
+
+        <span class="c1"># Clean up</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">tag</span><span class="p">,</span> <span class="s1">&#39;out.tar.gz&#39;</span><span class="p">]))</span>
+
+    <span class="k">def</span> <span class="nf">__failure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Default handling for task failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Report the failure and print any output for debugging.</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Task </span><span class="si">{}</span><span class="s1"> failed with result </span><span class="si">{}</span><span class="s1"> and WQ status </span><span class="si">{}</span><span class="s1">&#39;</span>
+              <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">task</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="n">task</span><span class="o">.</span><span class="n">return_status</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+
+        <span class="c1"># If using Compute Classes, update task statistics.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ccid</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">tag</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cc</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">ccid</span><span class="p">:</span>
+                    <span class="n">cc</span><span class="o">.</span><span class="n">submitted_tasks</span> <span class="o">-=</span> <span class="mi">1</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Jeff Kinnison.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1a1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

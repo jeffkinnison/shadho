@@ -1,0 +1,481 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Search Space Specification &mdash; SHADHO 0.1a1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="SHADHO 0.1a1 documentation" href="index.html"/>
+        <link rel="next" title="Compute Classes" href="ccs.html"/>
+        <link rel="prev" title="The Hyperparameter Optimization Problem" href="hyperparam.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> SHADHO
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1a1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="hyperparam.html">The Hyperparameter Optimization Problem</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Search Space Specification</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#integer-search-spaces">Integer Search Spaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#continuous-search-spaces">Continuous Search Spaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#choice-search-spaces">Choice Search Spaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multidimensional-search-spaces">Multidimensional Search Spaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nested-search-spaces">Nested Search Spaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optional-search-spaces">Optional Search Spaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#exclusive-search-spaces">Exclusive Search Spaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example-optimizing-a-decision-tree">Example: Optimizing a Decision Tree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example-searching-svm-kernels">Example: Searching SVM Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example-scaling-a-convolutional-net">Example: Scaling a Convolutional Net</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ccs.html">Compute Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Library Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SHADHO</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Search Space Specification</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/spec.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="search-space-specification">
+<h1>Search Space Specification<a class="headerlink" href="#search-space-specification" title="Permalink to this headline">¶</a></h1>
+<p>Search spaces are defined using native Python dictionaries and SHADHO’s inbuilt
+helper functions. To get a feel for this, let’s begin by defining a few toy
+search spaces.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">space</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="mi">4</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This is the most basic search space that can be defined, containing a single
+constant value named ‘num’. Note that a search space is defined using a key/value
+pair, where the key is the name of the search space and the value is the space
+itself. This is because search spaces are specified using standard Python
+dictionaries.</p>
+<p>Python’s dictionary structure allows us to do interesting things, such as nest
+search spaces and include metadata to better structure our search. We will see
+more on these features later. For now, let’s look at some more basic examples.</p>
+<div class="section" id="integer-search-spaces">
+<h2>Integer Search Spaces<a class="headerlink" href="#integer-search-spaces" title="Permalink to this headline">¶</a></h2>
+<p>Searching only a single value is valid, but not terribly useful for optimization.
+Instead, we want to define a range of values to search, for example the integers
+<em>i</em> such that <span class="math">\(0 \leq i &lt; 11\)</span>.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shadho</span> <span class="k">import</span> <span class="n">randint</span>
+
+<span class="n">space</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;ints&#39;</span><span class="p">:</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">11</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This creates a space called ‘ints’ containing all integers in range
+[0, 10]. During the optimization process, SHADHO will randomly generate one of
+0, 1, 2, 3, 4, 5, 6, 7, 8, 9, or 10. What if we want to use these integers
+to search over powers of two instead?</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shadho</span> <span class="k">import</span> <span class="n">log2_randint</span>
+
+<span class="n">space</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;pow2&#39;</span><span class="p">:</span> <span class="n">log2_randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">11</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Now, instead of generating one of 0, …, 10, SHADHO will randomly
+generate one of 0, 2, 4, 8, …, 1024. Could this be done in the code
+being optimized? Absolutely. But these types of utilities are here for your
+convenience.</p>
+</div>
+<div class="section" id="continuous-search-spaces">
+<h2>Continuous Search Spaces<a class="headerlink" href="#continuous-search-spaces" title="Permalink to this headline">¶</a></h2>
+<p>Randomly drawing integers is useful, but it will only get us so far. To fill in
+the gaps, we need to be able to draw from continuous, real-valued ranges as
+well. Since we can’t enumerate all real-valued numbers in a range, we instead
+define a continuous space using a probability distribution.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shadho</span> <span class="k">import</span> <span class="n">uniform</span>
+
+<span class="n">space</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;uni&#39;</span><span class="p">:</span> <span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">7.0</span><span class="p">,</span> <span class="mf">32.4</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This search space is a uniform distribution defined over the range [-7.0, 32.4).
+While running, SHADHO will draw real numbers from this range with equal
+probability.</p>
+</div>
+<div class="section" id="choice-search-spaces">
+<h2>Choice Search Spaces<a class="headerlink" href="#choice-search-spaces" title="Permalink to this headline">¶</a></h2>
+<p>The last of the basic search spaces allows us to provide arbitrary values to
+search. These can be numeric or non-numeric, and are drawn randomly in the same
+way integers are.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shadho</span> <span class="k">import</span> <span class="n">choose</span>
+
+<span class="n">space</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;vals&#39;</span><span class="p">:</span> <span class="n">choose</span><span class="p">([</span><span class="s1">&#39;hi&#39;</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="mi">78</span><span class="p">])</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This space will randomly choose one of the values passed to it with equal
+probability. Notice that we are mixing types in this space. This allows the
+choose space a great deal of flexibility. These spaces can be used to search,
+e.g., activation functions in neural networks or optimizers, without having to
+map them to integers.</p>
+</div>
+<div class="section" id="multidimensional-search-spaces">
+<h2>Multidimensional Search Spaces<a class="headerlink" href="#multidimensional-search-spaces" title="Permalink to this headline">¶</a></h2>
+<p>So far, we have only set up searches in a single dimension. For most practical
+applications, however, a search must be conducted over multiple parameters,
+meaning that multiple dimensions are necessary.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shadho</span> <span class="k">import</span> <span class="n">randint</span>
+
+<span class="n">space</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;ints1&#39;</span><span class="p">:</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="s1">&#39;ints2&#39;</span><span class="p">:</span> <span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This search space now has two dimensions: ints1 which includes even numbers in
+[0, 10], and ints2 which includes odd numbers in [1, 10]. When searching this
+space, SHADHO will randomly draw one value from ints1 and one value from ints2.</p>
+<p>Now let’s look at a more complicated multidimenisonal space.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shadho</span> <span class="k">import</span> <span class="n">randint</span><span class="p">,</span> <span class="n">uniform</span><span class="p">,</span> <span class="n">choose</span>
+
+<span class="n">space</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;ints&#39;</span><span class="p">:</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+    <span class="s1">&#39;uni&#39;</span><span class="p">:</span> <span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">7.0</span><span class="p">,</span> <span class="mf">34.2</span><span class="p">),</span>
+    <span class="s1">&#39;vals&#39;</span><span class="p">:</span> <span class="n">choose</span><span class="p">([</span><span class="s1">&#39;hi&#39;</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="mi">78</span><span class="p">])</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>We’ve added a few new things here, so let’s break this search space down. First,
+there are three dimensions to this search space. SHADHO allows you to search
+over any number of dimensions (provided the space can fit in memory!). Second,
+each of the three dimensions of the search is over a different “type” of space.
+This search space includes an integer search, a continuous search, and a choose
+search. By mixing and matching search types and by adding additional dimensions
+to the search space, we can create rich searches that meet the needs of the
+optimization problem.</p>
+</div>
+<div class="section" id="nested-search-spaces">
+<h2>Nested Search Spaces<a class="headerlink" href="#nested-search-spaces" title="Permalink to this headline">¶</a></h2>
+<p>While multidimensional searches are nice, adding dimensions to a flat search
+space does not lend itself to a good organizational structure. To help structure
+the search, we can use nested dictionaries.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shadho</span> <span class="k">import</span> <span class="n">randint</span><span class="p">,</span> <span class="n">uniform</span><span class="p">,</span> <span class="n">choose</span>
+
+<span class="n">space</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;nest1&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;ints&#39;</span><span class="p">:</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+        <span class="s1">&#39;uni&#39;</span><span class="p">:</span> <span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">7.0</span><span class="p">,</span> <span class="mf">34.2</span><span class="p">)</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;nest2&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;vals&#39;</span><span class="p">:</span> <span class="n">choose</span><span class="p">([</span><span class="s1">&#39;hi&#39;</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="mi">78</span><span class="p">])</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>We now have a space with two nested levels. The nested structure is maintained
+when SHADHO generates values from the space. Nesting in this way allows us to
+structure search values in a way that is meaningful to us. Internally, SHADHO
+treats the nested dictionaries as a tree, with branching at each nested layer.</p>
+<p>Structuring the search space as a tree provides some nice qualities: parameters
+can be grouped logically, different spaces can be made disjoint, and additional
+constraints can be placed on individual subtrees.</p>
+</div>
+<div class="section" id="optional-search-spaces">
+<h2>Optional Search Spaces<a class="headerlink" href="#optional-search-spaces" title="Permalink to this headline">¶</a></h2>
+<p>Sometimes it’s helpful to test the effect of excluding values from the search.
+<strong>Optional</strong> search spaces do just that: they are either included or excluded
+when values are generated. These are denoted by adding the “optional” flag to
+a nested space.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shadho</span> <span class="k">import</span> <span class="n">randint</span><span class="p">,</span> <span class="n">uniform</span><span class="p">,</span> <span class="n">choose</span>
+
+<span class="n">space</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;nest1&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;ints&#39;</span><span class="p">:</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+        <span class="s1">&#39;uni&#39;</span><span class="p">:</span> <span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">7.0</span><span class="p">,</span> <span class="mf">34.2</span><span class="p">)</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;nest2&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;optional&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;vals&#39;</span><span class="p">:</span> <span class="n">choose</span><span class="p">([</span><span class="s1">&#39;hi&#39;</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="mi">78</span><span class="p">])</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Here, <code class="docutils literal"><span class="pre">nest2</span></code> has been made optional. When values are generated, you can check
+for <code class="docutils literal"><span class="pre">nest2</span></code> with the condition</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">space</span><span class="p">[</span><span class="s1">&#39;nest2&#39;</span><span class="p">]:</span>
+    <span class="c1"># Do something awesome with values in nest2</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># Handle the case where nest2 is excluded</span>
+</pre></div>
+</div>
+<p>Optional spaces/subspaces are nice for testing things like data preprocessing
+steps or additional neural network layers. They allow you to see how including
+and excluding a particular part of your model affects the performance.</p>
+</div>
+<div class="section" id="exclusive-search-spaces">
+<h2>Exclusive Search Spaces<a class="headerlink" href="#exclusive-search-spaces" title="Permalink to this headline">¶</a></h2>
+<p>Exclusive spaces allow you to test disjoint models, for example different kernel
+functions with different hyperparameter sets or different neural network layers.
+Like optional spaces, exclusive spaces are indicated using a flag:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shadho</span> <span class="k">import</span> <span class="n">randint</span><span class="p">,</span> <span class="n">uniform</span><span class="p">,</span> <span class="n">choose</span>
+
+<span class="n">space</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;nest1&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;exclusive&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;ints&#39;</span><span class="p">:</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+        <span class="s1">&#39;uni&#39;</span><span class="p">:</span> <span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">7.0</span><span class="p">,</span> <span class="mf">34.2</span><span class="p">)</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;nest2&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;vals&#39;</span><span class="p">:</span> <span class="n">choose</span><span class="p">([</span><span class="s1">&#39;hi&#39;</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="mi">78</span><span class="p">])</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>When hyperparameter values are generated, either <code class="docutils literal"><span class="pre">space['nest1']['ints']</span></code> or
+<code class="docutils literal"><span class="pre">space['nest1']['uni']</span></code> will be included, but not both. Exclusive spaces may
+also be made optional:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shadho</span> <span class="k">import</span> <span class="n">randint</span><span class="p">,</span> <span class="n">uniform</span><span class="p">,</span> <span class="n">choose</span>
+
+<span class="n">space</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;nest1&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;exclusive&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;optional&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;ints&#39;</span><span class="p">:</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+        <span class="s1">&#39;uni&#39;</span><span class="p">:</span> <span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">7.0</span><span class="p">,</span> <span class="mf">34.2</span><span class="p">)</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;nest2&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;vals&#39;</span><span class="p">:</span> <span class="n">choose</span><span class="p">([</span><span class="s1">&#39;hi&#39;</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="mi">78</span><span class="p">])</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>In this case, there is also the possibility that <code class="docutils literal"><span class="pre">space['nest1']</span></code> will be
+excluded entirely. This may be handled like so:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">space</span><span class="p">[</span><span class="s1">&#39;nest1&#39;</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="s1">&#39;ints&#39;</span> <span class="ow">in</span> <span class="n">space</span><span class="p">[</span><span class="s1">&#39;nest1&#39;</span><span class="p">]:</span>
+        <span class="c1"># Handle using space[&#39;nest1&#39;][&#39;ints&#39;]</span>
+    <span class="k">elif</span> <span class="s1">&#39;uni&#39;</span> <span class="ow">in</span> <span class="n">spaces</span><span class="p">[</span><span class="s1">&#39;nest1&#39;</span><span class="p">]:</span>
+        <span class="c1"># Handle using space[&#39;nest1&#39;][&#39;uni&#39;]</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># Handle excluding space[&#39;nest1&#39;]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="example-optimizing-a-decision-tree">
+<h2>Example: Optimizing a Decision Tree<a class="headerlink" href="#example-optimizing-a-decision-tree" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="example-searching-svm-kernels">
+<h2>Example: Searching SVM Kernels<a class="headerlink" href="#example-searching-svm-kernels" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="example-scaling-a-convolutional-net">
+<h2>Example: Scaling a Convolutional Net<a class="headerlink" href="#example-scaling-a-convolutional-net" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="ccs.html" class="btn btn-neutral float-right" title="Compute Classes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="hyperparam.html" class="btn btn-neutral" title="The Hyperparameter Optimization Problem" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Jeff Kinnison.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1a1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

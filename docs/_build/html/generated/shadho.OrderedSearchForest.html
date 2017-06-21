@@ -1,0 +1,385 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>shadho.OrderedSearchForest &mdash; SHADHO 0.1a1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="SHADHO 0.1a1 documentation" href="../index.html"/>
+        <link rel="up" title="Library Reference" href="../reference.html"/>
+        <link rel="next" title="shadho.ComputeClass" href="shadho.ComputeClass.html"/>
+        <link rel="prev" title="shadho.HyperparameterSearch" href="shadho.HyperparameterSearch.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SHADHO
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1a1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../hyperparam.html">The Hyperparameter Optimization Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../spec.html">Search Space Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ccs.html">Compute Classes</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../reference.html">Library Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../reference.html#core">Core</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="shadho.HyperparameterSearch.html">shadho.HyperparameterSearch</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">shadho.OrderedSearchForest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shadho.ComputeClass.html">shadho.ComputeClass</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#specification-helpers">Specification Helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#tree">Tree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#search-spaces">Search Spaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#search-strategies">Search Strategies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#scaling-functions">Scaling Functions</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SHADHO</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../reference.html">Library Reference</a> &raquo;</li>
+        
+      <li>shadho.OrderedSearchForest</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/generated/shadho.OrderedSearchForest.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="shadho-orderedsearchforest">
+<h1>shadho.OrderedSearchForest<a class="headerlink" href="#shadho-orderedsearchforest" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="shadho.OrderedSearchForest">
+<em class="property">class </em><code class="descclassname">shadho.</code><code class="descname">OrderedSearchForest</code><span class="sig-paren">(</span><em>spec</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shadho/forest.html#OrderedSearchForest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shadho.OrderedSearchForest" title="Permalink to this definition">¶</a></dt>
+<dd><p>A collection of trees containing spaces to search.</p>
+<p>The OSF is a collection of trees that have some ordering imposed on them.
+OSFs are defined by a single specification tree that contains information
+about split points at which two trees are created.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>spec</strong> : dict</p>
+<blockquote class="last">
+<div><p>Dictionary containing a tree specification.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<dl class="last docutils">
+<dt><code class="xref py py-obj docutils literal"><span class="pre">shadho.tree.SearchTree</span></code></dt>
+<dd>a single search tree, contained within OSF</dd>
+</dl>
+</div>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#shadho.OrderedSearchForest.build" title="shadho.OrderedSearchForest.build"><code class="xref py py-obj docutils literal"><span class="pre">build</span></code></a>(spec[,&nbsp;name])</td>
+<td>Build the OSF trees from a specification.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#shadho.OrderedSearchForest.generate" title="shadho.OrderedSearchForest.generate"><code class="xref py py-obj docutils literal"><span class="pre">generate</span></code></a>()</td>
+<td>Generate values from a random tree in the OSF.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">set_ranks</span></code>([use_complexity,&nbsp;use_priority])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">update_assignments</span></code>(ccs)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#shadho.OrderedSearchForest.write_all" title="shadho.OrderedSearchForest.write_all"><code class="xref py py-obj docutils literal"><span class="pre">write_all</span></code></a>()</td>
+<td>Write the OSF state to file.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="shadho.OrderedSearchForest.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>spec</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shadho/forest.html#OrderedSearchForest.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shadho.OrderedSearchForest.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="shadho.OrderedSearchForest.build">
+<code class="descname">build</code><span class="sig-paren">(</span><em>spec</em>, <em>name=’root’</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shadho/forest.html#OrderedSearchForest.build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shadho.OrderedSearchForest.build" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build the OSF trees from a specification.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>spec</strong> : dict</p>
+<blockquote>
+<div><p>The specification tree in dictionary format.</p>
+</div></blockquote>
+<p><strong>name</strong> : {‘root’, str}, optional</p>
+<blockquote>
+<div><p>The name of the tree.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>node</strong> : shadho.tree.SearchTreeNode or shadho.tree.SearchTreeLeaf</p>
+<blockquote class="last">
+<div><p>The single search tree defined by spec.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-obj docutils literal"><span class="pre">shadho.tree.SearchTreeNode</span></code>, <code class="xref py py-obj docutils literal"><span class="pre">shadho.tree.SearchTreeNode</span></code></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="shadho.OrderedSearchForest.generate">
+<code class="descname">generate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shadho/forest.html#OrderedSearchForest.generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shadho.OrderedSearchForest.generate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate values from a random tree in the OSF.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>vals</strong> : tuple(str, dict)</p>
+<blockquote class="last">
+<div><p>A pair containing the unique id of the selected tree and the values
+generated from that tree.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-obj docutils literal"><span class="pre">shadho.tree.SearchTree.generate</span></code></p>
+</div>
+<p class="rubric">Notes</p>
+<p>This function is used by shadho.HyperparameterSearch when no compute
+classes are defined. The proportions are based on the rank of each tree
+if priority and/or complexity are used, otherwise the tree is selected
+entirely at random.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="shadho.OrderedSearchForest.write_all">
+<code class="descname">write_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shadho/forest.html#OrderedSearchForest.write_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shadho.OrderedSearchForest.write_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the OSF state to file.</p>
+<p>This function writes the state of each tree in the OSF to file. Each
+file contains the specification used to construct the tree and the list
+of tested search values/results.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-obj docutils literal"><span class="pre">shadho.tree.SearchTree.write</span></code></p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="shadho.ComputeClass.html" class="btn btn-neutral float-right" title="shadho.ComputeClass" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="shadho.HyperparameterSearch.html" class="btn btn-neutral" title="shadho.HyperparameterSearch" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Jeff Kinnison.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.1a1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

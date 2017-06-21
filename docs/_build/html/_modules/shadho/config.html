@@ -1,0 +1,401 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>shadho.config &mdash; SHADHO 0.1a1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="SHADHO 0.1a1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> SHADHO
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1a1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../hyperparam.html">The Hyperparameter Optimization Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../spec.html">Search Space Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ccs.html">Compute Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference.html">Library Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">SHADHO</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>shadho.config</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for shadho.config</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Helper objects for configuring and using Work Queue.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">work_queue</span>
+
+
+<div class="viewcode-block" id="WQConfig"><a class="viewcode-back" href="../../generated/shadho.WQConfig.html#shadho.WQConfig">[docs]</a><span class="k">class</span> <span class="nc">WQConfig</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Data store for WorkQueue master and task configuration information.</span>
+
+<span class="sd">    Work Queue [1]_ has a large number of configurations for both Work Queue</span>
+<span class="sd">    masters and Work Queue tasks. This object provides a standard interface for</span>
+<span class="sd">    the configurations with default values so that users can use only the</span>
+<span class="sd">    features they need.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        The name of the Work Queue master, used to direct workers to the</span>
+<span class="sd">        correct master and for potential Work Queue statistical information.</span>
+<span class="sd">    port : {work_queue.WORK_QUEUE_DEFAULT_PORT, int}, optional</span>
+<span class="sd">        The port on which the master will listen.</span>
+<span class="sd">    catalog : {False, True}, optional</span>
+<span class="sd">        Whether or not to run the Work Queue master in catalog mode. Catalog</span>
+<span class="sd">        mode allows workers to find the master by its name rather than by its</span>
+<span class="sd">        hostname and port.</span>
+<span class="sd">    exclusive : {True, False}, optional</span>
+<span class="sd">        If True, prevents this process from starting additional Work Queue</span>
+<span class="sd">        masters. Other processes, however, may do so.</span>
+<span class="sd">    logfile : {&#39;wq_shadho.log&#39;, str}, optional</span>
+<span class="sd">        Name of the log file to write to. The log file records statistics about</span>
+<span class="sd">        connected workers, submitted tasks, network usage, etc. Output roughly</span>
+<span class="sd">        as a csv file.</span>
+<span class="sd">    debug : {&#39;wq_shadho.debug&#39;, str}, optional</span>
+<span class="sd">        Name of the debug file to write to. The debug file contains Work Queue</span>
+<span class="sd">        master output and information about all workers and tasks that interact</span>
+<span class="sd">        with the master.</span>
+<span class="sd">    password : {False, True}, optional</span>
+<span class="sd">        If True, requires workers to send the correct password to the master</span>
+<span class="sd">        before receiving tasks. A password entry prompt will be displayed when</span>
+<span class="sd">        this object is initialized.</span>
+<span class="sd">    command : {None, str}, optional</span>
+<span class="sd">        The command for tasks to execute. Format identical to how a command</span>
+<span class="sd">        would be run in terminal, e.g. &#39;python example.py 1 foo&#39;</span>
+<span class="sd">    files : {None, list(dict)}, optional</span>
+<span class="sd">        The input and output files that should be sent to and returned from</span>
+<span class="sd">        each task.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Information about the Work Queue Python API can be foung in the `CCTools</span>
+<span class="sd">    documentation&lt;http://ccl.cse.nd.edu/software/manuals/api/html/namespaceWorkQueuePython.html&gt;`_.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. _[1] Li Yi, Christopher Moretti, Scott Emrich, Kenneth Judd, and Douglas</span>
+<span class="sd">           Thain. 2009. Harnessing parallelism in multicore clusters with the</span>
+<span class="sd">           all-pairs and wavefrontabstractions. In Proceedings of the 18th ACM</span>
+<span class="sd">           international symposium on High performance distributed computing.</span>
+<span class="sd">           ACM, 1–10.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="WQConfig.__init__"><a class="viewcode-back" href="../../generated/shadho.WQConfig.html#shadho.WQConfig.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">work_queue</span><span class="o">.</span><span class="n">WORK_QUEUE_DEFAULT_PORT</span><span class="p">,</span>
+                 <span class="n">catalog</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shutdown</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">logfile</span><span class="o">=</span><span class="s1">&#39;wq_shadho.log&#39;</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="s1">&#39;wq_shadho.debug&#39;</span><span class="p">,</span>
+                 <span class="n">password</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">password</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">getpass</span><span class="o">.</span><span class="n">getpass</span><span class="p">(</span><span class="s1">&#39;Supply a password:&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;port&#39;</span><span class="p">:</span> <span class="n">port</span><span class="p">,</span>
+            <span class="s1">&#39;catalog&#39;</span><span class="p">:</span> <span class="n">catalog</span><span class="p">,</span>
+            <span class="s1">&#39;exclusive&#39;</span><span class="p">:</span> <span class="n">exclusive</span><span class="p">,</span>
+            <span class="s1">&#39;shutdown&#39;</span><span class="p">:</span> <span class="n">shutdown</span><span class="p">,</span>
+            <span class="s1">&#39;logfile&#39;</span><span class="p">:</span> <span class="n">logfile</span><span class="p">,</span>
+            <span class="s1">&#39;debug&#39;</span><span class="p">:</span> <span class="n">debug</span><span class="p">,</span>
+            <span class="s1">&#39;wq_logfile&#39;</span><span class="p">:</span> <span class="n">wq_logfile</span><span class="p">,</span>
+            <span class="s1">&#39;task_logfile&#39;</span><span class="p">:</span> <span class="n">task_logfile</span><span class="p">,</span>
+            <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="n">p</span><span class="p">,</span>
+            <span class="s1">&#39;command&#39;</span><span class="p">:</span> <span class="n">command</span><span class="p">,</span>
+            <span class="s1">&#39;files&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_files</span><span class="p">(</span><span class="n">files</span><span class="p">)</span> <span class="k">if</span> <span class="n">files</span> <span class="k">else</span> <span class="p">[]</span>
+        <span class="p">}</span></div>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">val</span>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+<div class="viewcode-block" id="WQConfig.add_files"><a class="viewcode-back" href="../../generated/shadho.WQConfig.html#shadho.WQConfig.add_files">[docs]</a>    <span class="k">def</span> <span class="nf">add_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Add files to be sent to with Tasks.</span>
+
+<span class="sd">        Each file should be specified in the following format:</span>
+
+<span class="sd">            ``{</span>
+<span class="sd">                &#39;localpath&#39;: # Path to the local file,</span>
+<span class="sd">                &#39;remotepath&#39;: # Path to/name of the file after transfer,</span>
+<span class="sd">                &#39;type&#39;: # &#39;input&#39; or &#39;output&#39;,</span>
+<span class="sd">                &#39;cache&#39;: # True or False, whether to cache the file remotely</span>
+<span class="sd">            }``</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        files : list(dict)</span>
+<span class="sd">            The list of files, each specified as above.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        wqfs : list(shadho.config.WQFile)</span>
+<span class="sd">            The list of Work Queue files to send to/receive from each task.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">wqfs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">wqf</span> <span class="o">=</span> <span class="n">WQFile</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s1">&#39;localpath&#39;</span><span class="p">],</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;remotepath&#39;</span><span class="p">],</span>
+                             <span class="n">f</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">],</span> <span class="n">cache</span><span class="o">=</span><span class="n">f</span><span class="p">[</span><span class="s1">&#39;cache&#39;</span><span class="p">])</span>
+                <span class="n">wqfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wqf</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+        <span class="k">return</span> <span class="n">wqfs</span></div></div>
+
+
+<div class="viewcode-block" id="WQFile"><a class="viewcode-back" href="../../generated/shadho.WQFile.html#shadho.WQFile">[docs]</a><span class="k">class</span> <span class="nc">WQFile</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Representation of a file to send to/receive from a remote worker.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    localpath : str</span>
+<span class="sd">        Path to the local copy of the file.</span>
+<span class="sd">    remotepath : str</span>
+<span class="sd">        Path to the file after transferred to the Work Queue worker.</span>
+<span class="sd">    type : {&#39;input&#39;, &#39;output&#39;, &#39;buffer&#39;}, optional</span>
+<span class="sd">        Whether the file is an input file (to send to a worker), an output file</span>
+<span class="sd">        (to receive from a worker), or created from a string buffer.</span>
+<span class="sd">    cache : {False, True}, optional</span>
+<span class="sd">        Whether to cache the file on a Work Queue worker between tasks. Doing</span>
+<span class="sd">        so can reduce the overhead of running multiple tasks on a worker by</span>
+<span class="sd">        preserving files common to all tasks.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    For more information on Work Queue file specifications, see the `CCTools</span>
+<span class="sd">    documentation&lt;http://ccl.cse.nd.edu/software/manuals/api/html/work__queue_8h.html#a8f9af7213ea271d3b58fe0f62ad160c0&gt;`_.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="WQFile.__init__"><a class="viewcode-back" href="../../generated/shadho.WQFile.html#shadho.WQFile.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">localpath</span><span class="p">,</span> <span class="n">remotepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">localpath</span> <span class="o">=</span> <span class="n">localpath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remotepath</span> <span class="o">=</span> <span class="n">remotepath</span> <span class="k">if</span> <span class="n">remotepath</span> <span class="k">else</span> <span class="n">os</span><span class="o">.</span><span class="n">basename</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">work_queue</span><span class="o">.</span><span class="n">WORK_QUEUE_INPUT</span> \
+            <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;input&#39;</span> <span class="k">else</span> <span class="n">work_queue</span><span class="o">.</span><span class="n">WORK_QUEUE_OUTPUT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">work_queue</span><span class="o">.</span><span class="n">WORK_QUEUE_CACHE</span> \
+            <span class="k">if</span> <span class="n">cache</span> <span class="k">else</span> <span class="n">work_queue</span><span class="o">.</span><span class="n">WORK_QUEUE_NOCACHE</span></div>
+
+    <span class="k">def</span> <span class="nf">add_to_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="n">task</span><span class="o">.</span><span class="n">specify_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">tag</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">localpath</span><span class="p">])),</span>
+                          <span class="n">remote_name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">remotepath</span><span class="p">),</span>
+                          <span class="nb">type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
+                          <span class="n">cache</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+                          <span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Jeff Kinnison.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1a1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

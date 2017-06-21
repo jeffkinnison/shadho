@@ -1,0 +1,7 @@
+OrderedSearchForest
+===================
+
+.. autoclass::
+    :toctree: generated/
+    
+    OrderedSearchForest

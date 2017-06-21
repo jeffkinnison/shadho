@@ -19,12 +19,13 @@ tree: tree data structures for implementing the Ordered Search Forest
 from .shadho import HyperparameterSearch
 from .forest import OrderedSearchForest
 from .hardware import ComputeClass
+from .config import WQConfig, WQFile
 from .helpers import uniform, ln_uniform, log10_uniform, log2_uniform
 from .helpers import normal, ln_normal, log10_normal, log2_normal
 from .helpers import randint, log10_randint, log2_randint
 from .helpers import choose
 
-__all__ = [HyperparameterSearch, OrderedSearchForest, ComputeClass, uniform,
-           ln_uniform, log10_uniform, log2_uniform, normal, ln_normal,
-           log10_normal, log2_normal, randint, log10_randint, log2_randint,
-           choose]
+__all__ = [HyperparameterSearch, OrderedSearchForest, ComputeClass, WQConfig,
+           WQFile, uniform, ln_uniform, log10_uniform, log2_uniform, normal,
+           ln_normal, log10_normal, log2_normal, randint, log10_randint,
+           log2_randint, choose]

@@ -114,7 +114,9 @@ class HyperparameterSearch(object):
             The tasks to submit to Work Queue.
         """
         tasks = []
-        if (not self.use_complexity and not self.use_priority) or len(self.ccs) == 0:
+        if len(self.ccs) == 0:
+            self.forest.set_ranks(use_priority=self.use_priority,
+                                  use_complexity=self.use_complexity)
             for i in range(n_tasks):
                 task = work_queue.Task(self.wq_config['command'])
 
@@ -166,48 +168,35 @@ class HyperparameterSearch(object):
         # TODO: Reduce the number of times iterating over things
         # TODO: Make the assignments agnostic to the number of trees and ccs
         # Clear the assignments within both trees and Compute Classes
-        trees = [self.forest.trees[key] for key in self.forest.trees]
         for cc in self.ccs:
             cc.clear_assignments()
-        for tree in trees:
-            tree.rank = 1   # Clear the rank for re-ordering
-            tree.clear_assignments()
 
-        # Sort trees by complexity if using the complexity heuristic
-        if self.use_complexity:
-            trees.sort(key=lambda x: x.complexity, reverse=True)
-            for i in range(len(trees)):
-                trees[i].rank *= (i + 1)
-
-        # Sort trees by priority if using the complexity heuristic
-        if self.use_priority:
-            trees.sort(key=lambda x: x.priority, reverse=True)
-            for i in range(len(trees)):
-                trees[i].rank *= (i + 1)
-
+        self.forest.set_ranks(use_priority=self.use_priority,
+                              use_complexity=self.use_complexity)
+        trees = [self.forest.trees[key] for key in self.forest.trees]
         trees.sort(key=lambda x: x.rank)
 
-        # larger, smaller = (trees, self.ccs) \
-        #     if len(trees) > len(self.ccs) else (self.ccs, trees)
-        # x = float(len(larger)) / float(len(smaller))
-        # y = x - 1
-        # j = 0
-        # n = len(larger) / 2
+        larger, smaller = (trees, self.ccs) \
+            if len(trees) >= len(self.ccs) else (self.ccs, trees)
+        x = float(len(larger)) / float(len(smaller))
+        y = x - 1
+        j = 0
+        n = (len(larger) / 2) - 1
 
-        for i in range(len(trees)):
+        for i in range(len(larger)):
             if i > np.ceil(y):
                 j += 1
                 y += x
-            trees[i].assign(self.ccs[j])
-            self.ccs[j].assign(trees[i])
+            larger[i].assign(smaller[j])
+            smaller[j].assign(larger[i])
 
             if i <= n:
-                trees[i].assign(self.ccs[j + 1])
-                self.ccs[j + 1].assign(trees[i])
+                larger[i].assign(smaller[j + 1])
+                smaller[j + 1].assign(larger[i])
 
             if i > n:
-                trees[i].assign(self.ccs[j - 1])
-                self.ccs[j - 1].assign(trees[i])
+                larger[i].assign(smaller[j - 1])
+                smaller[j - 1].assign(larger[i])
 
     def __success(self, task):
         """Default handling for successful task completion.

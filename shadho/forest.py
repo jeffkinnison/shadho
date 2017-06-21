@@ -122,6 +122,23 @@ class OrderedSearchForest(object):
         for tree in self.trees:
             self.trees[tree].write()
 
+    def set_ranks(self, use_complexity=False, use_priority=False):
+        trees = [self.trees[key] for key in self.trees]
+
+        for tree in trees:
+            tree.rank = 1
+            tree.clear_assignments()
+
+        if use_complexity:
+            trees.sort(key=lambda x: x.complexity, reverse=True)
+            for i in range(len(trees)):
+                trees[i].rank *= i
+
+        if use_priority:
+            trees.sort(key=lambda x: x.priority, reverse=True)
+            for i in range(len(trees)):
+                trees[i].rank *= i
+
     # DEPRECATED
     def update_assignments(self, ccs):
         x = max(len(self.trees), len(ccs)) / min(len(self.forest), len(ccs))

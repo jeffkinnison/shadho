@@ -1,0 +1,362 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>shadho.ComputeClass &mdash; SHADHO 0.1a1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="SHADHO 0.1a1 documentation" href="../index.html"/>
+        <link rel="up" title="Library Reference" href="../reference.html"/>
+        <link rel="prev" title="shadho.OrderedSearchForest" href="shadho.OrderedSearchForest.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SHADHO
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1a1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../hyperparam.html">The Hyperparameter Optimization Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../spec.html">Search Space Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ccs.html">Compute Classes</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../reference.html">Library Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../reference.html#core">Core</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="shadho.HyperparameterSearch.html">shadho.HyperparameterSearch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shadho.OrderedSearchForest.html">shadho.OrderedSearchForest</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">shadho.ComputeClass</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#specification-helpers">Specification Helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#tree">Tree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#search-spaces">Search Spaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#search-strategies">Search Strategies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference.html#scaling-functions">Scaling Functions</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SHADHO</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../reference.html">Library Reference</a> &raquo;</li>
+        
+      <li>shadho.ComputeClass</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/generated/shadho.ComputeClass.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="shadho-computeclass">
+<h1>shadho.ComputeClass<a class="headerlink" href="#shadho-computeclass" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="shadho.ComputeClass">
+<em class="property">class </em><code class="descclassname">shadho.</code><code class="descname">ComputeClass</code><span class="sig-paren">(</span><em>name</em>, <em>resource</em>, <em>value</em>, <em>max_tasks</em>, <em>assignments=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shadho/hardware.html#ComputeClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shadho.ComputeClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Group distributed compute nodes by hardware properties.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : str</p>
+<blockquote>
+<div><p>The name of the compute class.</p>
+</div></blockquote>
+<p><strong>resource</strong> : str</p>
+<blockquote>
+<div><p>The name of the required resource.</p>
+</div></blockquote>
+<p><strong>value</strong> : str | int</p>
+<blockquote>
+<div><p>The value of the required resource.</p>
+</div></blockquote>
+<p><strong>max_tasks</strong> : int</p>
+<blockquote>
+<div><p>The expected maximum number of concurrent tasks to run.</p>
+</div></blockquote>
+<p><strong>assignments</strong> : {None, list(shadho.tree.SearchTree)}</p>
+<blockquote class="last">
+<div><p>The list of search spaces assigned to this compute class.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The assignments are set by shadho.HyperparameterSearch as searches are
+conducted. When using the two together, there is no need to explicity
+assign search spaces to hardware.</p>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#shadho.ComputeClass.assign" title="shadho.ComputeClass.assign"><code class="xref py py-obj docutils literal"><span class="pre">assign</span></code></a>(a)</td>
+<td>Add an assignment.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#shadho.ComputeClass.clear_assignments" title="shadho.ComputeClass.clear_assignments"><code class="xref py py-obj docutils literal"><span class="pre">clear_assignments</span></code></a>()</td>
+<td>Clear the current set of assignments.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#shadho.ComputeClass.generate" title="shadho.ComputeClass.generate"><code class="xref py py-obj docutils literal"><span class="pre">generate</span></code></a>()</td>
+<td>Generate sets of values to search from the assignments.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="shadho.ComputeClass.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>name</em>, <em>resource</em>, <em>value</em>, <em>max_tasks</em>, <em>assignments=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shadho/hardware.html#ComputeClass.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shadho.ComputeClass.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="shadho.ComputeClass.assign">
+<code class="descname">assign</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shadho/hardware.html#ComputeClass.assign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shadho.ComputeClass.assign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an assignment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>a</strong> : shadho.tree.SearchTree</p>
+<blockquote class="last">
+<div><p>A search space that should be run on the hardware specified by this
+ComputeClass.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="shadho.ComputeClass.clear_assignments">
+<code class="descname">clear_assignments</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shadho/hardware.html#ComputeClass.clear_assignments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shadho.ComputeClass.clear_assignments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear the current set of assignments.</p>
+<p class="rubric">Notes</p>
+<p>This method is called by shadho.HyperparameterSearch when updating
+assignments.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="shadho.ComputeClass.generate">
+<code class="descname">generate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shadho/hardware.html#ComputeClass.generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#shadho.ComputeClass.generate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate sets of values to search from the assignments.</p>
+<p>Because a ComputeClass may have multiple assignments, each assignment
+is weighted by its rank (position within the Ordered Search Forest).
+Values are generated proportional to the rank.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>specs</strong> : list(dict)</p>
+<blockquote class="last">
+<div><p>The list of hyperparameters to search.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="shadho.OrderedSearchForest.html" class="btn btn-neutral" title="shadho.OrderedSearchForest" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Jeff Kinnison.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.1a1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

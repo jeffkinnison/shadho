@@ -1,0 +1,301 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>shadho.strategies &mdash; SHADHO 0.1a1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="SHADHO 0.1a1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> SHADHO
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1a1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../hyperparam.html">The Hyperparameter Optimization Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../spec.html">Search Space Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ccs.html">Compute Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference.html">Library Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">SHADHO</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>shadho.strategies</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for shadho.strategies</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Strategies for exploring search spaces.</span>
+
+<span class="sd">This module implements strategies for searching individual spaces. Strategies</span>
+<span class="sd">are either undirected (as in `random`) or directed (`tpe`, `hyperband`, etc.).</span>
+<span class="sd">A helper function has been included to provide a standard interface to access</span>
+<span class="sd">these strategies for general use.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">get_strategy : function</span>
+<span class="sd">    Retrieve a search strategy by name.</span>
+<span class="sd">random : numeric</span>
+<span class="sd">    Generate a random number (float or int) from a probability distribution.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">get_strategy</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve a search strategy by name.</span>
+
+<span class="sd">    This function is provided to allow easy access for regular use. Retrieves a</span>
+<span class="sd">    search function that is defined within this module.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        The name of the strategy to get. Must be &#39;random&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    The requested search strategy function.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">random</span>
+
+
+<div class="viewcode-block" id="random"><a class="viewcode-back" href="../../generated/shadho.strategies.random.html#shadho.strategies.random">[docs]</a><span class="k">def</span> <span class="nf">random</span><span class="p">(</span><span class="n">distribution</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Randomly search a probability distribution.</span>
+
+<span class="sd">    Random search is undirected beyond the specified probability distribution,</span>
+<span class="sd">    returning a randomly generated value from the given distribution. Random</span>
+<span class="sd">    search for hyperparameter optimization was suggested in [1].</span>
+
+<span class="sd">    Currently, random search must be a subclass of scipy.stats.rv_continuous or</span>
+<span class="sd">    scipy.stats.rv_discrete for consistency with the rest of this package.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    distribution : scipy.stats.rv_continuous or scipy.stats.rv_discrete</span>
+<span class="sd">        The probability distribution to draw from.</span>
+<span class="sd">    *args : variable</span>
+<span class="sd">        Arguments to parametrize the distribution.</span>
+<span class="sd">    **kwargs : variable</span>
+<span class="sd">        Keyword arguments to parametrize the distribution.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; random(scipy.stats.uniform)</span>
+<span class="sd">    # Returns a value drawn from uniform distribution over [0.0, 1.0)</span>
+<span class="sd">    &gt;&gt;&gt; random(scipy.stats.uniform, loc=3.7, scale=5.0)</span>
+<span class="sd">    # Returns a value drawn from uniform distribution over [3.7, 5.0)</span>
+<span class="sd">    &gt;&gt;&gt; random(scipy.stats.gamma, 3.2)</span>
+<span class="sd">    # Returns a value from the gamma distribution with shape parameter a=3.2</span>
+<span class="sd">    &gt;&gt;&gt; random(scipy.stats.randint, -4, 8)</span>
+<span class="sd">    # Returns an integer in the range [-4, 8)</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] J. Bergstra and Y. Bengio, &quot;Random Search for Hyper-parameter</span>
+<span class="sd">           Optimization,&quot; J. Mach. Learn. Res., Vol. 13, p. 281-305, 2012.</span>
+<span class="sd">           </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">distribution</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Jeff Kinnison.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1a1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

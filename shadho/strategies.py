@@ -30,6 +30,7 @@ def get_strategy(name):
     Returns
     -------
     The requested search strategy function.
+
     """
     return random
 
@@ -43,6 +44,15 @@ def random(distribution, *args, **kwargs):
 
     Currently, random search must be a subclass of scipy.stats.rv_continuous or
     scipy.stats.rv_discrete for consistency with the rest of this package.
+
+    Parameters
+    ----------
+    distribution : scipy.stats.rv_continuous or scipy.stats.rv_discrete
+        The probability distribution to draw from.
+    *args : variable
+        Arguments to parametrize the distribution.
+    **kwargs : variable
+        Keyword arguments to parametrize the distribution.
 
     Examples
     --------
@@ -59,14 +69,6 @@ def random(distribution, *args, **kwargs):
     ----------
     .. [1] J. Bergstra and Y. Bengio, "Random Search for Hyper-parameter
            Optimization," J. Mach. Learn. Res., Vol. 13, p. 281-305, 2012.
-
-    Parameters
-    ----------
-    distribution : scipy.stats.rv_continuous or scipy.stats.rv_discrete
-        The probability distribution to draw from.
-    *args : variable
-        Arguments to parametrize the distribution.
-    **kwargs : variable
-        Keyword arguments to parametrize the distribution.
+           
     """
     return distribution.rvs(*args, **kwargs)

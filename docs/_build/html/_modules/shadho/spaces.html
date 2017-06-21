@@ -1,0 +1,524 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>shadho.spaces &mdash; SHADHO 0.1a1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="SHADHO 0.1a1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> SHADHO
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1a1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../hyperparam.html">The Hyperparameter Optimization Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../spec.html">Search Space Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ccs.html">Compute Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference.html">Library Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">SHADHO</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>shadho.spaces</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for shadho.spaces</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Search space definitions for specifying hyperparameters.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">BaseSpace: base class for other spaces</span>
+<span class="sd">ConstantSpace: search space containing a single search value</span>
+<span class="sd">ContinuousSpace: search space defined over a real interval</span>
+<span class="sd">DiscreteSpace: search space over a set of categorical values</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">strategies</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">scales</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span>
+
+
+<span class="k">class</span> <span class="nc">DistributionDoesNotExist</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="BaseSpace"><a class="viewcode-back" href="../../generated/shadho.spaces.BaseSpace.html#shadho.spaces.BaseSpace">[docs]</a><span class="k">class</span> <span class="nc">BaseSpace</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for other spaces.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BaseSpace.generate"><a class="viewcode-back" href="../../generated/shadho.spaces.BaseSpace.html#shadho.spaces.BaseSpace.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate a value from this space.</span>
+
+<span class="sd">        The BaseSpace is defined over the Pythonic Nonespace, which consists of</span>
+<span class="sd">        a single value (None). From this value, we catch a glimpse of the</span>
+<span class="sd">        perfection and nihilistic delight that is eternity. Praise the None,</span>
+<span class="sd">        for from it we are made whole.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="BaseSpace.to_spec"><a class="viewcode-back" href="../../generated/shadho.spaces.BaseSpace.html#shadho.spaces.BaseSpace.to_spec">[docs]</a>    <span class="k">def</span> <span class="nf">to_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate the specification for this search space.</span>
+
+<span class="sd">        The BaseSpace is defined over the Pythonic Nonespace, which consists of</span>
+<span class="sd">        a single value (None). How does one specify the void? It may only be</span>
+<span class="sd">        represented as the infinite yet incomprehensible None, as decreed by</span>
+<span class="sd">        BDFL.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="BaseSpace.complexity"><a class="viewcode-back" href="../../generated/shadho.spaces.BaseSpace.html#shadho.spaces.BaseSpace.complexity">[docs]</a>    <span class="k">def</span> <span class="nf">complexity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine the complexity of the search space.</span>
+
+<span class="sd">        The BaseSpace is defined over the Pythonic Nonespace, which consists of</span>
+<span class="sd">        a single value (None). According to the ``scriptures&lt;https://docs.python.org/3/reference/datamodel.html#the-standard-type-hierarchy&gt;``_</span>
+<span class="sd">        None is singular and infinite, representing the identity and lack of</span>
+<span class="sd">        identity simultaneously. Our feeble human minds cannot comprehend this</span>
+<span class="sd">        duality, and thus we represent None as 1 for the sake of the Algorithm.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mi">1</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ConstantSpace"><a class="viewcode-back" href="../../generated/shadho.spaces.ConstantSpace.html#shadho.spaces.ConstantSpace">[docs]</a><span class="k">class</span> <span class="nc">ConstantSpace</span><span class="p">(</span><span class="n">BaseSpace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A search space containing a single value.</span>
+
+<span class="sd">    This space exists to unify the API for generating search values, allowing</span>
+<span class="sd">    users to submit standard but arbitrary information along with searches.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : type</span>
+<span class="sd">        The constant value stored within this space.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ConstantSpace.__init__"><a class="viewcode-back" href="../../generated/shadho.spaces.ConstantSpace.html#shadho.spaces.ConstantSpace.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ConstantSpace</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span></div>
+
+<div class="viewcode-block" id="ConstantSpace.generate"><a class="viewcode-back" href="../../generated/shadho.spaces.ConstantSpace.html#shadho.spaces.ConstantSpace.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate a value from this space.</span>
+
+<span class="sd">        Returns the constant value stored within this space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span></div>
+
+<div class="viewcode-block" id="ConstantSpace.to_spec"><a class="viewcode-back" href="../../generated/shadho.spaces.ConstantSpace.html#shadho.spaces.ConstantSpace.to_spec">[docs]</a>    <span class="k">def</span> <span class="nf">to_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate the specification for this search space.</span>
+
+<span class="sd">        This space is specified entirely by a single value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ContinuousSpace"><a class="viewcode-back" href="../../generated/shadho.spaces.ContinuousSpace.html#shadho.spaces.ContinuousSpace">[docs]</a><span class="k">class</span> <span class="nc">ContinuousSpace</span><span class="p">(</span><span class="n">BaseSpace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A continuous real interval fit to a probability distribution.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    *args : tuple</span>
+<span class="sd">        The tuple containing arbitrary arguments for use with the probability</span>
+<span class="sd">        distribution.</span>
+<span class="sd">    distribution : {str, scipy.stats.rv_continuous}, optional</span>
+<span class="sd">        The name of the probability distribution or a subclass of the scipy</span>
+<span class="sd">        base continuous probability distribution.</span>
+<span class="sd">    strategy : {&#39;random&#39;, &#39;tpe&#39;, ...}, optional</span>
+<span class="sd">        The search strategy to use, as defined in shadho.strategies</span>
+<span class="sd">    scaling : {&#39;linear&#39;, &#39;ln&#39;, &#39;log10&#39;, &#39;log2&#39;}, optional</span>
+<span class="sd">        The scaling function to apply to generated values.</span>
+<span class="sd">    rng : {None, numpy.random.RandomState}, optional</span>
+<span class="sd">        The random number generator to use. `None` will create a new RNG seeded</span>
+<span class="sd">        by `seed`.</span>
+<span class="sd">    seed : {None, int, array_like}, optional</span>
+<span class="sd">        Random seed to use with `rng`. See the ``numpy.random.RandomState</span>
+<span class="sd">        documentation&lt;https://docs.scipy.org/doc/numpy/reference/generated/numpy.random.RandomState.html#numpy.random.RandomState&gt;``_ for details.</span>
+<span class="sd">    **kwargs : dict</span>
+<span class="sd">        Arbitrary additional key/value pairs for use with the probability</span>
+<span class="sd">        distribution.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    DistributionDoesNotExist</span>
+<span class="sd">        Raised when the supplied probability distribution is not a standard</span>
+<span class="sd">        scipy.stats distribution or not a subclass of scipy.stats.rv_continuous</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ContinuousSpace.__init__"><a class="viewcode-back" href="../../generated/shadho.spaces.ContinuousSpace.html#shadho.spaces.ContinuousSpace.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="s1">&#39;uniform&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span>
+                 <span class="n">scaling</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># Get the scipy distribution by attribute name. If not an existing</span>
+        <span class="c1"># attribute, check to see if a subclass of scipy.stats.rv_continuous.</span>
+        <span class="c1">#</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="p">,</span> <span class="n">distribution</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">distribution</span><span class="p">,</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">rv_continuous</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span> <span class="o">=</span> <span class="n">distribution</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">DistributionDoesNotExist</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">distribution</span><span class="p">))</span>
+
+        <span class="c1"># Save the args and kwargs for use with self.distribution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dist_args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dist_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+
+        <span class="c1"># Get the search strategy and scaling funtion from their respective</span>
+        <span class="c1"># modules.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="n">strategies</span><span class="o">.</span><span class="n">get_strategy</span><span class="p">(</span><span class="n">strategy</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scales</span><span class="o">.</span><span class="n">get_scale</span><span class="p">(</span><span class="n">scaling</span><span class="p">)</span>
+
+        <span class="c1"># Information for recreating the specification.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dist_name</span> <span class="o">=</span> <span class="n">distribution</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">distribution</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> \
+            <span class="k">else</span> <span class="s1">&#39;custom&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategy_name</span> <span class="o">=</span> <span class="n">strategy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale_name</span> <span class="o">=</span> <span class="n">scaling</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">rng</span> <span class="k">if</span> <span class="n">rng</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ContinuousSpace.generate"><a class="viewcode-back" href="../../generated/shadho.spaces.ContinuousSpace.html#shadho.spaces.ContinuousSpace.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate a value from this space.</span>
+
+<span class="sd">        Returns a random value from the probability distribution based on the</span>
+<span class="sd">        search strategy and scaled by the scaling function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">distribution</span><span class="p">,</span>
+                                        <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
+                                        <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_args</span><span class="p">,</span>
+                                        <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_kwargs</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ContinuousSpace.to_spec"><a class="viewcode-back" href="../../generated/shadho.spaces.ContinuousSpace.html#shadho.spaces.ContinuousSpace.to_spec">[docs]</a>    <span class="k">def</span> <span class="nf">to_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate the specification for this search space.</span>
+
+<span class="sd">        This space is specified by its probability distribution, search</span>
+<span class="sd">        strategy, and scaling function. This function allows the space to be</span>
+<span class="sd">        saved for checkpointing and analysis.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;distribution&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist_name</span><span class="p">,</span>
+            <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist_args</span><span class="p">,</span>
+            <span class="s1">&#39;kwargs&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist_kwargs</span><span class="p">,</span>
+            <span class="s1">&#39;strategy&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy_name</span><span class="p">,</span>
+            <span class="s1">&#39;scale&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_name</span><span class="p">,</span>
+            <span class="s1">&#39;random_state&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                <span class="n">state</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">state</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                <span class="n">state</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+            <span class="p">]</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="ContinuousSpace.complexity"><a class="viewcode-back" href="../../generated/shadho.spaces.ContinuousSpace.html#shadho.spaces.ContinuousSpace.complexity">[docs]</a>    <span class="k">def</span> <span class="nf">complexity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine the complexity of the search space.</span>
+
+<span class="sd">        The complexity is defined as</span>
+
+<span class="sd">        ..math::</span>
+<span class="sd">            2 + \|b - a\|</span>
+
+<span class="sd">        where (a, b) is the interval containing 99%% of the probability</span>
+<span class="sd">        distribution.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">interval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span><span class="o">.</span><span class="n">interval</span><span class="p">(</span><span class="o">.</span><span class="mi">99</span><span class="p">,</span>
+                                              <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_args</span><span class="p">,</span>
+                                              <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_kwargs</span><span class="p">)</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">interval</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">distance</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_spec</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="DiscreteSpace"><a class="viewcode-back" href="../../generated/shadho.spaces.DiscreteSpace.html#shadho.spaces.DiscreteSpace">[docs]</a><span class="k">class</span> <span class="nc">DiscreteSpace</span><span class="p">(</span><span class="n">BaseSpace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A set of categorical values to be searched.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    *args : tuple</span>
+<span class="sd">        The tuple containing arbitrary arguments for use with the probability</span>
+<span class="sd">        distribution.</span>
+<span class="sd">    values : {None, list}</span>
+<span class="sd">        The set of discrete value to search.</span>
+<span class="sd">    strategy : {&#39;random&#39;, &#39;tpe&#39;, ...}, optional</span>
+<span class="sd">        The search strategy to use, as defined in shadho.strategies</span>
+<span class="sd">    scaling : {&#39;linear&#39;, &#39;ln&#39;, &#39;log10&#39;, &#39;log2&#39;}, optional</span>
+<span class="sd">        The scaling function to apply to generated values.</span>
+<span class="sd">    rng : {None, numpy.random.RandomState}, optional</span>
+<span class="sd">        The random number generator to use. `None` will create a new RNG seeded</span>
+<span class="sd">        by `seed`.</span>
+<span class="sd">    seed : {None, int, array_like}, optional</span>
+<span class="sd">        Random seed to use with `rng`. See the ``numpy.random.RandomState</span>
+<span class="sd">        documentation&lt;https://docs.scipy.org/doc/numpy/reference/generated/numpy.random.RandomState.html#numpy.random.RandomState&gt;``_ for details.</span>
+<span class="sd">    **kwargs : dict</span>
+<span class="sd">        Arbitrary additional key/value pairs for use with the probability</span>
+<span class="sd">        distribution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="DiscreteSpace.__init__"><a class="viewcode-back" href="../../generated/shadho.spaces.DiscreteSpace.html#shadho.spaces.DiscreteSpace.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s1">&#39;random&#39;</span><span class="p">,</span> <span class="n">scaling</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+                 <span class="n">rng</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">values</span> <span class="k">if</span> <span class="n">values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">randint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dist_args</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dist_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="n">strategies</span><span class="o">.</span><span class="n">get_strategy</span><span class="p">(</span><span class="n">strategy</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scales</span><span class="o">.</span><span class="n">get_scale</span><span class="p">(</span><span class="n">scaling</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategy_name</span> <span class="o">=</span> <span class="n">strategy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale_name</span> <span class="o">=</span> <span class="n">scaling</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">rng</span> <span class="k">if</span> <span class="n">rng</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DiscreteSpace.generate"><a class="viewcode-back" href="../../generated/shadho.spaces.DiscreteSpace.html#shadho.spaces.DiscreteSpace.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate a value from this space.</span>
+
+<span class="sd">        Returns a random value from the set of possible values based on the</span>
+<span class="sd">        search strategy and scaled by the scaling function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">distribution</span><span class="p">,</span>
+                            <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span>
+                            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_args</span><span class="p">,</span>
+                            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="DiscreteSpace.to_spec"><a class="viewcode-back" href="../../generated/shadho.spaces.DiscreteSpace.html#shadho.spaces.DiscreteSpace.to_spec">[docs]</a>    <span class="k">def</span> <span class="nf">to_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate the specification for this search space.</span>
+
+<span class="sd">        This space is specified by its set of values, search strategy, and</span>
+<span class="sd">        scaling function. This function allows the space to be saved for</span>
+<span class="sd">        checkpointing and analysis.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="s1">&#39;strategy&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy_name</span><span class="p">,</span>
+            <span class="s1">&#39;scale&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_name</span><span class="p">,</span>
+            <span class="s1">&#39;random_state&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                <span class="n">state</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">state</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                <span class="n">state</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+            <span class="p">]</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="DiscreteSpace.complexity"><a class="viewcode-back" href="../../generated/shadho.spaces.DiscreteSpace.html#shadho.spaces.DiscreteSpace.complexity">[docs]</a>    <span class="k">def</span> <span class="nf">complexity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine the complexity of the search space.</span>
+
+<span class="sd">        The complexity is defined as</span>
+
+<span class="sd">        ..math::</span>
+<span class="sd">            1 + |self.values|</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">))))</span> \
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_spec</span><span class="p">())</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Jeff Kinnison.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1a1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

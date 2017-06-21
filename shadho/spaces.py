@@ -173,12 +173,20 @@ class ContinuousSpace(BaseSpace):
         strategy, and scaling function. This function allows the space to be
         saved for checkpointing and analysis.
         """
+        state = self.rng.get_state()
         return {
             'distribution': self.dist_name,
             'args': self.dist_args,
             'kwargs': self.dist_kwargs,
             'strategy': self.strategy_name,
-            'scale': self.scale_name
+            'scale': self.scale_name,
+            'random_state': [
+                state[0],
+                list(state[1]),
+                state[2],
+                state[3],
+                state[4]
+            ]
         }
 
     def complexity(self):
@@ -260,10 +268,18 @@ class DiscreteSpace(BaseSpace):
         scaling function. This function allows the space to be saved for
         checkpointing and analysis.
         """
+        state = self.rng.get_state()
         return {
             'values': self.values,
             'strategy': self.strategy_name,
-            'scale': self.scale_name
+            'scale': self.scale_name,
+            'random_state': [
+                state[0],
+                list(state[1]),
+                state[2],
+                state[3],
+                state[4]
+            ]
         }
 
     def complexity(self):

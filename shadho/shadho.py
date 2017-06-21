@@ -65,7 +65,7 @@ class HyperparameterSearch(object):
                             exclusive=self.wq_config['exclusive'],
                             shutdown=self.wq_config['shutdown']
                             )
-        self.forest = SearchForest(spec)
+        self.forest = OrderedSearchForest(spec)
         self.ccs = [] if ccs is None else ccs
         self.use_complexity = use_complexity
         self.use_priority = use_priority
@@ -176,12 +176,12 @@ class HyperparameterSearch(object):
         trees = [self.forest.trees[key] for key in self.forest.trees]
         trees.sort(key=lambda x: x.rank)
 
-        larger, smaller = (trees, self.ccs) \
-            if len(trees) >= len(self.ccs) else (self.ccs, trees)
+        # larger, smaller = (trees, self.ccs) \
+        #     if len(trees) > len(self.ccs) else (self.ccs, trees)
         x = float(len(larger)) / float(len(smaller))
         y = x - 1
         j = 0
-        n = (len(larger) / 2) - 1
+        n = len(larger) / 2
 
         for i in range(len(larger)):
             if i > np.ceil(y):

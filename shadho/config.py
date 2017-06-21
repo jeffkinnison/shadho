@@ -2,6 +2,7 @@
 """Helper objects for configuring and using Work Queue.
 """
 
+import getpass
 import json
 import os
 
@@ -81,8 +82,6 @@ class WQConfig(object):
             'shutdown': shutdown,
             'logfile': logfile,
             'debug': debug,
-            'wq_logfile': wq_logfile,
-            'task_logfile': task_logfile,
             'password': p,
             'command': command,
             'files': self.add_files(files) if files else []

@@ -4,3 +4,5 @@ cctools
 *.pyx
 *.pyc
 *.pyd
+generated
+_build

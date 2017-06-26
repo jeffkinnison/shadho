@@ -1,12 +1,41 @@
 #!/usr/bin/env python
 from setuptools import setup
 from setuptools.command.install import install
+
+try:
+    import configparser
+except:
+    import ConfigParser as configparser
+import os
 import site
+import shutil
 import subprocess
 import sys
 
-MAJ = sys.version_info[0]
 
+MAJ = sys.version_info[0]
+SHADHO_DIR = os.path.join(os.environ['HOME'], '.shadho')
+DEFAULT_CONFIG = {
+    'global': {
+        'wrapper': 'shadho_run_task.py',
+        'output': 'out.tar.gz',
+        'resultfile': 'performance.json',
+        'minval': 'loss'
+    },
+    'workqueue': {
+        'port': '9123',
+        'name': 'shadho_master',
+        'exclusive': 'yes',
+        'shutdown': 'yes',
+        'catalog': 'no',
+        'logfile': 'shadho_master.log',
+        'debugfile': 'shadho_master.debug',
+        'password': 'no'
+    },
+    'storage': {
+        'type': 'json'
+    }
+}
 
 class InstallCCToolsCommand(install):
     """Helper to install CCTools.
@@ -19,11 +48,28 @@ class InstallCCToolsCommand(install):
         CCTools and moves the related Python module and shared library to the
         site-packages directory.
         """
+        print('Installing CCTools suite')
+        global MAJ
+        global SHADHO_DIR
+        global DEFAULT_CONFIG
+        # CCTools distinguishes between Python 2/3 SWIG bindings, and the
+        # Python 3 bindings require extra effort. Install based on the user's
+        # version
         if MAJ == 3:
-            subprocess.call('bash install_cctools.sh py3')
+            subprocess.call(['bash', 'install_cctools.sh', 'py3'])
         else:
-            subprocess.call('bash install_cctools.sh')
-        install.run()
+            subprocess.call(['bash', 'install_cctools.sh'])
+        print('Installing shadho_worker')
+
+        shutil.copy(os.path.join('.', 'scripts', 'shadho_run_task.py'),
+                    SHADHO_DIR)
+        cfg = configparser.ConfigParser(default_section='global')
+        cfg.read_dict(DEFAULT_CONFIG)
+        home = os.path.expanduser(os.environ['HOME'] if 'HOME' in os.environ
+                                      else os.environ['USERPROFILE'])
+        with open(os.path.join(home, '.shadhorc'), 'w') as f:
+            cfg.write(f)
+        install.run(self)
 
 
 setup(

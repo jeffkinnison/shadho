@@ -4,11 +4,5 @@ python:
   - "3.4"
   - "3.5"
   - "3.6"
-before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y swig
-  - sudo apt-get install -y libperl-dev
-install:
-  - pip install .
-  - bash ./travis_helpers/install_cctools.sh
-script: PYTHONPATH=$HOME/cctools/lib/python$TRAVIS_PYTHON_VERSION/site-packages:$PYTHONPATH nosetests
+install: pip install .
+script: nosetests

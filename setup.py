@@ -37,6 +37,7 @@ DEFAULT_CONFIG = {
     }
 }
 
+
 class InstallCCToolsCommand(install):
     """Helper to install CCTools.
     """
@@ -63,7 +64,7 @@ class InstallCCToolsCommand(install):
 
         shutil.copy(os.path.join('.', 'scripts', 'shadho_run_task.py'),
                     SHADHO_DIR)
-        cfg = configparser.ConfigParser(default_section='global')
+        cfg = configparser.ConfigParser()
         cfg.read_dict(DEFAULT_CONFIG)
         home = os.path.expanduser(os.environ['HOME'] if 'HOME' in os.environ
                                       else os.environ['USERPROFILE'])

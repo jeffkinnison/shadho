@@ -75,7 +75,10 @@ class SHADHOConfig():
 
         if not ignore_shadhorc:
             with open(configfile, 'r') as f:
-                self.config.read_file(f)
+                if hasattr(self.config, 'read_file'):
+                    self.config.read_file(f)
+                else:
+                    self.config.readfp(f)
 
     def __getattr__(self, name):
         if self.config.has_section(name):

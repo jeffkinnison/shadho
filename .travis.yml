@@ -4,5 +4,20 @@ python:
   - "3.4"
   - "3.5"
   - "3.6"
+before_install:
+  - version="$(python -c 'import sys; print("{}.{}.{}".format(*sys.version_info[:3]))')"
+  - libpy="$(find /opt -name "libpython${TRAVIS_PYTHON_VERSION}m.so")"
+  - py3path="$(dirname "$(dirname $(command -v python3))")"
+  - cp "${libpy} "${py3path}/lib"
+  - echo $'#!/usr/bin/env python3\nimport sys\nfrom lib2to3.main import main\n\nsys.exit(main("lib2to3.fixes"))' > "$py3path/bin/2to3"
+  - chmod 755 "$py3path/bin/2to3"
+  - maj=`echo "$TRAVIS_PYTHON_VERSION" | cut -d'.' -f1 | read maj`
+  - min=`echo "$TRAVIS_PYTHON_VERSION" | cut -d'.' -f2 | read maj`
+  - sed -i "s@prefix_build=PREFIXBUILD@prefix_build=\"$py3path\"@" "./travis_helpers/python3-config"
+  - sed -i "s@VERSION=\"3.5\"@VERSION=\"$TRAVIS_PYTHON_VERSION\"@" "./travis_helpers/python3-config"
+  - sed -i "s@/lib/python3.5/config-@/lib/python${TRAVIS_PYTHON_VERSION}/config-@" "./travis_helpers/python3-config"
+  - sed -i "s@SO=\".cpython-35m-x86_64-linux-gnu.so\"@SO=\".cpython-${maj}${min}m-x86_64-linux-gnu.so\"@" "./travis_helpers/python3-config"
+  - mv "./travis_helpers/python3-config" "${py3path}/bin"
+  - chmod 755 "${py3path}/bin/python3-config"
 install: pip install .
-script: nosetests
+script: PYTHONPATH=$HOME/cctools/lib/python$TRAVIS_PYTHON_VERSION/site-packages:$PYTHONPATH nosetests

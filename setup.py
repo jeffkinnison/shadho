@@ -64,7 +64,7 @@ class InstallCCToolsCommand(install):
             subprocess.call(['bash', 'install_cctools.sh'])
             for key, val in DEFAULT_CONFIG.iteritems():
                 cfg.add_section(key)
-                for k, v in val.iteritems:
+                for k, v in val.iteritems():
                     cfg.set(key, k, v)
         print('Installing shadho_worker')
 

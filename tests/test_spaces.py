@@ -140,15 +140,24 @@ class TestContinuousSpace(object):
         assert_list_equal(x, list(y), msg='ContinuousSpace generates incorrect values')
 
     def test_to_spec(self):
-        '''Test that the specification of the constant space is the value.
+        '''Test that the specification of the continuous space is handled correctly.
         '''
-        sp = ContinuousSpace()
+        sp = ContinuousSpace(seed=1234)
+        rng = np.random.RandomState(1234)
+        state = rng.get_state()
         spec = {
             'distribution': 'uniform',
             'args': (),
             'kwargs': {},
             'strategy': 'random',
-            'scale': 'linear'
+            'scale': 'linear',
+            'random_state': [
+                state[0],
+                list(state[1]),
+                state[2],
+                state[3],
+                state[4]
+            ]
         }
         assert_dict_equal(sp.to_spec(), spec, msg='BaseSpace does not generate spec')
 
@@ -201,15 +210,24 @@ class TestDiscreteSpace(object):
             assert_in(sp.generate(), ['a', 'b', 'c', 'd', 'e'], msg='Values not being generated')
 
     def test_to_spec(self):
-        '''Test that the specification of the constant space is the value.
+        '''Test that the specification of the discrete space is correct.
         '''
-        sp = DiscreteSpace()
+        sp = DiscreteSpace(seed=1234)
+        rng = np.random.RandomState(1234)
+        state = rng.get_state()
         spec = {
             'values': [],
             'strategy': 'random',
-            'scale': 'linear'
+            'scale': 'linear',
+            'random_state': [
+                state[0],
+                list(state[1]),
+                state[2],
+                state[3],
+                state[4]
+            ]
         }
-        assert_dict_equal(sp.to_spec(), spec, msg='BaseSpace does not generate spec')
+        assert_dict_equal(sp.to_spec(), spec, msg='DiscreteSpace does not generate spec')
 
     def test_complexity(self):
         '''Test the complexity of the discrete space.

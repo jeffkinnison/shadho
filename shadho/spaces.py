@@ -195,6 +195,7 @@ class ContinuousSpace(BaseSpace):
         The complexity is defined as
 
         ..math::
+
             2 + \|b - a\|
 
         where (a, b) is the interval containing 99%% of the probability

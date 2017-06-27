@@ -63,7 +63,16 @@ class SHADHOConfig():
         print(configfile)
 
         self.config = configparser.ConfigParser()
-        self.config.read_dict(SHADHOConfig.DEFAULTS)
+        if hasattr(self.config, 'read_dict'):
+            # Python 3
+            self.config.read_dict(SHADHOConfig.DEFAULTS)
+        else:
+            # Python 2
+            for key, value in SHADHOConfig.DEFAULTS.iteritems():
+                self.config.add_section(key)
+                for k, v in value.iteritems():
+                    self.config.set(key, k, v)
+
         if not ignore_shadhorc:
             with open(configfile, 'r') as f:
                 self.config.read_file(f)

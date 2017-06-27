@@ -1,9 +1,0 @@
-Hyperparameter Optimizer
-========================
-
-.. currentmodule:: shadho
-
-.. autosummary::
-    :toctree: generated/
-
-    HyperparameterSearch

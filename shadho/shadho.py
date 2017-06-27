@@ -7,7 +7,7 @@ HyperparameterSearch: perform hyperparameter search with or without decisions
 """
 
 from .forest import OrderedSearchForest
-from .config import WQConfig
+from .config import SHADHOConfig
 
 import json
 import os
@@ -18,7 +18,117 @@ import uuid
 import numpy as np
 
 import work_queue
-from work_queue import WorkQueue
+from work_queue import WorkQueue, Task, WORK_QUEUE_RESULT_SUCCESS
+
+
+class SHADHO(object):
+    """Manager for
+
+    """
+    def __init__(self, spec, cmd=None, ccs=None, infiles=None,
+                 outfile='output.json', use_complexity=True, use_priority=True,
+                 timeout=3600, max_tasks=500, threshold=-1):
+        self.cfg = SHADHOConfig()
+        self.wq = WorkQueue(port=int(self.config.workqueue['port']),
+                            name=str(self.config.workqueue['name']),
+                            catalog=self.config.workqueue['catalog'],
+                            exclusive=self.config.workqueue['exclusive'],
+                            shutdown=self.config.workqueue['shutdown']
+                            )
+
+        self.timeout = timeout
+        self.threshold = threshold
+
+        if ccs is None:
+            self.search = HeuristicSearch(spec,
+                                          use_complexity=use_complexity,
+                                          use_priority=use_priority
+                                          )
+        else:
+            self.search = HardwareAwareSearch(spec,
+                                              ccs,
+                                              use_complexity=use_complexity,
+                                              use_priority=use_priority
+                                              )
+
+    def run(self):
+        """Conduct the hyperparameter search.
+        """
+        thresh = False
+        start = time.time()
+        curr = 0
+        while curr < timeout and not thresh:
+            tasks = self.search.make_tasks()
+            for task in tasks:
+                self.wq.submit(task)
+            res = self.wq.wait(timeout=10)
+            if res is not None and res.result == WORK_QUEUE_RESULT_SUCCESS:
+                self.__success(res)
+            else:
+                self.__failure(res)
+
+            curr = time.time() - start
+            if self.search.min < self.threshold:
+                thresh = True
+
+        self.search.report_min()
+
+
+class HeuristicSearch(object):
+    """Randomly generate hyperparameter values.
+
+    Parameters
+    ----------
+    spec : dict
+        Specification tree for the hyperparameter search.
+    use_complexity : {True, False}
+        True to weight parameter generation by the complexity heuristic.
+    use_priority : {True, False}
+        True to weight parameter generation by the priority heuristic.
+
+
+    Attributes
+    ----------
+    forest : shadho.forest.OrderedSearchForest
+        Forest of potential hyperparameter values.
+
+
+    """
+
+    def __init__(self, spec, cc=None, use_complexity=True, use_priority=True,
+                 max_tasks=500):
+        self.forest = OrderedSearchForest(spec)
+        self.cc = cc if cc is not None \
+                  else ComputeClass('dummy', randint(0, len(self.forest)))
+        self.use_complexity = use_complexity
+        self.use_priority = use_priority
+        self.current_tasks = 0
+        self.max_tasks = max_tasks
+
+    def get_params(self, n):
+        """Generate hyperparameter values to test.
+
+        Parameters
+        ----------
+        n : int
+            The number of parameters to generate.
+
+        Returns
+        -------
+        params : list(dict)
+            A list of hyperparameter values to test.
+
+        """
+        self.forest.set_ranks(use_complexity=self.use_complexity,
+                              use_priority=self.use_priority)
+        return [self.forest.generate(self.cc.rv,
+                                     use_complexity=self.use_complexity,
+                                     use_priority=self.use_priority)
+                for _ in range(n)]
+
+    def make_tasks(self):
+        params = self.get_params(self.max_tasks - self.current_tasks)
+
 
 
 class HyperparameterSearch(object):

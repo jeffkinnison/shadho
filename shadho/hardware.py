@@ -5,9 +5,12 @@ Classes
 -------
 ComputeClass: Group distributed compute nodes by hardware properties.
 """
+import json
+import uuid
+
 import numpy as np
 
-import work_queue
+from work_queue import Task
 
 
 class ComputeClass(object):
@@ -19,76 +22,74 @@ class ComputeClass(object):
         The name of the compute class.
     resource : str
         The name of the required resource.
-    value : str | int
+    value : str or int
         The value of the required resource.
     max_tasks : int
         The expected maximum number of concurrent tasks to run.
-    assignments : {None, list(shadho.tree.SearchTree)}
-        The list of search spaces assigned to this compute class.
+    inputs : list of shadho.config.WQFile, optional
+        The set of input files to send to this compute class.
+    output : str
+        Name of the expected output file from this compute class. Default:
+        ``out.tar.gz``
+    adapt_max_tasks : bool, optional
+        (Future Release) If true, determine the max number of tasks based on
+        connected workers with this compute class's resource/value pair.
 
-    Notes
-    -----
-    The assignments are set by shadho.HyperparameterSearch as searches are
-    conducted. When using the two together, there is no need to explicity
-    assign search spaces to hardware.
+    Attributes
+    ----------
+    name : str
+        The name of the compute class.
+    resource : str
+        The name of the required resource.
+    value : str or int
+        The value of the required resource.
+    max_tasks : int
+        The expected maximum number of concurrent tasks to run.
+
 
     """
-    def __init__(self, name, resource, value, max_tasks, assignments=None):
+
+    def __init__(self, name, resource, value, max_tasks, inputs=None,
+                 output='out.tar.gz', adapt_max_tasks=False):
         self.name = name
         self.resource = resource
         self.value = value
         self.max_tasks = max_tasks
-        self.submitted_tasks = 0
-        self.assignments = assignments if assignments is not None else []
+        self.inputs = inputs
+        self.output = output
 
-    def clear_assignments(self):
-        """Clear the current set of assignments.
+    def create_task(self, cmd, tag):
+        task = Task(cmd)
 
-        Notes
-        -----
-        This method is called by shadho.HyperparameterSearch when updating
-        assignments.
-        """
-        self.assignments = []
+        tag = '.'.join([str(uuid.uuid4()), tag])
 
-    def assign(self, a):
-        """Add an assignment.
+        if self.resource == 'cores':
+            task.specify_cores(self.value)
+        else:
+            task.specify_resource(self.resource, self.value)
 
-        Parameters
-        ----------
-        a : shadho.tree.SearchTree
-            A search space that should be run on the hardware specified by this
-            ComputeClass.
-        """
-        self.assignments.append(a)
+        for i in self.inputs:
+            i.add_to_task(task)
 
-    def generate(self):
-        """Generate sets of values to search from the assignments.
+        self.output.add_to_task(task, tag=tag)
 
-        Because a ComputeClass may have multiple assignments, each assignment
-        is weighted by its rank (position within the Ordered Search Forest).
-        Values are generated proportional to the rank.
+        return task
+
+
+    def update_max_tasks(self):
+        """Update the max tasks for this CC based on the number of workers.
+
+        Makes a call to the Work Queue catalog to determine how many of the
+        workers connected to this Work Queue master have the resource requested
+        by this CC.
 
         Returns
         -------
-        specs : list(dict)
-            The list of hyperparameters to search.
+        max_tasks : int
+            The maximum number of tasks to submit to the queue.
+
         """
-        n_tasks = self.max_tasks - self.submitted_tasks
-        specs = []
-
-        ranks = np.array([float(a.rank) for a in self.assignments])
-        ranks = (ranks / np.sum(ranks))[::-1]
-        print(ranks)
-
-        for i in range(n_tasks):
-            idx = np.random.choice(len(self.assignments), p=ranks)
-            specs.append((self.assignments[idx].id,
-                          self.assignments[idx].generate()))
-
-        self.submitted_tasks = self.max_tasks
-
-        return specs
+        pass
 
     def __str__(self):
         kids = ' '.join([str(a.root.children[0].name)

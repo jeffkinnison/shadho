@@ -46,7 +46,7 @@ class BaseSpace(object):
         """Determine the complexity of the search space.
 
         The BaseSpace is defined over the Pythonic Nonespace, which consists of
-        a single value (None). According to the ``scriptures<https://docs.python.org/3/reference/datamodel.html#the-standard-type-hierarchy>``_
+        a single value (None). According to the `scriptures<https://docs.python.org/3/reference/datamodel.html#the-standard-type-hierarchy>`_
         None is singular and infinite, representing the identity and lack of
         identity simultaneously. Our feeble human minds cannot comprehend this
         duality, and thus we represent None as 1 for the sake of the Algorithm.

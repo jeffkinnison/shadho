@@ -42,6 +42,10 @@ class OrderedSearchForest(object):
         forest = [SearchTree(root=tree, priority=priority)
                   for tree in self.orig_tree.split_spaces()]
         self.trees = {tree.id: tree for tree in forest}
+        self.ids = [tree.id for tree in forest]
+
+    def __len__(self):
+        return len(self.trees)
 
     def build(self, spec, name='root'):
         """Build the OSF trees from a specification.
@@ -82,8 +86,13 @@ class OrderedSearchForest(object):
 
         return node
 
-    def generate(self):
+    def generate(self, rv):
         """Generate values from a random tree in the OSF.
+
+        Parameters
+        ----------
+        rv : scipy.stats.rv_discrete
+            A random variable to draw an index from.
 
         Returns
         -------
@@ -93,20 +102,20 @@ class OrderedSearchForest(object):
 
         Notes
         -----
-        This function is used by shadho.HyperparameterSearch when no compute
+        This function is used by shadho.HeuristicSearch when no compute
         classes are defined. The proportions are based on the rank of each tree
         if priority and/or complexity are used, otherwise the tree is selected
         entirely at random.
 
         See Also
         --------
+        shadho.shadho.HeuristicSearch
         shadho.tree.SearchTree.generate()
         """
-        # TODO: incorporate weighted choices
-        idx = np.random.randint(len(self.trees))
-        key = list(self.trees.keys())[idx]
+        idx = rv.rvs()
+        key = self.ids[idx]
         tree = self.trees[key]
-        return (tree.id, tree.generate())
+        return (key, tree.generate())
 
     def write_all(self):
         """Write the OSF state to file.
@@ -139,25 +148,5 @@ class OrderedSearchForest(object):
             for i in range(len(trees)):
                 trees[i].rank *= i
 
-    # DEPRECATED
-    def update_assignments(self, ccs):
-        x = max(len(self.trees), len(ccs)) / min(len(self.forest), len(ccs))
-
-        if len(self.trees) < len(ccs):
-            j = 0
-            y = x - 1
-            for i in range(len(self.trees)):
-                if i > y:
-                    j += 1
-                    y += x
-                if j > 0:
-                    j
-                ccs[j].assignments.append(self.trees[i])
-        else:
-            i = 0
-            y = x - 1
-            for j in range(len(self.trees)):
-                if j > y:
-                    i += 1
-                    y += x
-                ccs[j].assignments.append(self.trees[i])
+        self.ids = [tree.id for tree in
+            trees.sort(lambda x: x.rank, reverse=True)]

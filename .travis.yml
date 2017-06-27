@@ -5,7 +5,8 @@ python:
   - "3.5"
   - "3.6"
 before_install:
-  - if "[ ${TRAVIS_PYTHON_VERSION}" -ne "2.7" ]; then
+  - if [ "${TRAVIS_PYTHON_VERSION}" -ne "2.7" ]; then
+    pip install --only-binary=numpy,scipy numpy scipy;
     version="$(python -c 'import sys; print("{}.{}.{}".format(*sys.version_info[:3]))')";
     libpy="$(find /opt -name "libpython${TRAVIS_PYTHON_VERSION}m.so")";
     py3path="$(dirname "$(dirname $(command -v python3))")";

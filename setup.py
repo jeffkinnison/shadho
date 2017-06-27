@@ -56,16 +56,21 @@ class InstallCCToolsCommand(install):
         # CCTools distinguishes between Python 2/3 SWIG bindings, and the
         # Python 3 bindings require extra effort. Install based on the user's
         # version
+        cfg = configparser.ConfigParser()
         if MAJ == 3:
             subprocess.call(['bash', 'install_cctools.sh', 'py3'])
+            cfg.read_dict(DEFAULT_CONFIG)
         else:
             subprocess.call(['bash', 'install_cctools.sh'])
+            for key, val in DEFAULT_CONFIG.iteritems():
+                cfg.add_section(key)
+                for k, v in val.iteritems:
+                    cfg.set(key, k, v)
         print('Installing shadho_worker')
 
         shutil.copy(os.path.join('.', 'scripts', 'shadho_run_task.py'),
                     SHADHO_DIR)
-        cfg = configparser.ConfigParser()
-        cfg.read_dict(DEFAULT_CONFIG)
+
         home = os.path.expanduser(os.environ['HOME'] if 'HOME' in os.environ
                                       else os.environ['USERPROFILE'])
         with open(os.path.join(home, '.shadhorc'), 'w') as f:

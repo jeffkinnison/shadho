@@ -8,7 +8,7 @@ before_install:
   - version="$(python -c 'import sys; print("{}.{}.{}".format(*sys.version_info[:3]))')"
   - libpy="$(find /opt -name "libpython${TRAVIS_PYTHON_VERSION}m.so")"
   - py3path="$(dirname "$(dirname $(command -v python3))")"
-  - cp "${libpy} "${py3path}/lib"
+  - cp "${libpy}" "${py3path}/lib"
   - echo $'#!/usr/bin/env python3\nimport sys\nfrom lib2to3.main import main\n\nsys.exit(main("lib2to3.fixes"))' > "$py3path/bin/2to3"
   - chmod 755 "$py3path/bin/2to3"
   - maj=`echo "$TRAVIS_PYTHON_VERSION" | cut -d'.' -f1 | read maj`

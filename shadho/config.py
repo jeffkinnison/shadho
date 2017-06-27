@@ -1,12 +1,87 @@
 # -*- coding: utf-8 -*-
 """Helper objects for configuring and using Work Queue.
 """
-
+try:
+    import configparser
+except:
+    import ConfigParser as configparser
 import getpass
 import json
 import os
 
 import work_queue
+
+
+class LocalFileDoesNotExist(Exception):
+    pass
+
+
+class InvalidFileType(Exception):
+    def __init__(self, ftype):
+        msg = """
+{} is not a valid file type for Work Queue files.
+Please specify one of 'input' or 'output'.
+""".format(ftype)
+        super(InvalidFileType, self).__init__(msg)
+
+
+class InvalidCacheSetting(Exception):
+    def __init__(self, ftype):
+        msg = """
+{} is not a valid caching option.
+Please specify one of True or False.
+""".format(ftype)
+        super(InvalidFileType, self).__init__(msg)
+
+
+class SHADHOConfig():
+    DEFAULTS = {
+        'global': {
+            'wrapper': 'shadho_run_task.py',
+            'output': 'out.tar.gz',
+            'resultfile': 'performance.json',
+            'minval': 'loss'
+        },
+        'workqueue': {
+            'port': '9123',
+            'name': 'shadho_master',
+            'exclusive': 'yes',
+            'shutdown': 'yes',
+            'catalog': 'no',
+            'logfile': 'shadho_master.log',
+            'debugfile': 'shadho_master.debug',
+            'password': 'no'
+        },
+        'storage': {
+            'type': 'json'
+        }
+    }
+
+    def __init__(self, ignore_shadhorc=False):
+        configfile = os.environ['SHADHORC'] if 'SHADHORC' in os.environ \
+            else os.path.join(self._shadho_dir(), '.shadhorc')
+        print(configfile)
+
+        self.config = configparser.ConfigParser()
+        self.config.read_dict(SHADHOConfig.DEFAULTS)
+        if not ignore_shadhorc:
+            with open(configfile, 'r') as f:
+                self.config.read_file(f)
+
+    def __getattr__(self, name):
+        if self.config.has_section(name):
+            return self.config[name]
+        else:
+            raise AttributeError
+
+    def _shadho_dir(self):
+        try:
+            home = os.path.expanduser(os.environ['HOME'] if 'HOME' in os.environ
+                                          else os.environ['USERPROFILE'])
+        except KeyError:
+            print('Error: Could not find home directory in environment')
+
+        return home
 
 
 class WQConfig(object):
@@ -140,8 +215,10 @@ class WQFile(object):
     localpath : str
         Path to the local copy of the file.
     remotepath : str
-        Path to the file after transferred to the Work Queue worker.
-    type : {'input', 'output', 'buffer'}, optional
+        Path to the file after transferred to the Work Queue worker. If not
+        supplied, defaults to the basename of localpath
+        (e.g. "/foo/bar/file.txt" -> "file.txt").
+    ftype : {'input', 'output', 'buffer'}, optional
         Whether the file is an input file (to send to a worker), an output file
         (to receive from a worker), or created from a string buffer.
     cache : {False, True}, optional
@@ -149,23 +226,76 @@ class WQFile(object):
         so can reduce the overhead of running multiple tasks on a worker by
         preserving files common to all tasks.
 
+    Attributes
+    ----------
+    localpath : str
+        Path to the local copy of the file.
+    remotepath : str
+        The name of the file on the remote worker.
+    type : {'input', 'output', 'buffer'}
+        Whether the file is a task input, task output, or created from a string
+        buffer.
+    cache : bool
+        Whether to cache the file on the worker between tasks.
+
     Notes
     -----
-    For more information on Work Queue file specifications, see the `CCTools
-    documentation<http://ccl.cse.nd.edu/software/manuals/api/html/work__queue_8h.html#a8f9af7213ea271d3b58fe0f62ad160c0>`_.
+    For more information on Work Queue file specifications, see the
+    `CCTools documentation<http://ccl.cse.nd.edu/software/manuals/api/html/work__queue_8h.html#a8f9af7213ea271d3b58fe0f62ad160c0>`_.
 
     """
 
+    TYPES = {
+        'input': work_queue.WORK_QUEUE_INPUT,
+        'output': work_queue.WORK_QUEUE_OUTPUT
+    }
+
+    CACHE = {
+        True: work_queue.WORK_QUEUE_CACHE,
+        False: work_queue.WORK_QUEUE_NOCACHE
+    }
+
     def __init__(self, localpath, remotepath=None,
-                 type='input', cache=False):
-        self.localpath = localpath
-        self.remotepath = remotepath if remotepath else os.basename()
-        self.type = work_queue.WORK_QUEUE_INPUT \
-            if type == 'input' else work_queue.WORK_QUEUE_OUTPUT
-        self.cache = work_queue.WORK_QUEUE_CACHE \
-            if cache else work_queue.WORK_QUEUE_NOCACHE
+                 ftype='input', cache=False):
+        # TODO: add check for localpath existence
+        # TODO: add exception handling for invalid type
+        # TODO: add exception handling for invalid caching flag
+        # TODO: add handling for buffers (?)
+        if os.path.isfile(localpath):
+            self.localpath = localpath
+        else:
+            raise LocalFileDoesNotExist("{} does not exist".format(localpath))
+        self.remotepath = remotepath if remotepath is not None \
+            else os.path.basename(localpath)
+
+        if ftype in WQFile.TYPES:
+            self.type = WQFile.TYPES[ftype]
+        else:
+            raise InvalidFileType("{} is not a valid file type".format(ftype))
+
+        if cache in WQFile.CACHE:
+            self.cache = WQFile.CACHE[cache]
+        else:
+            raise InvalidCacheSetting("{} is not a valid cache flag".format(cache))
 
     def add_to_task(self, task, tag=''):
+        """Add the file to a task.
+
+        Parameters
+        ----------
+        task : work_queue.Task
+            The task to add the file to.
+        tag : {'', str}, optional
+            Tag to prepend to localpath. This allows for output files to be
+            save to a common temporary directory without clobbering each other.
+            If empty, localpath is unchanged.
+
+        Notes
+        -----
+        The reference for work_queue.Task.specify_file may be found in the Work
+        Queue `documentation<http://ccl.cse.nd.edu/software/manuals/api/html/classwork__queue_1_1Task.html#a0a1f1922908f822ac8d70d3903919024>`_.
+
+        """
         task.specify_file(str(''.join([tag, self.localpath])),
                           remote_name=str(self.remotepath),
                           type=self.type,

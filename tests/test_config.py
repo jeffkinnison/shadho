@@ -14,7 +14,6 @@ class TestSHADHOConfig(object):
         # Test default initialization
         cfg = SHADHOConfig(ignore_shadhorc=True)
         defaults = {s: dict(cfg.config.items(s)) for s in cfg.config.sections()}
-        defaults['global'] = dict(cfg.config.items('global'))
         print(defaults)
         assert_dict_equal(defaults,
                           SHADHOConfig.DEFAULTS,
@@ -25,7 +24,7 @@ class TestSHADHOConfig(object):
                                     os.path.join('.', 'tests', '.shadhorc')
                                  )
         cfg = SHADHOConfig()
-        assert_not_equal(cfg.workqueue['port'],
+        assert_not_equal(cfg.config.get('workqueue', 'port'),
                          SHADHOConfig.DEFAULTS['workqueue']['port'],
                          msg='New port not set')
         del os.environ['SHADHORC']

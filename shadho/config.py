@@ -80,12 +80,6 @@ class SHADHOConfig():
                 else:
                     self.config.readfp(f)
 
-    def __getattr__(self, name):
-        if self.config.has_section(name):
-            return self.config[name]
-        else:
-            raise AttributeError
-
     def _shadho_dir(self):
         try:
             home = os.path.expanduser(os.environ['HOME'] if 'HOME' in os.environ

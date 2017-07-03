@@ -52,7 +52,7 @@ class SHADHOConfig():
             'debugfile': 'shadho_master.debug',
             'password': 'no'
         },
-        'storage': {
+        'backend': {
             'type': 'json'
         }
     }

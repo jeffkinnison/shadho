@@ -8,8 +8,6 @@ ComputeClass: Group distributed compute nodes by hardware properties.
 import json
 import uuid
 
-import numpy as np
-
 from work_queue import Task
 
 
@@ -24,16 +22,13 @@ class ComputeClass(object):
         The name of the required resource.
     value : str or int
         The value of the required resource.
-    max_tasks : int
-        The expected maximum number of concurrent tasks to run.
+    cmd : str
+        The command to run on the worker.
     inputs : list of shadho.config.WQFile, optional
         The set of input files to send to this compute class.
     output : str
         Name of the expected output file from this compute class. Default:
         ``out.tar.gz``
-    adapt_max_tasks : bool, optional
-        (Future Release) If true, determine the max number of tasks based on
-        connected workers with this compute class's resource/value pair.
 
     Attributes
     ----------
@@ -43,23 +38,32 @@ class ComputeClass(object):
         The name of the required resource.
     value : str or int
         The value of the required resource.
-    max_tasks : int
-        The expected maximum number of concurrent tasks to run.
+    cmd : str
+        The command to run on the worker.
+    input : list of shadho.config.WQFile
+        The list of input files required by this compute class.
+    output : str or WQFile
+        The name of the expected output file from this task.
 
+    Notes
+    -----
+    ComputeClasses have their own set of files which are sent to workers. This
+    is to allow differentiating inputs between workers with different hardware,
+    e.g. CPU and GPU programs.
 
     """
 
-    def __init__(self, name, resource, value, max_tasks, inputs=None,
-                 output='out.tar.gz', adapt_max_tasks=False):
+    def __init__(self, name, resource, value, cmd, inputs=None,
+                 output='out.tar.gz'):
         self.name = name
         self.resource = resource
         self.value = value
-        self.max_tasks = max_tasks
         self.inputs = inputs
         self.output = output
+        self.cmd = cmd
 
-    def create_task(self, cmd, tag):
-        task = Task(cmd)
+    def create_task(self, tag):
+        task = Task(self.cmd)
 
         tag = '.'.join([str(uuid.uuid4()), tag])
 

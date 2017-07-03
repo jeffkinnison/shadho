@@ -32,7 +32,7 @@ DEFAULT_CONFIG = {
         'debugfile': 'shadho_master.debug',
         'password': 'no'
     },
-    'storage': {
+    'backend': {
         'type': 'json'
     }
 }
@@ -41,6 +41,7 @@ DEFAULT_CONFIG = {
 class InstallCCToolsCommand(install):
     """Helper to install CCTools.
     """
+    description = "Install CCTools and set up SHADHO working directory"
     def run(self):
         """Install WorkQueue from the CCTools suite to site-packages.
 
@@ -58,19 +59,27 @@ class InstallCCToolsCommand(install):
         # version
         cfg = configparser.ConfigParser()
         if MAJ == 3:
-            subprocess.call(['bash', 'install_cctools.sh', 'py3'])
+            try:
+                import work_queue
+                print("Found Work Queue, skipping install")
+            except ImportError:
+                subprocess.call(['bash', 'install_cctools.sh', 'py3'])
             cfg.read_dict(DEFAULT_CONFIG)
         else:
-            subprocess.call(['bash', 'install_cctools.sh'])
+            try:
+                import work_queue
+                print("Found Work Queue, skipping install")
+            except ImportError:
+                subprocess.call(['bash', 'install_cctools.sh'])
             for key, val in DEFAULT_CONFIG.iteritems():
                 cfg.add_section(key)
                 for k, v in val.iteritems():
                     cfg.set(key, k, v)
         print('Installing shadho_worker')
-
         shutil.copy(os.path.join('.', 'scripts', 'shadho_run_task.py'),
                     SHADHO_DIR)
 
+        print('Copying default .shadhorc to home directory')
         home = os.path.expanduser(os.environ['HOME'] if 'HOME' in os.environ
                                       else os.environ['USERPROFILE'])
         with open(os.path.join(home, '.shadhorc'), 'w') as f:

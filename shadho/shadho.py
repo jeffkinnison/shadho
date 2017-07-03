@@ -62,10 +62,7 @@ class SHADHO(object):
             for task in tasks:
                 self.wq.submit(task)
             res = self.wq.wait(timeout=10)
-            if res is not None and res.result == WORK_QUEUE_RESULT_SUCCESS:
-                self.__success(res)
-            else:
-                self.__failure(res)
+            self.search.process_result(res)
 
             curr = time.time() - start
             if self.search.min < self.threshold:
@@ -81,9 +78,9 @@ class HeuristicSearch(object):
     ----------
     spec : dict
         Specification tree for the hyperparameter search.
-    use_complexity : {True, False}
+    use_complexity : bool, optional
         True to weight parameter generation by the complexity heuristic.
-    use_priority : {True, False}
+    use_priority : bool, optional
         True to weight parameter generation by the priority heuristic.
 
 
@@ -91,21 +88,30 @@ class HeuristicSearch(object):
     ----------
     forest : shadho.forest.OrderedSearchForest
         Forest of potential hyperparameter values.
-
+    use_complexity : bool
+        True to weight parameter generation by the complexity heuristic.
+    use_priority : bool
+        True to weight parameter generation by the priority heuristic.
+    current_tasks : int
+        The current number of tasks in the queue in this search.
+    max_tasks : int
+        The maximum number of tasks to place in the queue.
 
     """
 
     def __init__(self, spec, cc=None, use_complexity=True, use_priority=True,
-                 max_tasks=500):
+                 max_tasks=500, rng=None):
         self.forest = OrderedSearchForest(spec)
         self.cc = cc if cc is not None \
-                  else ComputeClass('dummy', randint(0, len(self.forest)))
+                  else ComputeClass('dummy', 'foo', 'bar')
         self.use_complexity = use_complexity
         self.use_priority = use_priority
         self.current_tasks = 0
         self.max_tasks = max_tasks
+        self.rng = rng if rng is not None \
+                   else scipy.stats.randint(0, len(self.forest))
 
-    def get_params(self, n):
+    def get_param(self):
         """Generate hyperparameter values to test.
 
         Parameters
@@ -121,14 +127,60 @@ class HeuristicSearch(object):
         """
         self.forest.set_ranks(use_complexity=self.use_complexity,
                               use_priority=self.use_priority)
-        return [self.forest.generate(self.cc.rv,
-                                     use_complexity=self.use_complexity,
-                                     use_priority=self.use_priority)
-                for _ in range(n)]
+        return self.forest.generate(self.rv)
 
     def make_tasks(self):
-        params = self.get_params(self.max_tasks - self.current_tasks)
+        """Make tasks
+        """
+        diff = self.max_tasks - self.current_tasks
+        tasks = []
+        for i in range(diff):
+            tag, param = self.get_param()
+            task = self.cc.create_task(tag)
+            task.specify_buffer(str(json.dumps()))
 
+    def process_result(self, task):
+        if task is not None:
+            if task.result == work_queue.WORK_QUEUE_RESULT_SUCCESS:
+                # Task tag is unique and contains information about the tree its values
+                # came from and the compute class it was assigned to.
+                tag = str(task.tag)
+                print('Task {} was successful'.format(tag))
+                ids = tag.split('.')
+
+                # Get the correct tree from the OSF
+                tree_id = ids[-1]
+                tree = self.forest.trees[tree_id]
+
+                # Extract the results from the output tar file.
+                try:
+                    result = tarfile.open('.'.join([tag, 'out.tar.gz']), 'r')
+                    resultstring = result.extractfile('performance.json').read()
+                    result.close()
+                except IOError:
+                    print('Error opening task {} result'.format(tag))
+
+                # Load the results from file and store them to the correct tree
+                result = json.loads(resultstring.decode('utf-8'))
+                result['task_id'] = task.id
+                tree.add_result(result['params'],
+                                result,
+                                update_priority=self.use_priority)
+
+                # If using Compute Classes, update task statistics.
+                if len(self.ccs) > 0:
+                    ccid = ids[1]
+                    for cc in self.ccs:
+                        if cc.name == ccid:
+                            cc.submitted_tasks -= 1
+
+                # Clean up
+                os.remove('.'.join([tag, 'out.tar.gz']))
+            else:
+                # Report the failure and print any output for debugging.
+                print('Task {} failed with result {} and WQ status {}'
+                      .format(task.tag, task.result, task.return_status))
+                print(task.output)
 
 
 class HyperparameterSearch(object):

@@ -2,7 +2,7 @@
 """
 from .check import heuristic_check
 
-import scipy.stats.rv_continuous
+import scipy.stats
 import numpy
 
 

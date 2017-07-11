@@ -11,12 +11,14 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-import copy.deepcopy
+import copy
 import os
 
 
 class ShadhorcDoesNotExistError(Exception):
-    pass
+    def __init__(self, configfile):
+        msg = "{} is not a valid shadho config file".format(configfile)
+        super(ShadhorcDoesNotExistError, self).__init__(msg)
 
 
 class ShadhoConfig(object):
@@ -44,47 +46,48 @@ class ShadhoConfig(object):
         }
     }
 
-    def __init__(self):
-        # Get the path to the shadhorc file
-        configfile = os.getenv('SHADHORC')
-        if configfile is None:
-            configfile = os.path.join(self.__get_home(), '.shadhorc')
-        if not os.path.isfile(configfile):
-            raise ShadhorcDoesNotExistError('{} is not a valid SHADHO config'
-                                            .format(configfile))
-
+    def __init__(self, use_defaults=False):
         # Copy the defaults
         self.config = copy.deepcopy(ShadhoConfig.DEFAULTS)
 
-        # Load custom settings
-        cfg = configparser.ConfigParser()
-        with open(configfile, 'r') as f:
-            try:
-                cfg.read_file(f)
-                cfg.readfp(f)
-            except AttributeError:
+        if not use_defaults:
+            # Get the path to the shadhorc file
+            configfile = os.getenv('SHADHORC')
+            if configfile is None:
+                configfile = os.path.join(self.__get_home(), '.shadhorc')
+            if not os.path.isfile(configfile):
+                raise ShadhorcDoesNotExistError(configfile)
 
-        for section in cfg.sections:
-            for option in cfg.options(section):
-                t = type(ShadhoConfig.DEFAULTS[section][option])
-                if t is bool:
-                    val = cfg.getboolean(section, option)
-                elif t is int:
-                    val = cfg.getint(section, option)
-                elif t is float:
-                    val = cfg.getfloat(section, option)
-                else:
-                    val = cfg.get(section, option)
+            # Load custom settings
+            cfg = configparser.ConfigParser()
+            with open(configfile, 'r') as f:
+                try:
+                    cfg.read_file(f)
+                except AttributeError:
+                    cfg.readfp(f)
 
-                self.config[section][option] = val
+            for section in cfg.sections():
+                for option in cfg.options(section):
+                    t = type(ShadhoConfig.DEFAULTS[section][option])
+                    if t is bool:
+                        val = cfg.getboolean(section, option)
+                    elif t is int:
+                        val = cfg.getint(section, option)
+                    elif t is float:
+                        val = cfg.getfloat(section, option)
+                    else:
+                        val = cfg.get(section, option)
+
+                    self.config[section][option] = val
 
     def __getitem__(self, key):
         return self.config[key]
 
     def __get_home(self):
         try:
-            home = os.path.expanduser(os.environ['HOME'] if 'HOME' in os.environ
-                                          else os.environ['USERPROFILE'])
+            home = os.path.expanduser(
+                    os.environ['HOME'] if 'HOME' in os.environ
+                    else os.environ['USERPROFILE'])
         except KeyError:
             print('Error: Could not find home directory in environment')
 

@@ -24,4 +24,4 @@ before_install:
     chmod 755 "${py3path}/bin/python3-config";
     fi
 install: pip install .
-script: nosetests
+script: pytest

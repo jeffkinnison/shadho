@@ -40,9 +40,33 @@ class TestShadhoConfig(object):
         assert cfg.config == defaults
         del os.environ['HOME']
 
-
         os.environ['USERPROFILE'] = os.path.dirname(dummyrc)
         cfg = ShadhoConfig()
         assert cfg.config['workqueue']['port'] == 9123
         assert cfg.config == defaults
         del os.environ['USERPROFILE']
+
+        with pytest.raises(ShadhorcDoesNotExistError):
+            cfg = ShadhoConfig()
+
+        fakerc = os.path.abspath(os.path.join('foo', 'bar', 'baz'))
+        os.environ['SHADHORC'] = fakerc
+        with pytest.raises(ShadhorcDoesNotExistError):
+            cfg = ShadhoConfig()
+        del os.environ['SHADHORC']
+
+        os.environ['HOME'] = fakerc
+        with pytest.raises(ShadhorcDoesNotExistError):
+            cfg = ShadhoConfig()
+        del os.environ['HOME']
+
+        os.environ['USERPROFILE'] = fakerc
+        with pytest.raises(ShadhorcDoesNotExistError):
+            cfg = ShadhoConfig()
+        del os.environ['USERPROFILE']
+
+        if home is not None:
+            os.environ['HOME'] = home
+
+        if userprofile is not None:
+            os.environ['USERPROFILE'] = userprofile

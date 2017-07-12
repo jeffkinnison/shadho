@@ -52,9 +52,8 @@ class ShadhoConfig(object):
 
         if not use_defaults:
             # Get the path to the shadhorc file
-            configfile = os.getenv('SHADHORC')
-            if configfile is None:
-                configfile = os.path.join(self.__get_home(), '.shadhorc')
+            configfile = os.getenv('SHADHORC') if 'SHADHORC' in os.environ \
+                         else os.path.join(self.__get_home(), '.shadhorc')
             if not os.path.isfile(configfile):
                 raise ShadhorcDoesNotExistError(configfile)
 
@@ -90,5 +89,6 @@ class ShadhoConfig(object):
                     else os.environ['USERPROFILE'])
         except KeyError:
             print('Error: Could not find home directory in environment')
+            home = ''
 
         return home

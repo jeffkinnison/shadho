@@ -13,7 +13,50 @@ The functions in this module attempt to preserve the input type when possible.
 The user will expect to see an integer when an integer is input, or a string
 when a string is input.
 """
+import numbers
+import warnings
+
 import numpy as np
+
+
+def scale_value(value, scaling):
+    """Scale a value.
+
+    Parameters
+    ----------
+    value
+        The value to scale.
+    scaling : {'linear', 'ln', 'log_10', 'log_2'} or callable
+        The name of the `shadho.scaling` function to use or a function/callable
+        object to apply to value.
+
+    Returns
+    -------
+    scaled
+        `value` scaled by `scaling` or `value` if `scaling` cannot be applied.
+
+    Notes
+    -----
+    In the case that `scaling` cannot be used (i.e. it is not the name of a
+    valid `shadho.scaling` function and cannot be called), a warning is issued
+    and the value is returned without modification.
+    """
+    SCALES = {
+        'linear': linear,
+        'ln': ln,
+        'log_10': log_10,
+        'log_2': log_2
+    }
+    try:
+        scaled = SCALES[scaling](value) if scaling in SCALES \
+                 else scaling(value)
+    except TypeError:
+        msg = "Invalid scaling {}. {} will not be altered.".format(scaling,
+                                                                   value)
+        warnings.warn(msg)
+        scaled = value
+
+    return scaled
 
 
 def linear(x, coeff=1.0, degree=1.0):
@@ -73,7 +116,13 @@ def ln(x):
     the input type. All return values are converted to floating point
     as a consequence of using base *e*.
     """
-    return np.exp(value)
+    try:
+        if not isinstance(x, numbers.Number):
+            raise TypeError
+        x = np.exp(x)
+    except TypeError:
+        x = x
+    return x
 
 
 def log_10(x):
@@ -102,15 +151,20 @@ def log_10(x):
     The exception to this rule is when an `x` less than 0 is supplied. In this
     case the return value will always be floating-point.
     """
-    t = type(x)
-    res = np.power(10.0, x)
-    if x < 0:
-        return res
-    else:
-        return t(res)
+    try:
+        if not isinstance(x, numbers.Number):
+            raise TypeError
+        t = type(x)
+        x = np.power(10.0, x)
+        if t(x) == x:
+            x = t(x)
+    except TypeError:
+        x = x
+
+    return x
 
 
-def log2(x):
+def log_2(x):
     """Scale exponentially to base 2.
 
     This function attempts to maintain the type of the input value x. The
@@ -135,9 +189,14 @@ def log2(x):
     The exception to this rule is when an `x` less than 0 is supplied. In this
     case the return value will always be floating-point.
     """
-    t = type(x)
-    res = np.exp2(x)
-    if x < 0:
-        return res
-    else:
-        return t(res)
+    try:
+        if not isinstance(x, numbers.Number):
+            raise TypeError
+        t = type(x)
+        x = np.exp2(x)
+        if t(x) == x:
+            x = t(x)
+    except TypeError:
+        x = x
+
+    return x

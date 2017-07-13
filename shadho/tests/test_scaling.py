@@ -4,6 +4,7 @@ from shadho.scaling import scale_value, linear, ln, log_10, log_2
 
 import numpy as np
 
+
 def test_scale_value():
     # Test linear
     x = scale_value(1, 'linear')

@@ -2,6 +2,7 @@
 
 Functions
 ---------
+scale_value
 linear
 ln
 log_10

@@ -5,6 +5,7 @@ from shadho.backend.basedb import BaseResult
 
 from collections import OrderedDict
 
+import numpy as np
 import scipy.stats
 
 
@@ -330,11 +331,76 @@ class TestBaseSpace(object):
         s.domain = 5.0
         assert s.complexity == 1
 
+        s.domain = 'foo'
+        assert s.complexity == 1
+
+        # Test list as domain
+        s.domain = []
+        assert s.complexity == 1
+
+        s.domain = [1, 2, 3, 4]
+        assert s.complexity == 1.75
+
+        s.domain = [0 for _ in range(1000)]
+        assert s.complexity == 1.999
+
+        # Test continuous random variate as domain
+        rs1 = np.random.RandomState(1234)
+        rs2 = np.random.RandomState(1234)
+
+        s.domain = scipy.stats.uniform(loc=-7, scale=1000)
+        d2 = scipy.stats.uniform(loc=-7, scale=1000)
+
+        s.domain.random_state = rs1
+        d2.random_state = rs2
+
+        a, b = d2.interval(0.9999)
+
+        assert s.complexity == 2 + np.linalg.norm(b - a)
+
     def test_get_label(self):
-        pass
+        s = BaseSpace()
+
+        # Test with list domain
+        s.domain = []
+        assert s.get_label('foo') == -1
+
+        s.domain = ['foo', 'bar', 'baz']
+        assert s.get_label('foo') == 0
+        assert s.get_label('meep') == -1
+
+        # Test with non-list domains
+        # Should return the value unaltered
+        s.domain = 5.0
+
+        assert s.get_label(1) == 1
+        assert s.get_label(1.7) == 1.7
+        assert s.get_label('foo') == 'foo'
+        assert s.get_label([93475]) == [93475]
 
     def test_generate(self):
-        pass
+        s = BaseSpace()
+        s.strategy = 'random'
+        s.scaling = 'linear'
+
+        # Test constant domains
+        s.domain = None
+        assert s.generate() is None
+
+        s.domain = 1
+        assert s.generate() == 1
+
+        s.domain = 5.7
+        assert s.generate() == 5.7
+
+        s.domain = 'foo'
+        assert s.generate() == 'foo'
+
+        # Test discrete domain
+        s.domain = [1, 5.7, 'foo']
+
+        for _ in range(1000):
+            assert s.generate() in s.domain
 
 
 class TestBaseValue(object):

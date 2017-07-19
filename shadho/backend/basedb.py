@@ -256,12 +256,14 @@ class BaseSpace(object):
 
         If the space contains a single value, returns the value unaltered.
         """
-        if isinstance(self.domain, scipy.stats.rv_continuous):
+        if hasattr(self.domain, 'dist') and \
+           isinstance(self.domain.dist, scipy.stats.rv_continuous):
             value = scale_value(next_value(self.domain, self.strategy),
                                 self.scaling)
-        elif isinstance(self.domain, list):
+        elif isinstance(self.domain, list) and len(self.domain) > 0:
             rv = scipy.stats.randint(low=0, high=len(self.domain))
-            value = scale_value(next_value(rv, self.strategy), self.scaling)
+            idx = next_value(rv, self.strategy)
+            value = scale_value(self.domain[idx], self.scaling)
         else:
             value = self.domain
 

@@ -202,6 +202,7 @@ class BaseTree(object):
 
 
 class BaseSpace(object):
+    @property
     def complexity(self):
         """Calculate the complexity of searching this space.
 

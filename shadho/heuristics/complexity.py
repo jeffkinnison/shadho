@@ -6,7 +6,7 @@ import scipy.stats
 import numpy
 
 
-@heuristic_check
+#@heuristic_check
 def complexity(space):
     if isinstance(space, scipy.stats.rv_continuous):
         a, b = space.domain.interval(0.9999)

@@ -317,7 +317,18 @@ class TestBaseTree(object):
 
 class TestBaseSpace(object):
     def test_complexity(self):
-        pass
+        s = BaseSpace()
+
+        # Test None as domain
+        s.domain = None
+        assert s.complexity == 1
+
+        # Test constant scalar values as domain
+        s.domain = 5
+        assert s.complexity == 1
+
+        s.domain = 5.0
+        assert s.complexity == 1
 
     def test_get_label(self):
         pass

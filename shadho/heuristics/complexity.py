@@ -13,6 +13,6 @@ def complexity(space):
         d = np.linalg.norm(b - a)
         return 2 + d
     elif isinstance(space, list) and len(space) > 0:
-        return 2 - (1 / len(space))
+        return 2.0 - (1.0 / float(len(space)))
     else:
         return 1

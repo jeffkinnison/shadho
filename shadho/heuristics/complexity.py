@@ -1,7 +1,5 @@
-"""Functions for calculating rellative search complexity.
+"""Functions for calculating relative search complexity.
 """
-from .check import heuristic_check
-
 import scipy.stats
 import numpy as np
 

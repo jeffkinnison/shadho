@@ -1,7 +1,5 @@
 """Claculate the priority of searching a model.
 """
-from .check import heuristic_check
-
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF

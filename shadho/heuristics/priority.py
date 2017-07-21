@@ -7,7 +7,6 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 
 
-@heuristic_check
 def priority(feats, losses):
     if losses.ndim == 1:
         losses = losses.reshape((-1, 1))

@@ -367,16 +367,53 @@ class TestBaseSpace(object):
 
         s.domain = ['foo', 'bar', 'baz']
         assert s.get_label('foo') == 0
+        assert s.get_label('bar') == 1
+        assert s.get_label('baz') == 2
         assert s.get_label('meep') == -1
 
-        # Test with non-list domains
-        # Should return the value unaltered
+        # Test with constant domains
+        # Should return 0 if equal to the domain, else -1
         s.domain = 5.0
+        assert s.get_label(5.0) == 0
+        assert s.get_label(1) == -1
+        assert s.get_label(1.7) == -1
+        assert s.get_label('foo') == -1
+        assert s.get_label(None) == -1
 
-        assert s.get_label(1) == 1
-        assert s.get_label(1.7) == 1.7
-        assert s.get_label('foo') == 'foo'
-        assert s.get_label([93475]) == [93475]
+        s.domain = 1
+        assert s.get_label(5.0) == -1
+        assert s.get_label(1) == 0
+        assert s.get_label(1.7) == -1
+        assert s.get_label('foo') == -1
+        assert s.get_label(None) == -1
+
+        s.domain = 1.7
+        assert s.get_label(5.0) == -1
+        assert s.get_label(1) == -1
+        assert s.get_label(1.7) == 0
+        assert s.get_label('foo') == -1
+        assert s.get_label(None) == -1
+
+        s.domain = 'foo'
+        assert s.get_label(5.0) == -1
+        assert s.get_label(1) == -1
+        assert s.get_label(1.7) == -1
+        assert s.get_label('foo') == 0
+        assert s.get_label(None) == -1
+
+        s.domain = None
+        assert s.get_label(5.0) == -1
+        assert s.get_label(1) == -1
+        assert s.get_label(1.7) == -1
+        assert s.get_label('foo') == -1
+        assert s.get_label(None) == 0
+
+        # Test continuous domain
+        # Should return the value unaltered
+        s.domain = scipy.stats.uniform(loc=-7, scale=42)
+        assert s.get_label(23.9) == 23.9
+        assert s.get_label(3.05) == 3.05
+        assert s.get_label(-84356) == -84356
 
     def test_generate(self):
         s = BaseSpace()
@@ -397,15 +434,114 @@ class TestBaseSpace(object):
         assert s.generate() == 'foo'
 
         # Test discrete domain
-        s.domain = [1, 5.7, 'foo']
+        s.domain = []
+        assert s.generate() == []
 
+        s.domain = [1, 5.7, 'foo']
         for _ in range(1000):
             assert s.generate() in s.domain
 
+        # Test continuous domain
+        s.domain = scipy.stats.uniform(loc=-7, scale=42)
+        d2 = scipy.stats.uniform(loc=-7, scale=42)
+
+        s.domain.random_state = np.random.RandomState(1234)
+        d2.random_state = np.random.RandomState(1234)
+
+        for _ in range(1000):
+            assert s.generate() == d2.rvs()
 
 class TestBaseValue(object):
     def test_to_numeric(self):
-        pass
+        s = BaseSpace()
+        s.domain = ['foo', 'bar', 'baz']
+        s.strategy = 'random'
+        s.scaling = 'linear'
+
+        # Test with continuous domain
+        v = BaseValue()
+        v.space = s
+        v.value = 'foo'
+        assert v.to_numeric() == 0
+        v.value = 'bar'
+        assert v.to_numeric() == 1
+        v.value = 'baz'
+        assert v.to_numeric() == 2
+        v.value = 'meep'
+        assert v.to_numeric() == -1
+
+        # Test with constant domains
+        # Should return 0 if equal to the domain, else -1
+        s.domain = 5.0
+        v.value = 5.0
+        assert v.to_numeric() == 0
+        v.value = 1
+        assert v.to_numeric() == -1
+        v.value = 1.7
+        assert v.to_numeric() == -1
+        v.value = 'foo'
+        assert v.to_numeric() == -1
+        v.value = None
+        assert v.to_numeric() == -1
+
+        s.domain = 1
+        v.value = 5.0
+        assert v.to_numeric() == -1
+        v.value = 1
+        assert v.to_numeric() == 0
+        v.value = 1.7
+        assert v.to_numeric() == -1
+        v.value = 'foo'
+        assert v.to_numeric() == -1
+        v.value = None
+        assert v.to_numeric() == -1
+
+        s.domain = 1.7
+        v.value = 5.0
+        assert v.to_numeric() == -1
+        v.value = 1
+        assert v.to_numeric() == -1
+        v.value = 1.7
+        assert v.to_numeric() == 0
+        v.value = 'foo'
+        assert v.to_numeric() == -1
+        v.value = None
+        assert v.to_numeric() == -1
+
+        s.domain = 'foo'
+        v.value = 5.0
+        assert v.to_numeric() == -1
+        v.value = 1
+        assert v.to_numeric() == -1
+        v.value = 1.7
+        assert v.to_numeric() == -1
+        v.value = 'foo'
+        assert v.to_numeric() == 0
+        v.value = None
+        assert v.to_numeric() == -1
+
+        s.domain = None
+        v.value = 5.0
+        assert v.to_numeric() == -1
+        v.value = 1
+        assert v.to_numeric() == -1
+        v.value = 1.7
+        assert v.to_numeric() == -1
+        v.value = 'foo'
+        assert v.to_numeric() == -1
+        v.value = None
+        assert v.to_numeric() == 0
+
+        # Test continuous domain
+        s.domain = scipy.stats.uniform(loc=-7, scale=42)
+        d2 = scipy.stats.uniform(loc=-7, scale=42)
+
+        s.domain.random_state = np.random.RandomState(1234)
+        d2.random_state = np.random.RandomState(1234)
+
+        for _ in range(1000):
+            v.value = d2.rvs()
+            assert v.to_numeric() == v.value
 
 
 class TestBaseResult(object):

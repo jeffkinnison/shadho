@@ -231,8 +231,13 @@ class BaseSpace(object):
         """
         try:
             label = self.domain.index(value)
-        except AttributeError:
-            label = value
+        except (TypeError, AttributeError):
+            if hasattr(self.domain, 'dist') and \
+               isinstance(self.domain.dist, scipy.stats.rv_continuous):
+                label = value
+            else:
+                label = 0 if value == self.domain or value is self.domain \
+                        else -1
         except ValueError:
             label = -1
         return label

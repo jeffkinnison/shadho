@@ -5,6 +5,7 @@ from ..strategies import next_value
 from ..scaling import scale_value
 
 import copy
+import numbers
 
 import numpy as np
 import scipy.stats
@@ -234,7 +235,7 @@ class BaseSpace(object):
         except (TypeError, AttributeError):
             if hasattr(self.domain, 'dist') and \
                isinstance(self.domain.dist, scipy.stats.rv_continuous):
-                label = value
+                label = value if isinstance(value, (numbers.Number)) else -1
             else:
                 label = 0 if value == self.domain or value is self.domain \
                         else -1
@@ -315,5 +316,9 @@ class BaseResult(object):
                 v[i] += self.values[i].to_numeric()
             except TypeError:
                 continue
-        v[-1] += self.loss
+        try:
+            v[-1] += self.loss
+        except TypeError:
+            # Happens in the case that result.loss is non-numeric
+            pass
         return v

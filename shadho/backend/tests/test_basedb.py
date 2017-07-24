@@ -546,4 +546,96 @@ class TestBaseValue(object):
 
 class TestBaseResult(object):
     def test_to_feature_vector(self):
-        pass
+        s1 = BaseSpace()
+        s1.domain = 7
+        s1.strategy = 'random'
+        s1.scaling = 'linear'
+
+        s2 = BaseSpace()
+        s2.domain = ['foo', 'bar', 'baz']
+        s2.strategy = 'random'
+        s2.scaling = 'linear'
+
+        s3 = BaseSpace()
+        s3.domain = scipy.stats.uniform(loc=-7, scale=42)
+        s3.domain.random_state = np.random.RandomState(1234)
+        s3.strategy = 'random'
+        s3.scaling = 'linear'
+
+        # Test case with no values
+        r = BaseResult()
+        r.values = []
+        r.loss = 0.163584
+
+        assert r.to_feature_vector() == np.array([r.loss])
+
+        # Test case with constant value
+        v1 = BaseValue()
+        v1.space = s1
+        v1.space_id = 1
+        v1.value = 0
+
+        r.values = [v1]
+        v = r.to_feature_vector()
+        vec = np.array([-1., r.loss])
+        assert np.array_equal(v, vec)
+
+        v1.value = 7
+        v = r.to_feature_vector()
+        vec = np.array([0., r.loss])
+        assert np.array_equal(v, vec)
+
+        # Test case with discrete domain value
+        v2 = BaseValue()
+        v2.space = s2
+        v2.space_id = 2
+        v2.value = 'meep'
+
+        r.values = [v2]
+        v = r.to_feature_vector()
+        vec = np.array([-1., r.loss])
+        assert np.array_equal(v, vec)
+
+        v2.value = 'foo'
+        v = r.to_feature_vector()
+        vec = np.array([0., r.loss])
+        assert np.array_equal(v, vec)
+
+        v2.value = 'bar'
+        v = r.to_feature_vector()
+        vec = np.array([1., r.loss])
+        assert np.array_equal(v, vec)
+
+        v2.value = 'baz'
+        v = r.to_feature_vector()
+        vec = np.array([2., r.loss])
+        assert np.array_equal(v, vec)
+
+        # Test with continuous domain value
+        v3 = BaseValue()
+        v3.space = s3
+        v3.space_id = 3
+        v3.value = "meep"
+
+        r.values = [v3]
+        v = r.to_feature_vector()
+        vec = np.array([-1., r.loss])
+        assert np.array_equal(v, vec)
+
+        v3.value = 0.685413
+        v = r.to_feature_vector()
+        vec = np.array([v3.value, r.loss])
+        assert np.array_equal(v, vec)
+
+        # Test with multiple values
+        r.values = [v2, v3, v1]
+
+        v = r.to_feature_vector()
+        vec = np.array([0., 2., v3.value, r.loss])
+        assert np.array_equal(v, vec)
+
+        # Ensure that non-numeric loss values result in 0-value
+        r.loss = "meep"
+        v = r.to_feature_vector()
+        vec = np.array([0., 2., v3.value, 0.])
+        assert np.array_equal(v, vec)

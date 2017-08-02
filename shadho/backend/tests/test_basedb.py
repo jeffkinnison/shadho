@@ -303,8 +303,10 @@ class TestBaseBackend(object):
 
 
 class TestBaseTree(object):
-    def test_generate(self):
-        pass
+    __testtree__ = BaseTree
+    __testspace__ = BaseSpace
+    __testvalue__ = BaseValue
+    __testresult__ = BaseResult
 
     def test_calculate_priority(self):
         pass
@@ -312,13 +314,15 @@ class TestBaseTree(object):
     def test_calculate_complexity(self):
         pass
 
-    def test_optimal_parameters(self):
-        pass
-
 
 class TestBaseSpace(object):
+    __testtree__ = BaseTree
+    __testspace__ = BaseSpace
+    __testvalue__ = BaseValue
+    __testresult__ = BaseResult
+
     def test_complexity(self):
-        s = BaseSpace()
+        s = self.__testspace__()
 
         # Test None as domain
         s.domain = None
@@ -359,7 +363,7 @@ class TestBaseSpace(object):
         assert s.complexity == 2 + np.linalg.norm(b - a)
 
     def test_get_label(self):
-        s = BaseSpace()
+        s = self.__testspace__()
 
         # Test with list domain
         s.domain = []
@@ -416,7 +420,7 @@ class TestBaseSpace(object):
         assert s.get_label(-84356) == -84356
 
     def test_generate(self):
-        s = BaseSpace()
+        s = self.__testspace__()
         s.strategy = 'random'
         s.scaling = 'linear'
 
@@ -451,15 +455,21 @@ class TestBaseSpace(object):
         for _ in range(1000):
             assert s.generate() == d2.rvs()
 
+
 class TestBaseValue(object):
+    __testtree__ = BaseTree
+    __testspace__ = BaseSpace
+    __testvalue__ = BaseValue
+    __testresult__ = BaseResult
+
     def test_to_numeric(self):
-        s = BaseSpace()
+        s = self.__testspace__()
         s.domain = ['foo', 'bar', 'baz']
         s.strategy = 'random'
         s.scaling = 'linear'
 
         # Test with continuous domain
-        v = BaseValue()
+        v = self.__testvalue__()
         v.space = s
         v.value = 'foo'
         assert v.to_numeric() == 0
@@ -545,32 +555,37 @@ class TestBaseValue(object):
 
 
 class TestBaseResult(object):
+    __testtree__ = BaseTree
+    __testspace__ = BaseSpace
+    __testvalue__ = BaseValue
+    __testresult__ = BaseResult
+
     def test_to_feature_vector(self):
-        s1 = BaseSpace()
+        s1 = self.__testspace__()
         s1.domain = 7
         s1.strategy = 'random'
         s1.scaling = 'linear'
 
-        s2 = BaseSpace()
+        s2 = self.__testspace__()
         s2.domain = ['foo', 'bar', 'baz']
         s2.strategy = 'random'
         s2.scaling = 'linear'
 
-        s3 = BaseSpace()
+        s3 = self.__testspace__()
         s3.domain = scipy.stats.uniform(loc=-7, scale=42)
         s3.domain.random_state = np.random.RandomState(1234)
         s3.strategy = 'random'
         s3.scaling = 'linear'
 
         # Test case with no values
-        r = BaseResult()
+        r = self.__testresult__()
         r.values = []
         r.loss = 0.163584
 
         assert r.to_feature_vector() == np.array([r.loss])
 
         # Test case with constant value
-        v1 = BaseValue()
+        v1 = self.__testvalue__()
         v1.space = s1
         v1.space_id = 1
         v1.value = 0
@@ -586,7 +601,7 @@ class TestBaseResult(object):
         assert np.array_equal(v, vec)
 
         # Test case with discrete domain value
-        v2 = BaseValue()
+        v2 = self.__testvalue__()
         v2.space = s2
         v2.space_id = 2
         v2.value = 'meep'
@@ -612,7 +627,7 @@ class TestBaseResult(object):
         assert np.array_equal(v, vec)
 
         # Test with continuous domain value
-        v3 = BaseValue()
+        v3 = self.__testvalue__()
         v3.space = s3
         v3.space_id = 3
         v3.value = "meep"

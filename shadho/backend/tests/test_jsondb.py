@@ -284,6 +284,21 @@ class TestJSONBackend(TestBaseBackend):
         assert r.tree == t.id
         assert r.values == [v.id]
 
+    def test_checkpoint(self):
+        pass
+
+    def test_make_forest(self):
+        pass
+
+    def test_generate(self):
+        pass
+
+    def test_register_result(self):
+        pass
+
+    def test_get_optimal(self):
+        pass
+
 
 class TestTree(TestBaseTree):
     __testtree__ = Tree

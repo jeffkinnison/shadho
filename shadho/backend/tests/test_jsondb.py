@@ -112,7 +112,8 @@ class TestJSONBackend(TestBaseBackend):
             t = self.__testtree__()
             t.__tablename__ = 'foo'
             b.add(t)
-            t.__tablename__ = 'trees'
+
+        t.__tablename__ = 'trees'
 
         with pytest.raises(InvalidObjectError):
             r = self.__testresult__()
@@ -155,10 +156,133 @@ class TestJSONBackend(TestBaseBackend):
         with pytest.raises(InvalidTableError):
             Tree.__tablename__ = 'foo'
             b.get(Tree, t.id)
-            Tree.__tablename__ = 'trees'
+
+        Tree.__tablename__ = 'trees'
 
         with pytest.raises(InvalidObjectError):
             b.get(Result, 'foo')
+
+    def test_make(self):
+        b = self.__testbackend__()
+
+        # Test making Trees
+        t1 = b.make(self.__testtree__)
+        assert isinstance(t1, self.__testtree__)
+        assert hasattr(t1, 'id')
+        assert t1.priority is None
+        assert t1.complexity is None
+        assert t1.rank is None
+        assert t1.spaces == []
+        assert t1.results == []
+
+        tid = str(uuid.uuid4())
+        t2 = b.make(Tree, id=tid, complexity=1, priority=1, rank=1,
+                    spaces=['1', '2', '3', '4', '5'],
+                    results=['6', '7', '8', '9', '10'])
+        assert t2.id == tid
+        assert t2.priority == 1
+        assert t2.complexity == 1
+        assert t2.rank == 1
+        assert t2.spaces == ['1', '2', '3', '4', '5']
+        assert t2.results == ['6', '7', '8', '9', '10']
+
+        # Test making Spaces
+        s = b.make(self.__testspace__)
+        assert hasattr(s, 'id')
+        assert s.domain is None
+        assert s.strategy == 'random'
+        assert s.scaling == 'linear'
+        assert s.tree is None
+        assert s.values == []
+
+        t = self.__testtree__()
+        v = self.__testvalue__()
+        sid = str(uuid.uuid4())
+        s = b.make(self.__testspace__, id=sid, domain=1, strategy='tpe', scaling='ln', tree=t,
+                  values=[v])
+        assert s.id == sid
+        assert s.domain == 1
+        assert s.strategy == 'tpe'
+        assert s.scaling == 'ln'
+        assert s.tree == t.id
+        assert s.values == [v.id]
+
+        s = b.make(self.__testspace__, id=sid, domain=[1, 2, 3, 4], tree=t.id, values=[v.id])
+        assert s.domain == [1, 2, 3, 4]
+        assert s.tree == t.id
+        assert s.values == [v.id]
+
+        dist = scipy.stats.uniform(loc=-7, scale=42)
+        s = b.make(self.__testspace__, domain=dist)
+        assert s.domain is dist
+
+        rng = np.random.RandomState().get_state()
+        domain = {
+            'distribution': 'uniform',
+            'args': [],
+            'kwargs': {
+                'loc': -7,
+                'scale': 42,
+            },
+            'rng': [rng[0], list(rng[1]), rng[2], rng[3], rng[4]]
+        }
+        s = b.make(self.__testspace__, domain=domain)
+        assert s.domain.dist.name == 'uniform'
+        assert s.domain.args == ()
+        assert s.domain.kwds == {'loc': -7, 'scale': 42}
+        state = s.domain.random_state.get_state()
+        assert state[0] == rng[0]
+        assert np.all(state[1] == np.array(rng[1]))
+        assert state[2] == rng[2]
+        assert state[3] == rng[3]
+        assert state[4] == rng[4]
+
+        # Test making Values
+        v = b.make(self.__testvalue__)
+        assert hasattr(v, 'id')
+        assert v.value is None
+        assert v.space is None
+        assert v.value is None
+
+        vid = str(uuid.uuid4())
+        s = self.__testspace__()
+        r = self.__testresult__()
+
+        v = b.make(self.__testvalue__, id=vid, value=12.4, space=s, result=r)
+        assert v.id == vid
+        assert v.value == 12.4
+        assert v.space == s.id
+        assert v.result == r.id
+
+        v = b.make(self.__testvalue__, id=vid, value='foo', space=s.id, result=r.id)
+        assert v.id == vid
+        assert v.value == 'foo'
+        assert v.space == s.id
+        assert v.result == r.id
+
+        # Test making Results
+        r = b.make(self.__testresult__)
+        assert hasattr(r, 'id')
+        assert r.loss is None
+        assert r.results is None
+        assert r.tree is None
+        assert r.values == []
+
+        rid = str(uuid.uuid4())
+        t = self.__testtree__()
+        v = self.__testvalue__()
+
+        r = b.make(self.__testresult__, id=rid, loss=0.00154, results={'foo': 'bar'},
+                                tree=t, values=[v])
+        assert r.id == rid
+        assert r.loss == 0.00154
+        assert r.results == {'foo': 'bar'}
+        assert r.tree == t.id
+        assert r.values == [v.id]
+
+        r = b.make(self.__testresult__, tree=t.id, values=[v.id])
+        assert r.tree == t.id
+        assert r.values == [v.id]
 
 
 class TestTree(TestBaseTree):

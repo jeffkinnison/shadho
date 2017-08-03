@@ -62,9 +62,10 @@ class JSONBackend(basedb.BaseBackend):
 
     def make(self, objclass, **kwargs):
         try:
-            if objclass.__tablename__ in db:
+            if objclass.__tablename__ in self.db:
                 obj = objclass(**kwargs)
             else:
+                print(objclass.__tablename__)
                 raise InvalidObjectClassError()
         except AttributeError:
             raise InvalidObjectClassError()

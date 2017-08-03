@@ -329,7 +329,7 @@ class Space(basedb.BaseSpace):
                 'distribution': self.domain.dist.name,
                 'args': self.domain.args,
                 'kwargs': self.domain.kwds,
-                'rng': [rng[0], list(rng[1]), *rng[2:]]
+                'rng': [rng[0], list(rng[1]), rng[2], rng[3], rng[4]]
             }
         else:
             domain = self.domain

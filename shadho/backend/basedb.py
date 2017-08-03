@@ -41,7 +41,14 @@ class BaseBackend(object):
         pitfalls like the object creation memory leak in Python 2.
         """
         # Recursive base case.
-        if all(key in spec for key in ('domain', 'strategy', 'scale')):
+        if not isinstance(spec, dict):
+            spec = {
+                'domain': spec,
+                'strategy': 'random',
+                'scaling': 'linear',
+            }
+
+        if all(key in spec for key in ('domain', 'strategy', 'scaling')):
             # Update spec directly to avoid creating new objects; returns the
             # reference to spec.
             spec['path'] = path

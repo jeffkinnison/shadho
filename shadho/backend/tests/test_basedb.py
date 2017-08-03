@@ -16,7 +16,7 @@ class TestBaseBackend(object):
         # Test a flat search
         spec = {
             'domain': [1, 2, 3],
-            'scale': 'linear',
+            'scaling': 'linear',
             'strategy': 'random'
         }
 
@@ -28,13 +28,13 @@ class TestBaseBackend(object):
         spec = OrderedDict()
         spec['a'] = {
             'domain': [1, 2, 3],
-            'scale': 'linear',
+            'scaling': 'linear',
             'strategy': 'random'
         }
 
         spec['b'] = {
             'domain': [4, 5, 6],
-            'scale': 'linear',
+            'scaling': 'linear',
             'strategy': 'random'
         }
 
@@ -90,55 +90,55 @@ class TestBaseBackend(object):
 
         spec['A']['a'] = {
             'domain': 1,
-            'scale': 'linear',
+            'scaling': 'linear',
             'strategy': 'random'
         }
 
         spec['A']['b'] = {
             'domain': 2,
-            'scale': 'linear',
+            'scaling': 'linear',
             'strategy': 'random'
         }
 
         spec['A']['c'] = {
             'domain': 3,
-            'scale': 'linear',
+            'scaling': 'linear',
             'strategy': 'random'
         }
 
         spec['B']['d'] = {
             'domain': 4,
-            'scale': 'linear',
+            'scaling': 'linear',
             'strategy': 'random'
         }
 
         spec['B']['e'] = {
             'domain': 5,
-            'scale': 'linear',
+            'scaling': 'linear',
             'strategy': 'random'
         }
 
         spec['C']['f'] = {
             'domain': 6,
-            'scale': 'linear',
+            'scaling': 'linear',
             'strategy': 'random'
         }
 
         spec['C']['g'] = {
             'domain': 7,
-            'scale': 'linear',
+            'scaling': 'linear',
             'strategy': 'random'
         }
 
         spec['D']['h'] = {
             'domain': 8,
-            'scale': 'linear',
+            'scaling': 'linear',
             'strategy': 'random'
         }
 
         spec['D']['i'] = {
             'domain': 9,
-            'scale': 'linear',
+            'scaling': 'linear',
             'strategy': 'random'
         }
 

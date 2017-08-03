@@ -141,7 +141,7 @@ class TestSpace(TestBaseSpace):
                 'loc': -7,
                 'scale': 42,
             },
-            'rng': [rng[0], list(rng[1]), *rng[2:]]
+            'rng': [rng[0], list(rng[1]), rng[2], rng[3], rng[4]]
         }
         s = self.__testspace__(domain=domain)
         assert s.domain.dist.name == 'uniform'
@@ -179,9 +179,62 @@ class TestValue(TestBaseValue):
     __testvalue__ = Value
     __testresult__ = Result
 
+    def test_init(self):
+        # Test default initialization
+        v = self.__testvalue__()
+        assert hasattr(v, 'id')
+        assert v.value is None
+        assert v.space is None
+        assert v.value is None
+
+        # Test with id, value, Space object, and Result object
+        vid = str(uuid.uuid4())
+        s = self.__testspace__()
+        r = self.__testresult__()
+
+        v = self.__testvalue__(id=vid, value=12.4, space=s, result=r)
+        assert v.id == vid
+        assert v.value == 12.4
+        assert v.space == s.id
+        assert v.result == r.id
+
+        # Test with nonnumeric value, space id, and result id
+        v = self.__testvalue__(id=vid, value='foo', space=s.id, result=r.id)
+        assert v.id == vid
+        assert v.value == 'foo'
+        assert v.space == s.id
+        assert v.result == r.id
+
 
 class TestResult(TestBaseResult):
     __testtree__ = Tree
     __testspace__ = Space
     __testvalue__ = Value
     __testresult__ = Result
+
+    def test_init(self):
+        # Test default initialization
+        r = self.__testresult__()
+        assert hasattr(r, 'id')
+        assert r.loss is None
+        assert r.results is None
+        assert r.tree is None
+        assert r.values == []
+
+        # Test with id, loss, results, Tree object, and Value object
+        rid = str(uuid.uuid4())
+        t = self.__testtree__()
+        v = self.__testvalue__()
+
+        r = self.__testresult__(id=rid, loss=0.00154, results={'foo': 'bar'},
+                                tree=t, values=[v])
+        assert r.id == rid
+        assert r.loss == 0.00154
+        assert r.results == {'foo': 'bar'}
+        assert r.tree == t.id
+        assert r.values == [v.id]
+
+        # Test with Tree id and value id
+        r = self.__testresult__(tree=t.id, values=[v.id])
+        assert r.tree == t.id
+        assert r.values == [v.id]

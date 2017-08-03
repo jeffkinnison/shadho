@@ -7,10 +7,158 @@ from shadho.backend.jsondb import InvalidObjectError
 from test_basedb import TestBaseBackend, TestBaseTree, TestBaseSpace
 from test_basedb import TestBaseValue, TestBaseResult
 
+import os
 import uuid
 
 import numpy as np
 import scipy.stats
+
+
+class TestJSONBackend(TestBaseBackend):
+    __testbackend__ = JSONBackend
+    __testtree__ = Tree
+    __testspace__ = Space
+    __testvalue__ = Value
+    __testresult__ = Result
+
+    def test_init(self):
+        # Test defaults
+        b = self.__testbackend__()
+        assert b.path == os.getcwd()
+        assert b.db == {'trees': {}, 'spaces': {}, 'values': {}, 'results': {}}
+
+        # Test with custom absolute path
+        b = self.__testbackend__(path='/tmp/shadho')
+        assert b.path == '/tmp/shadho'
+        assert b.db == {'trees': {}, 'spaces': {}, 'values': {}, 'results': {}}
+
+        # Test with custom relative path
+        b = self.__testbackend__(path='~/shadho')
+        p = os.path.expanduser('~/shadho')
+        assert b.path == p
+        assert b.db == {'trees': {}, 'spaces': {}, 'values': {}, 'results': {}}
+
+    def test_add(self):
+        b = self.__testbackend__()
+
+        # Add a Tree
+        t = self.__testtree__()
+        tdb = {
+            'complexity': None,
+            'priority': None,
+            'rank': None,
+            'spaces': [],
+            'results': [],
+        }
+        b.add(t)
+        assert t.id in b.db['trees']
+        assert b.db['trees'][t.id] == tdb
+        assert b.db['trees'][t.id] == t.to_json()
+
+        # Add a Space
+        s = self.__testspace__()
+        sdb = {
+            'domain': None,
+            'path': None,
+            'strategy': 'random',
+            'scaling': 'linear',
+            'tree': None,
+            'values': []
+        }
+        b.add(s)
+        assert s.id in b.db['spaces']
+        assert b.db['spaces'][s.id] == sdb
+        assert b.db['spaces'][s.id] == s.to_json()
+
+        # Add a Value
+        v = self.__testvalue__()
+        vdb = {
+            'value': None,
+            'space': None,
+            'result': None
+        }
+        b.add(v)
+        assert v.id in b.db['values']
+        assert b.db['values'][v.id] == vdb
+        assert b.db['values'][v.id] == v.to_json()
+
+        # Add a Result
+        r = self.__testresult__()
+        rdb = {
+            'loss': None,
+            'results': None,
+            'tree': None,
+            'values': []
+        }
+        b.add(r)
+        assert r.id in b.db['results']
+        assert b.db['results'][r.id] == rdb
+        assert b.db['results'][r.id] == r.to_json()
+
+        # Ensure that the database contains all of the correct information
+        db = {
+            'trees': {t.id: tdb},
+            'spaces': {s.id: sdb},
+            'values': {v.id: vdb},
+            'results': {r.id: rdb},
+        }
+        assert b.db == db
+
+        # Test throwing exceptions
+        with pytest.raises(InvalidObjectClassError):
+            b.add(3245)
+
+        with pytest.raises(InvalidTableError):
+            t = self.__testtree__()
+            t.__tablename__ = 'foo'
+            b.add(t)
+            t.__tablename__ = 'trees'
+
+        with pytest.raises(InvalidObjectError):
+            r = self.__testresult__()
+            del r.id
+            b.add(r)
+
+    def test_get(self):
+        t = self.__testtree__()
+        s = self.__testspace__()
+        v = self.__testvalue__()
+        r = self.__testresult__()
+
+        b = self.__testbackend__()
+        b.add(t)
+        b.add(s)
+        b.add(v)
+        b.add(r)
+
+        # Test getting each class of object
+        t2 = b.get(Tree, t.id)
+        assert t.id == t2.id
+        assert t.to_json() == t2.to_json()
+
+        s2 = b.get(Space, s.id)
+        assert s.id == s2.id
+        assert s.to_json() == s2.to_json()
+
+        v2 = b.get(Value, v.id)
+        assert v.id == v2.id
+        assert v.to_json() == v2.to_json()
+
+        r2 = b.get(Result, r.id)
+        assert r.id == r2.id
+        assert r.to_json() == r2.to_json()
+
+        # Test getting invalid objects
+        with pytest.raises(InvalidObjectClassError):
+            b.get(JSONBackend, 'foo')
+
+        with pytest.raises(InvalidTableError):
+            Tree.__tablename__ = 'foo'
+            b.get(Tree, t.id)
+            Tree.__tablename__ = 'trees'
+
+        with pytest.raises(InvalidObjectError):
+            b.get(Result, 'foo')
 
 
 class TestTree(TestBaseTree):

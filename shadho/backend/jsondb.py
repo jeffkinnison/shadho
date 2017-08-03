@@ -24,11 +24,10 @@ class InvalidObjectError(Exception):
 
 class JSONBackend(basedb.BaseBackend):
     def __init__(self, path='.'):
-        self.path = os.path.abspath(path)
+        self.path = os.path.abspath(os.path.expanduser(path))
 
         self.db = {
             'trees': {},
-            'nodes': {},
             'spaces': {},
             'values': {},
             'results': {}
@@ -47,7 +46,10 @@ class JSONBackend(basedb.BaseBackend):
 
     def get(self, objclass, id):
         try:
-            table = self.db[objclass.__tablename__]
+            if objclass in (Tree, Space, Value, Result):
+                table = self.db[objclass.__tablename__]
+            else:
+                raise InvalidObjectClassError()
         except KeyError:
             raise InvalidTableError()
 
@@ -283,7 +285,8 @@ class Space(basedb.BaseSpace):
                                        **domain['kwargs'])
             rng = np.random.RandomState()
             state = domain['rng']
-            rng.set_state(tuple([state[0], np.array(state[1]), *state[2:]]))
+            rng.set_state(tuple([state[0], np.array(state[1]), state[2],
+                                 state[3], state[4]]))
             self.domain.random_state = rng
         else:
             self.domain = domain

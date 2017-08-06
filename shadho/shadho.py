@@ -5,6 +5,9 @@ from shadho.managers import *
 from shadho.config import *
 
 import json
+import os
+import tarfile
+import tempfile
 import time
 
 import numpy as np
@@ -38,10 +41,16 @@ class SHADHO(object):
         self.assignments = {}
         self.assign_to_ccs()
 
+        self.__tmpdir = tempfile.mkdtemp()
+
+    def __del__(self):
+        if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
+            os.rmdir(self.__tmpdir)
+
     def run(self):
         start = time.time()
-        current = start
-        while current - start < timeout:
+        elapsed = 0
+        while elapsed < timeout:
             self.assign_to_ccs()
             params = self.generate()
             tasks = self.make_tasks(params)
@@ -49,10 +58,11 @@ class SHADHO(object):
                 self.manager.submit(t)
             task = self.manager.wait(timeout=10)
             if task is not None:
-                self.__success(task)
-            else:
-                self.__failure(task)
-            current = time.time()
+                if task.result == work_queue.WORK_QUEUE_RESULT_SUCCESS:
+                    self.__success(task)
+                else:
+                    self.__failure(task)
+            elapsed = time.time() - start
 
         self.backend.get_opt(mode='global')
 
@@ -64,13 +74,23 @@ class SHADHO(object):
             for i in range(n):
                 idx = np.random.randint(len(assignments))
                 param = self.backend.generate()
+                param = (param[0], cc.id, param[1])
                 params.append(param)
+            cc.current_tasks = cc.max_tasks
         return params
 
     def make_tasks(self, params):
         tasks = []
         for p in params:
-            p =
+            tag = '.'.join([p[0], p[1]])
+            buff = WQBuffer(str(json.dumps(p[1])),
+                            self.config['global']['result_file'],
+                            cache=False)
+            files = [f for f in self.files]
+            files.append(buff)
+            task = self.manager.make_task(self.cmd, tag, files)
+            tasks.append(task)
+        return tasks
 
     def assign_to_ccs(self):
         if len(self.ccs) == 1:
@@ -105,3 +125,33 @@ class SHADHO(object):
                     self.assignments[larger[i]].append(smaller[j + 1])
                 else:
                     self.assignments[larger[i]].append(smaller[j - 1])
+
+    def __success(self, task):
+        rid, ccid = str(task.tag).split('.')
+
+        try:
+            result = tarfile.open('.'.join([rid,
+                                            self.config['global']['output']]),
+                                  'r')
+            resultstr = result.extractfile(self.config['global']['result_file'])
+            result.close()
+        except IOError:
+            print("Error opening task {} result".format(rid))
+
+        result = json.loads(resultstr.decode('utf-8'))
+        self.backend.register_result(rid, result['loss'], result)
+
+        for cc in self.ccs:
+            if cc.id == ccid:
+                cc.current_tasks -= 1
+
+
+    def __failure(self, task):
+        print('Task {} failed with result {} and WQ status {}'
+              .format(task.tag, task.result, task.return_status))
+        print(task.output)
+
+        ccid = str(task.tag)[1]
+        for cc in self.ccs:
+            if cc.id == ccid:
+                cc.current_tasks -= 1

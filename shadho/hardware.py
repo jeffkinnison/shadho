@@ -5,7 +5,7 @@ import uuid
 
 class ComputeClass(object):
     def __init__(self, name, resource, value, max_tasks):
-        self.__id = str(uuid.uuid4())
+        self.id = str(uuid.uuid4())
         self.name = name
         self.resource = resource
         self.value = value
@@ -13,4 +13,4 @@ class ComputeClass(object):
         self.current_tasks = 0
 
     def __hash__(self):
-        return hash((self.__id, self.name, self.resource, self.value))
+        return hash((self.id, self.name, self.resource, self.value))

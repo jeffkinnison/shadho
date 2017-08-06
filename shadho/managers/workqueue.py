@@ -26,7 +26,7 @@ class WQManager(work_queue.WorkQueue):
         task.specify_tag(tag)
 
         for f in files:
-            f.add_to_task(task)
+            f.add_to_task(task, tag=tag if f.ftype == WQFile.TYPES['output'] else '')
 
         return task
 
@@ -70,5 +70,5 @@ class WQBuffer(object):
         self.remotepath = remotepath
         self.cache = WQFile.CACHE[cache]
 
-    def add_to_task(task):
+    def add_to_task(task, tag=''):
         task.specify_buffer(self.buffer, self.remotepathm self.cache)

@@ -96,7 +96,35 @@ class JSONBackend(basedb.BaseBackend):
             self.add(tree)
             trees.append(tree.id)
 
+        return self.update_rank(trees)
+
+    def order_trees(self):
+        trees = [tid for tid in self.db['trees']]
+        trees.sort(key=lambda x: self.db['trees'][tid]['rank'])
         return trees
+
+    def update_rank(self):
+        trees = [tid for tid in self.db['trees']]
+        for tree in trees:
+            self.db['trees'][tree]['rank'] = 1
+
+        try:
+            trees.sort(key=lambda x: self.db['trees'][x]['priority'],
+                       reverse=True)
+            for i in range(len(trees)):
+                self.db['trees'][trees[i]]['rank'] *= i
+        except TypeError:
+            pass
+
+        try:
+            trees.sort(key=lambda x: self.db['trees'][x]['complexity'],
+                       reverse=True)
+            for i in range(len(trees)):
+                self.db['trees'][trees[i]]['rank'] *= i
+        except TypeError:
+            pass
+
+        return self.order_trees()
 
     def generate(self, tid):
         tree = self.get(tid)
@@ -132,7 +160,25 @@ class JSONBackend(basedb.BaseBackend):
             tree.calculate_priority()
 
     def get_optimal(self, mode='global'):
-        pass
+        opt = None
+        params = {}
+        for r in self.db['results']:
+            if opt is None or self.db['results'][r]['loss'] < loss:
+                opt = r
+
+        opt = self.get(Result, opt)
+        for v in opt.values:
+            value = self.get(Value, v)
+            space = self.get(Space, value.space)
+            path = space.path.split('/')
+            curr = params
+            for i in range(len(path) - 1):
+                if path[i] not in curr:
+                    curr[path[i]] = {}
+                curr = curr[path[i]]
+            curr[path[-1]] = value.value
+
+        return(opt.loss, params)
 
 
 class Tree(basedb.BaseTree):

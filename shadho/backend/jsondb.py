@@ -2,6 +2,7 @@
 """
 from . import basedb
 
+from collections import OrderedDict
 import os.path
 import uuid
 import warnings
@@ -43,10 +44,10 @@ class JSONBackend(basedb.BaseBackend):
         self.path = os.path.abspath(os.path.expanduser(path))
 
         self.db = {
-            'trees': {},
-            'spaces': {},
-            'values': {},
-            'results': {}
+            'trees': OrderedDict(),
+            'spaces': OrderedDict(),
+            'values': OrderedDict(),
+            'results': OrderedDict(),
         }
 
     def add(self, obj):

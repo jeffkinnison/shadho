@@ -72,6 +72,7 @@ class WQManager(work_queue.WorkQueue):
         for f in files:
             f.add_to_task(task,
                           tag=tag if f.ftype == WQFile.TYPES['output'] else '')
+
         return task
 
 

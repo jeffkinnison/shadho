@@ -4,9 +4,12 @@ from shadho.backend.jsondb import JSONBackend, Tree, Space, Value, Result
 from shadho.backend.jsondb import InvalidTableError, InvalidObjectClassError
 from shadho.backend.jsondb import InvalidObjectError
 
+from shadho.heuristics import complexity
+
 from test_basedb import TestBaseBackend, TestBaseTree, TestBaseSpace
 from test_basedb import TestBaseValue, TestBaseResult
 
+from collections import OrderedDict
 import os
 import uuid
 
@@ -288,7 +291,182 @@ class TestJSONBackend(TestBaseBackend):
         pass
 
     def test_make_forest(self):
-        pass
+        # Test creating a flat forest
+        spec = {
+            'domain': [1, 2, 3],
+            'scaling': 'linear',
+            'strategy': 'random'
+        }
+
+        b = JSONBackend()
+        trees = b.make_forest(spec)
+        t = b.get(Tree, trees[0])
+        assert len(trees) == 1
+        assert len(b.db['trees']) == 1
+        assert len(b.db['spaces']) == 1
+        spec['tree'] = t.id
+        spec['values'] = []
+        assert b.db['spaces'][t.spaces[0]] == spec
+        assert t.priority == 1
+        assert t.complexity == complexity([1, 2, 3])
+        assert t.rank == 0
+        assert t.results == []
+
+        # Test creating a forest with one tree and two spaces
+        spec = OrderedDict({
+            'a': {
+                'domain': [1, 2, 3],
+                'scaling': 'linear',
+                'strategy': 'random'
+            },
+            'b': {
+                'domain': [4, 5, 6],
+                'scaling': 'linear',
+                'strategy': 'random'
+            }
+        })
+
+        b = JSONBackend()
+        trees = b.make_forest(spec, use_priority=False)
+        t = b.get(Tree, trees[0])
+        assert len(trees) == 1
+        assert len(b.db['trees']) == 1
+        assert len(b.db['spaces']) == 2
+        spec['a']['tree'] = t.id
+        spec['a']['values'] = []
+        spec['b']['tree'] = t.id
+        spec['b']['values'] = []
+        assert b.db['spaces'][t.spaces[0]] == spec['a']
+        assert b.db['spaces'][t.spaces[1]] == spec['b']
+        assert t.priority is None
+        assert t.complexity == complexity([1, 2, 3]) + complexity([4, 5, 6])
+        assert t.rank == 0
+        assert t.results == []
+
+        # Test with exclusive flag
+        spec = OrderedDict({
+            'exclusive': True,
+            'a': {
+                'domain': [1, 2, 3],
+                'scaling': 'linear',
+                'strategy': 'random'
+            },
+            'b': {
+                'domain': [4, 5, 6],
+                'scaling': 'linear',
+                'strategy': 'random'
+            }
+        })
+        b = JSONBackend()
+        trees = b.make_forest(spec, use_complexity=False)
+        t1 = b.get(Tree, trees[0])
+        t2 = b.get(Tree, trees[1])
+        assert len(trees) == 2
+        assert len(b.db['trees']) == 2
+        assert len(b.db['spaces']) == 2
+        spec['a']['tree'] = t1.id
+        spec['a']['values'] = []
+        spec['b']['tree'] = t2.id
+        spec['b']['values'] = []
+        assert b.db['spaces'][t1.spaces[0]] == spec['a']
+        assert b.db['spaces'][t2.spaces[0]] == spec['b']
+        assert t1.priority == 1
+        assert t1.complexity is None
+        assert t1.rank == 0
+        assert t1.results == []
+        assert len(t1.spaces) == 1
+        assert t2.priority == 1
+        assert t2.complexity is None
+        assert t2.rank == 1
+        assert t2.results == []
+        assert len(t2.spaces) == 1
+
+        # Test with optional flag
+        spec = OrderedDict({
+            'optional': True,
+            'a': {
+                'domain': [1, 2, 3],
+                'scaling': 'linear',
+                'strategy': 'random'
+            },
+            'b': {
+                'domain': [4, 5, 6],
+                'scaling': 'linear',
+                'strategy': 'random'
+            }
+        })
+        b = JSONBackend()
+        trees = b.make_forest(spec, use_priority=False, use_complexity=False)
+        t1 = b.get(Tree, trees[0])
+        t2 = b.get(Tree, trees[1])
+        assert len(trees) == 2
+        assert len(b.db['trees']) == 2
+        assert len(b.db['spaces']) == 2
+        spec['a']['tree'] = t1.id
+        spec['a']['values'] = []
+        spec['b']['tree'] = t1.id
+        spec['b']['values'] = []
+        assert b.db['spaces'][t1.spaces[0]] == spec['a']
+        assert b.db['spaces'][t1.spaces[1]] == spec['b']
+        assert t1.priority is None
+        assert t1.complexity is None
+        assert t1.rank is None
+        assert t1.results == []
+        assert len(t1.spaces) == 2
+        assert t2.priority is None
+        assert t2.complexity is None
+        assert t2.rank is None
+        assert t2.results == []
+        assert len(t2.spaces) == 0
+
+        # Test with exclusive and optional flags
+        spec = OrderedDict({
+            'exclusive': True,
+            'optional': True,
+            'a': {
+                'domain': [1, 2, 3],
+                'scaling': 'linear',
+                'strategy': 'random'
+            },
+            'b': {
+                'domain': [4, 5, 6],
+                'scaling': 'linear',
+                'strategy': 'random'
+            }
+        })
+        b = JSONBackend()
+        trees = b.make_forest(spec)
+        t1 = b.get(Tree, trees[0])
+        t2 = b.get(Tree, trees[1])
+        t3 = b.get(Tree, trees[2])
+        assert len(trees) == 3
+        assert len(b.db['trees']) == 3
+        assert len(b.db['spaces']) == 2
+        spec['a']['tree'] = t1.id
+        spec['a']['values'] = []
+        spec['b']['tree'] = t2.id
+        spec['b']['values'] = []
+        assert b.db['spaces'][t1.spaces[0]] == spec['a']
+        assert b.db['spaces'][t2.spaces[0]] == spec['b']
+        assert t1.priority == 1
+        assert t1.complexity == complexity([1, 2, 3])
+        assert t1.rank == 0
+        assert t1.results == []
+        assert len(t1.spaces) == 1
+        assert t2.priority == 1
+        assert t2.complexity == complexity([4, 5, 6])
+        assert t2.rank == 1
+        assert t2.results == []
+        assert len(t2.spaces) == 1
+        assert t3.priority == 1
+        assert t3.complexity == 0
+        assert t3.rank == 2
+        assert t3.results == []
+        assert len(t3.spaces) == 0
+
+        # Put the big test here
+
+
 
     def test_generate(self):
         pass

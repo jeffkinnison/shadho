@@ -1,6 +1,6 @@
 """Backend based on JSON format using Python dictionaries in memory.
 """
-from . import basedb
+from shadho.backend import basedb
 
 from collections import OrderedDict
 import os.path
@@ -271,12 +271,12 @@ class JSONBackend(basedb.BaseBackend):
         hyperparameter value stored at the first key in a path down the tree
         that is not a dictionary.
         """
-        tree = self.get(tid)
+        tree = self.get(Tree, tid)
         result = self.make(Result, tree=tree)
         params = {}
 
         for sid in tree.spaces:
-            space = self.get(sid)
+            space = self.get(Space, sid)
             path = space.path.split('/')
             curr = params
             for i in range(len(path) - 1):
@@ -289,6 +289,8 @@ class JSONBackend(basedb.BaseBackend):
                               value=space.generate())
             curr[path[-1]] = value.value
             self.add(value)
+            result.add_value(value)
+            space.add_value(value)
 
         self.add(result)
         return (result.id, params)
@@ -296,21 +298,26 @@ class JSONBackend(basedb.BaseBackend):
     def register_result(self, rid, loss, results=None):
         """
         """
-        result = self.get(rid)
+        result = self.get(Result, rid)
         result.loss = loss
         result.results = results
         self.add(result)
 
-        tree = self.get(result.tree)
-        if len(tree.results) % 10 == 0:
+        tree = self.get(Tree, result.tree)
+        tree.add_result(result)
+        if tree.priority is not None and len(tree.results) % 10 == 0:
             tree.calculate_priority()
+        self.add(tree)
 
     def get_optimal(self, mode='global'):
         opt = None
+        loss = None
         params = {}
         for r in self.db['results']:
-            if opt is None or self.db['results'][r]['loss'] < loss:
+            l = self.db['results'][r]['loss']
+            if opt is None or (l is not None and loss is not None and l < loss):
                 opt = r
+                loss = self.db['results'][opt]['loss']
 
         opt = self.get(Result, opt)
         for v in opt.values:

@@ -1,3 +1,5 @@
-from . import basedb
-from . import jsondb
-from . import sqldb
+from .jsondb import JSONBackend
+#from . import sqldb
+
+
+__all__ = ['JSONBackend']

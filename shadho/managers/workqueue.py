@@ -70,10 +70,13 @@ class WQManager(work_queue.WorkQueue):
         task.specify_tag(tag)
 
         for f in files:
-            f.add_to_task(task,
-                          tag=tag if f.ftype == WQFile.TYPES['output'] else '')
+            f.add_to_task(task)
 
         return task
+
+    def task_succeeded(self, task):
+        return task is not None and \
+               task.result == work_queue.WORK_QUEUE_RESULT_SUCCESS
 
 
 class WQFile(object):
@@ -128,7 +131,7 @@ class WQFile(object):
         self.ftype = WQFile.TYPES[ftype]
         self.cache = WQFile.CACHE[cache]
 
-    def add_to_task(self, task, tag=''):
+    def add_to_task(self, task):
         """Add the file to a task.
 
         Parameters
@@ -143,9 +146,11 @@ class WQFile(object):
         If this file is an output file, `tag` is prepended to the local path
         name, then
         """
-        task.specify_file(str(''.join([tag, self.localpath])),
+        #if self.ftype == WQFile.TYPES['output']:
+        print(self.localpath)
+        task.specify_file(self.localpath,
                           remote_name=self.remotepath,
-                          type=self.type,
+                          type=self.ftype,
                           cache=self.cache)
 
 
@@ -182,8 +187,9 @@ class WQBuffer(object):
         self.buffer = str(buffer)
         self.remotepath = str(remotepath)
         self.cache = WQFile.CACHE[cache]
+        self.ftype = 'buffer'
 
-    def add_to_task(task, tag=''):
+    def add_to_task(self, task):
         """Add the buffer to a task.
 
         Parameters

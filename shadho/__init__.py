@@ -1,7 +1,5 @@
 """
 """
-from . import backend
-from . import config
-from . import heuristics
-from . import scaling
-from . import strategies
+from .shadho import Shadho
+
+__all__ = ['backend', 'heuristics', 'managers', 'strategies']

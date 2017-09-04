@@ -19,21 +19,23 @@ DEFAULT_CONFIG = {
     'global': {
         'wrapper': 'shadho_run_task.py',
         'output': 'out.tar.gz',
-        'resultfile': 'performance.json',
-        'minval': 'loss'
+        'result_file': 'performance.json',
+        'optimize': 'loss',
+        'param_file': 'hyperparameters.json'
     },
     'workqueue': {
-        'port': '9123',
+        'port': 9123,
         'name': 'shadho_master',
-        'exclusive': 'yes',
-        'shutdown': 'yes',
-        'catalog': 'no',
+        'exclusive': True,
+        'shutdown': True,
+        'catalog': False,
         'logfile': 'shadho_master.log',
         'debugfile': 'shadho_master.debug',
-        'password': 'no'
+        'password': False
     },
     'backend': {
-        'type': 'json'
+        'type': 'sql',
+        'url': 'sqlite:///:memory:'
     }
 }
 
@@ -94,7 +96,12 @@ setup(
     url='https://github.com/jeffkinnison/shadho',
     author='Jeff Kinnison',
     author_email='jkinniso@nd.edu',
-    packages=['shadho'],
+    packages=['shadho',
+              'shadho.backend',
+              'shadho.heuristics',
+              'shadho.managers',
+              'shadho.searches',
+              'shadho.strategies'],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',

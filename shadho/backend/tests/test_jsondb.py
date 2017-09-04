@@ -313,18 +313,18 @@ class TestJSONBackend(TestBaseBackend):
         assert t.results == []
 
         # Test creating a forest with one tree and two spaces
-        spec = OrderedDict({
-            'a': {
-                'domain': [1, 2, 3],
-                'scaling': 'linear',
-                'strategy': 'random'
-            },
-            'b': {
-                'domain': [4, 5, 6],
-                'scaling': 'linear',
-                'strategy': 'random'
-            }
-        })
+        spec = OrderedDict()
+
+        spec['a'] = {
+            'domain': [1, 2, 3],
+            'scaling': 'linear',
+            'strategy': 'random'
+        }
+        spec['b'] = {
+            'domain': [4, 5, 6],
+            'scaling': 'linear',
+            'strategy': 'random'
+        }
 
         b = JSONBackend()
         trees = b.make_forest(spec, use_priority=False)
@@ -344,19 +344,22 @@ class TestJSONBackend(TestBaseBackend):
         assert t.results == []
 
         # Test with exclusive flag
-        spec = OrderedDict({
-            'exclusive': True,
-            'a': {
-                'domain': [1, 2, 3],
-                'scaling': 'linear',
-                'strategy': 'random'
-            },
-            'b': {
-                'domain': [4, 5, 6],
-                'scaling': 'linear',
-                'strategy': 'random'
-            }
-        })
+        spec = OrderedDict()
+
+        spec['exclusive'] = True
+
+        spec['a'] = {
+            'domain': [1, 2, 3],
+            'scaling': 'linear',
+            'strategy': 'random'
+        }
+
+        spec['b'] = {
+            'domain': [4, 5, 6],
+            'scaling': 'linear',
+            'strategy': 'random'
+        }
+
         b = JSONBackend()
         trees = b.make_forest(spec, use_complexity=False)
         t1 = b.get(Tree, trees[0])
@@ -382,19 +385,21 @@ class TestJSONBackend(TestBaseBackend):
         assert len(t2.spaces) == 1
 
         # Test with optional flag
-        spec = OrderedDict({
-            'optional': True,
-            'a': {
-                'domain': [1, 2, 3],
-                'scaling': 'linear',
-                'strategy': 'random'
-            },
-            'b': {
-                'domain': [4, 5, 6],
-                'scaling': 'linear',
-                'strategy': 'random'
-            }
-        })
+        spec = OrderedDict()
+
+        spec['optional'] = True
+        spec['a'] = {
+            'domain': [1, 2, 3],
+            'scaling': 'linear',
+            'strategy': 'random'
+        }
+
+        spec['b'] = {
+            'domain': [4, 5, 6],
+            'scaling': 'linear',
+            'strategy': 'random'
+        }
+
         b = JSONBackend()
         trees = b.make_forest(spec, use_priority=False, use_complexity=False)
         t1 = b.get(Tree, trees[0])
@@ -420,20 +425,23 @@ class TestJSONBackend(TestBaseBackend):
         assert len(t2.spaces) == 0
 
         # Test with exclusive and optional flags
-        spec = OrderedDict({
-            'exclusive': True,
-            'optional': True,
-            'a': {
-                'domain': [1, 2, 3],
-                'scaling': 'linear',
-                'strategy': 'random'
-            },
-            'b': {
-                'domain': [4, 5, 6],
-                'scaling': 'linear',
-                'strategy': 'random'
-            }
-        })
+        spec = OrderedDict()
+
+        spec['a'] = {
+            'domain': [1, 2, 3],
+            'scaling': 'linear',
+            'strategy': 'random'
+        }
+
+        spec['optional'] = True
+
+        spec['b'] = {
+            'domain': [4, 5, 6],
+            'scaling': 'linear',
+            'strategy': 'random'
+        }
+        spec['exclusive'] = True
+
         b = JSONBackend()
         trees = b.make_forest(spec)
         t1 = b.get(Tree, trees[0])

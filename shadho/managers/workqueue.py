@@ -29,7 +29,7 @@ class WQManager(work_queue.WorkQueue):
 
     """
 
-    def __init__(self, param_file, out_file, results_file, opt_value,
+    def __init__(self, param_file, out_file, results_file, opt_value, tmpdir,
                  name='shadho', port=9123, exclusive=True, shutdown=True,
                  logfile='shadho_wq.log', debugfile='shadho_wq.debug'):
         work_queue.cctools_debug_flags_set("all")
@@ -48,9 +48,9 @@ class WQManager(work_queue.WorkQueue):
         self.out_file = out_file
         self.results_file = results_file
         self.opt_value = opt_value
+        self.tmpdir = tmpdir
 
-    def add_task(self, cmd, tag, params, files=None, resource=None, value=None,
-                 tmpdir=None):
+    def add_task(self, cmd, tag, params, files=None, resource=None, value=None):
         """Create a task for this manager.
 
         Parameters
@@ -86,7 +86,7 @@ class WQManager(work_queue.WorkQueue):
                 f = WQFile(f[0], remotepath=f[1], ftype=f[2], cache=f[3])
             f.add_to_task(task)
 
-        out = WQFile(os.path.join(tmpdir,
+        out = WQFile(os.path.join(self.tmpdir,
                                   '.'.join([tag, self.out_file])),
                      remotepath=self.out_file,
                      ftype='output',
@@ -157,7 +157,7 @@ class WQManager(work_queue.WorkQueue):
         try:
             # Open the result tarfile and get the results file.
             outfile = '.'.join([task.tag, self.out_file])
-            result = tarfile.open(os.path.join(self.__tmpdir, outfile), 'r')
+            result = tarfile.open(os.path.join(self.tmpdir, outfile), 'r')
             resultstr = result.extractfile(self.result_file).read()
             result.close()
         except IOError:

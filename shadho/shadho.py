@@ -164,7 +164,8 @@ class Shadho(object):
         if not hasattr(self, 'manager'):
             self.manager = create_manager(
                 manager_type=self.config['global']['manager'],
-                config=self.config)
+                config=self.config,
+                tmpdir=self.__tmpdir)
 
         if not hasattr(self, 'backend'):
             self.backend = create_backend(
@@ -195,8 +196,7 @@ class Shadho(object):
                                           p[-1],
                                           files=self.files,
                                           resource=cc.resource,
-                                          value=cc.value,
-                                          tmpdir=self.__tmpdir)
+                                          value=cc.value)
                 result = self.manager.run_task()
                 if result is not None:
                     if len(result) == 4:

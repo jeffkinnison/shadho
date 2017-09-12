@@ -63,13 +63,13 @@ class Shadho(object):
                  use_priority=True, timeout=600, max_tasks=100):
         self.cmd = cmd
         self.config = ShadhoConfig()
-        self.backend = JSONBackend()
-        self.manager = WQManager(name=self.config['workqueue']['name'],
-                                 port=self.config['workqueue']['port'],
-                                 exclusive=self.config['workqueue']['exclusive'],
-                                 shutdown=self.config['workqueue']['shutdown'],
-                                 logfile=self.config['workqueue']['logfile'],
-                                 debugfile=self.config['workqueue']['debugfile'])
+        # self.backend = JSONBackend()
+        # self.manager = WQManager(name=self.config['workqueue']['name'],
+        #                          port=self.config['workqueue']['port'],
+        #                          exclusive=self.config['workqueue']['exclusive'],
+        #                          shutdown=self.config['workqueue']['shutdown'],
+        #                          logfile=self.config['workqueue']['logfile'],
+        #                          debugfile=self.config['workqueue']['debugfile'])
         self.timeout = timeout
         self.ccs = ccs if ccs is not None and len(ccs) > 0 \
             else [ComputeClass('all', None, None, max_tasks)]
@@ -165,6 +165,13 @@ class Shadho(object):
     def run(self):
         """Search hyperparameter values on remote workers.
         """
+        if not hasattr(self, 'manager'):
+            create_manager(manager_type=self.config['global']['manager'],
+                           config=self.config)
+
+        if not hasattr(self, 'backend'):
+            create_backend(backend_type=self.config['global']['backend'])
+
         start = time.time()
         elapsed = 0
         try:

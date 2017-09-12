@@ -53,7 +53,7 @@ def load_config(path='.shadhorc'):
     cfg : dict
         The configuration to use with this task.
     """
-    cfg = copy.deepcopy(DEFAULTS)
+    config = copy.deepcopy(DEFAULTS)
 
     if os.path.isfile(path):
         cfg = configparser.ConfigParser()
@@ -77,9 +77,9 @@ def load_config(path='.shadhorc'):
                 else:
                     val = cfg.get(section, option)
 
-                cfg[section][option] = val
+                config[section][option] = val
 
-    return cfg
+    return config
 
 
 def run(task, cfgpath='.shadhorc'):

@@ -22,7 +22,9 @@ DEFAULT_CONFIG = {
         'output': 'out.tar.gz',
         'result_file': 'performance.json',
         'optimize': 'loss',
-        'param_file': 'hyperparameters.json'
+        'param_file': 'hyperparameters.json',
+        'backend': 'json',
+        'manager': 'workqueue'
     },
     'workqueue': {
         'port': 9123,
@@ -63,6 +65,8 @@ class InstallCCToolsCommand(install):
         # version
         if not os.path.isdir(SHADHO_DIR):
             os.mkdir(SHADHO_DIR)
+
+        DEFAULT_CONFIG['global']['shadho_dir'] = SHADHO_DIR
 
         cfg = configparser.ConfigParser()
         try:

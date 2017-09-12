@@ -2,7 +2,13 @@
 
 # Set paths to the Python and swig executables
 
-mkdir /tmp/shadho
+base="$(mktemp -d)"
+
+user=""
+
+if [ "$1" == "--user" ]; then
+    user="0"
+fi
 
 py2path="$(dirname "$(dirname "$(command -v python2)")")"
 py2version="$(python2 -c 'import sys; print("{}.{}".format(*sys.version_info[:2]))')"
@@ -16,7 +22,7 @@ for opt in "$@"; do
     fi
 done
 
-cd /tmp/shadho
+cd $base
 wget http://www.cpan.org/src/5.0/perl-5.26.0.tar.gz
 tar xzf perl-5.26.0.tar.gz
 cd perl-5.26.0
@@ -24,7 +30,7 @@ cd perl-5.26.0
 make -j8 && make install -j8
 perlpath="/tmp/shadho"
 
-cd /tmp/shadho
+cd $base
 wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.40.tar.gz
 tar xzf pcre-8.40.tar.gz
 cd pcre-8.40
@@ -32,7 +38,7 @@ cd pcre-8.40
 make -j8 && make install -j8
 
 
-cd /tmp/shadho
+cd $base
 wget http://prdownloads.sourceforge.net/swig/swig-3.0.12.tar.gz
 tar xzf swig-3.0.12.tar.gz
 cd swig-3.0.12
@@ -47,7 +53,7 @@ make -j8 && make install -j8
 swigpath="/tmp/shadho"
 
 # Get the CCTools source
-cd /tmp/shadho
+cd $base
 git clone -b hyperopt_worker https://github.com/nkremerh/cctools
 
 # Configure, make, and install
@@ -79,16 +85,34 @@ make install -j 8
 # Move the Work Queue install into site-packages so that it can be used without
 # additional configuration
 if [ ! -z "$py2path" ]; then
-    cclib="${prefix}/lib/python${py2version}/site-packages"
+    if [ -z "$user" ]; then
+        cclib="${prefix}/lib/python${py2version}/site-packages"
+    else
+        cclib="$(python2 -c 'import site; print(site.USER_SITE)')"
+    fi
+
+    if [ ! -d "$cclib" ]; then
+        mkdir -p "$cclib"
+    fi
+
     cp "${cclib}/work_queue.py" "${cclib}/_work_queue.so" \
         "$py2path/lib/python${py2version}/site-packages"
 fi
 
 if [ ! -z "$py3path" ]; then
-    cclib="${prefix}/lib/python${py3version}/site-packages"
+    if [ -z "$user" ]; then
+        cclib="${prefix}/lib/python${py3version}/site-packages"
+    else
+        cclib="$(python3 -c 'import site; print(site.USER_SITE)')"
+    fi
+
+    if [ ! -d "$cclib" ]; then
+        mkdir -p "$cclib"
+    fi
+
     cp "${cclib}/work_queue.py" "${cclib}/_work_queue.so" \
         "$py3path/lib/python${py3version}/site-packages"
 fi
 
 # Clean up
-rm -rf /tmp/shadho
+rm -r $base

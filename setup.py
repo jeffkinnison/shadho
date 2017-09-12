@@ -6,6 +6,7 @@ try:
     import configparser
 except:
     import ConfigParser as configparser
+import json
 import os
 import site
 import shutil
@@ -17,23 +18,27 @@ MAJ = sys.version_info[0]
 SHADHO_DIR = os.path.join(os.environ['HOME'], '.shadho')
 DEFAULT_CONFIG = {
     'global': {
-        'wrapper': 'shadho_run_task.py',
+        'wrapper': 'shadho_worker.py',
         'output': 'out.tar.gz',
-        'resultfile': 'performance.json',
-        'minval': 'loss'
+        'result_file': 'performance.json',
+        'optimize': 'loss',
+        'param_file': 'hyperparameters.json',
+        'backend': 'json',
+        'manager': 'workqueue'
     },
     'workqueue': {
-        'port': '9123',
+        'port': 9123,
         'name': 'shadho_master',
-        'exclusive': 'yes',
-        'shutdown': 'yes',
-        'catalog': 'no',
+        'exclusive': True,
+        'shutdown': True,
+        'catalog': False,
         'logfile': 'shadho_master.log',
         'debugfile': 'shadho_master.debug',
-        'password': 'no'
+        'password': False
     },
     'backend': {
-        'type': 'json'
+        'type': 'sql',
+        'url': 'sqlite:///:memory:'
     }
 }
 
@@ -57,26 +62,40 @@ class InstallCCToolsCommand(install):
         # CCTools distinguishes between Python 2/3 SWIG bindings, and the
         # Python 3 bindings require extra effort. Install based on the user's
         # version
+        if not os.path.isdir(SHADHO_DIR):
+            os.mkdir(SHADHO_DIR)
+
+        DEFAULT_CONFIG['global']['shadho_dir'] = SHADHO_DIR
+
         cfg = configparser.ConfigParser()
-        if MAJ == 3:
-            try:
-                import work_queue
-                print("Found Work Queue, skipping install")
-            except ImportError:
-                subprocess.call(['bash', 'install_cctools.sh', 'py3'])
+        try:
+            import work_queue
+            print("Found Work Queue, skipping install")
+        except ImportError:
+            args = [
+                'bash',
+                os.path.join(
+                    os.path.dirname(__file__),
+                    'install_cctools.sh')
+                ]
+
+            if '--user' in sys.argv:
+                args.append('--user')
+
+            if MAJ == 3:
+                args.append('py3')
+
+            subprocess.call(args)
+        try:
             cfg.read_dict(DEFAULT_CONFIG)
-        else:
-            try:
-                import work_queue
-                print("Found Work Queue, skipping install")
-            except ImportError:
-                subprocess.call(['bash', 'install_cctools.sh'])
+        except AttributeError:
             for key, val in DEFAULT_CONFIG.iteritems():
                 cfg.add_section(key)
                 for k, v in val.iteritems():
                     cfg.set(key, k, v)
+
         print('Installing shadho_worker')
-        shutil.copy(os.path.join('.', 'scripts', 'shadho_run_task.py'),
+        shutil.copy(os.path.join('.', 'scripts', 'shadho_worker.py'),
                     SHADHO_DIR)
 
         print('Copying default .shadhorc to home directory')
@@ -94,7 +113,13 @@ setup(
     url='https://github.com/jeffkinnison/shadho',
     author='Jeff Kinnison',
     author_email='jkinniso@nd.edu',
-    packages=['shadho'],
+    packages=['shadho',
+              'shadho.backend',
+              'shadho.heuristics',
+              'shadho.helpers',
+              'shadho.managers',
+              'shadho.searches',
+              'shadho.strategies'],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',

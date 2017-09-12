@@ -7,6 +7,7 @@ python:
 before_install:
   - pip install --upgrade pip
   - pip install --only-binary=numpy,scipy numpy scipy
+  - pip install --upgrade pytest
   - if [ "${TRAVIS_PYTHON_VERSION}" != "2.7" ]; then
     version="$(python -c 'import sys; print("{}.{}.{}".format(*sys.version_info[:3]))')";
     libpy="$(find /opt -name "libpython${TRAVIS_PYTHON_VERSION}m.so")";
@@ -24,4 +25,4 @@ before_install:
     chmod 755 "${py3path}/bin/python3-config";
     fi
 install: pip install .
-script: nosetests
+script: python -m pytest

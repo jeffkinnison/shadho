@@ -1,414 +1,332 @@
-# -*- coding: utf-8 -*-
-"""Main driver for distributed hyperparameter search.
-
-Classes
--------
-HyperparameterSearch: perform hyperparameter search with or without decisions
 """
+"""
+from .backend import create_backend
+from .config import ShadhoConfig
+from .hardware import ComputeClass
+from .managers import create_manager
 
-from .forest import OrderedSearchForest
-from .config import SHADHOConfig
-
+from collections import OrderedDict
 import json
 import os
 import tarfile
+import tempfile
 import time
-import uuid
 
 import numpy as np
-
-import work_queue
-from work_queue import WorkQueue, Task, WORK_QUEUE_RESULT_SUCCESS
+import scipy.stats
 
 
-class SHADHO(object):
-    """Manager for
-
-    """
-    def __init__(self, spec, cmd=None, ccs=None, infiles=None,
-                 outfile='output.json', use_complexity=True, use_priority=True,
-                 timeout=3600, max_tasks=500, threshold=-1):
-        self.cfg = SHADHOConfig()
-        self.wq = WorkQueue(port=int(self.config.workqueue['port']),
-                            name=str(self.config.workqueue['name']),
-                            catalog=self.config.workqueue['catalog'],
-                            exclusive=self.config.workqueue['exclusive'],
-                            shutdown=self.config.workqueue['shutdown']
-                            )
-
-        self.timeout = timeout
-        self.threshold = threshold
-
-        if ccs is None:
-            self.search = HeuristicSearch(spec,
-                                          use_complexity=use_complexity,
-                                          use_priority=use_priority
-                                          )
-        else:
-            self.search = HardwareAwareSearch(spec,
-                                              ccs,
-                                              use_complexity=use_complexity,
-                                              use_priority=use_priority
-                                              )
-
-    def run(self):
-        """Conduct the hyperparameter search.
-        """
-        thresh = False
-        start = time.time()
-        curr = 0
-        while curr < timeout and not thresh:
-            tasks = self.search.make_tasks()
-            for task in tasks:
-                self.wq.submit(task)
-            res = self.wq.wait(timeout=10)
-            self.search.process_result(res)
-
-            curr = time.time() - start
-            if self.search.min < self.threshold:
-                thresh = True
-
-        self.search.report_min()
+def shadho():
+    pass
 
 
-class HeuristicSearch(object):
-    """Randomly generate hyperparameter values.
+class Shadho(object):
+    """Optimize hyperparameters using specified hardware.
 
     Parameters
     ----------
     spec : dict
-        Specification tree for the hyperparameter search.
+        The specification defining search spaces.
+    files : list of str or WQFile
+        The files to send to remote workers for task execution.
+    ccs : list of `shadho.hardware.ComputeClass`, optional
+        The types of hardware to expect during optimization. If not supplied,
+        tasks are run on the first available worker.
     use_complexity : bool, optional
-        True to weight parameter generation by the complexity heuristic.
+        If True, use the complexity heuristic to adjust search proportions.
     use_priority : bool, optional
-        True to weight parameter generation by the priority heuristic.
-
+        If True, use the priority heuristic to adjust search proportions.
+    timeout : int, optional
+        Number of seconds to search for.
+    max_tasks : int, optional
+        Number of tasks to queue at a time.
 
     Attributes
     ----------
-    forest : shadho.forest.OrderedSearchForest
-        Forest of potential hyperparameter values.
-    use_complexity : bool
-        True to weight parameter generation by the complexity heuristic.
-    use_priority : bool
-        True to weight parameter generation by the priority heuristic.
-    current_tasks : int
-        The current number of tasks in the queue in this search.
-    max_tasks : int
-        The maximum number of tasks to place in the queue.
+    config : `shadho.config.ShadhoConfig`
+        Global configurations for shadho.
+    backend : `shadho.backend.basedb.BaseBackend`
+        The data storage backend.
+    manager : `shadho.managers.workqueue.WQManager`
+        The distributed task manager to use.
+    trees : list
+        The ids of every tree in the search forest.
+    ccs : list of `shadho.hardware.ComputeClass`
+        The types of hardware to expect during optimization. If not supplied,
+        tasks are run on the first available worker.
+    assignments : dict
+        Record of trees assigned to compute classes.
+    timeout : int
+        Number of seconds to search for.
 
     """
 
-    def __init__(self, spec, cc=None, use_complexity=True, use_priority=True,
-                 max_tasks=500, rng=None):
-        self.forest = OrderedSearchForest(spec)
-        self.cc = cc if cc is not None \
-                  else ComputeClass('dummy', 'foo', 'bar')
-        self.use_complexity = use_complexity
-        self.use_priority = use_priority
-        self.current_tasks = 0
-        self.max_tasks = max_tasks
-        self.rng = rng if rng is not None \
-                   else scipy.stats.randint(0, len(self.forest))
-
-    def get_param(self):
-        """Generate hyperparameter values to test.
-
-        Parameters
-        ----------
-        n : int
-            The number of parameters to generate.
-
-        Returns
-        -------
-        params : list(dict)
-            A list of hyperparameter values to test.
-
-        """
-        self.forest.set_ranks(use_complexity=self.use_complexity,
-                              use_priority=self.use_priority)
-        return self.forest.generate(self.rv)
-
-    def make_tasks(self):
-        """Make tasks
-        """
-        diff = self.max_tasks - self.current_tasks
-        tasks = []
-        for i in range(diff):
-            tag, param = self.get_param()
-            task = self.cc.create_task(tag)
-            task.specify_buffer(str(json.dumps()))
-
-    def process_result(self, task):
-        if task is not None:
-            if task.result == work_queue.WORK_QUEUE_RESULT_SUCCESS:
-                # Task tag is unique and contains information about the tree its values
-                # came from and the compute class it was assigned to.
-                tag = str(task.tag)
-                print('Task {} was successful'.format(tag))
-                ids = tag.split('.')
-
-                # Get the correct tree from the OSF
-                tree_id = ids[-1]
-                tree = self.forest.trees[tree_id]
-
-                # Extract the results from the output tar file.
-                try:
-                    result = tarfile.open('.'.join([tag, 'out.tar.gz']), 'r')
-                    resultstring = result.extractfile('performance.json').read()
-                    result.close()
-                except IOError:
-                    print('Error opening task {} result'.format(tag))
-
-                # Load the results from file and store them to the correct tree
-                result = json.loads(resultstring.decode('utf-8'))
-                result['task_id'] = task.id
-                tree.add_result(result['params'],
-                                result,
-                                update_priority=self.use_priority)
-
-                # If using Compute Classes, update task statistics.
-                if len(self.ccs) > 0:
-                    ccid = ids[1]
-                    for cc in self.ccs:
-                        if cc.name == ccid:
-                            cc.submitted_tasks -= 1
-
-                # Clean up
-                os.remove('.'.join([tag, 'out.tar.gz']))
-            else:
-                # Report the failure and print any output for debugging.
-                print('Task {} failed with result {} and WQ status {}'
-                      .format(task.tag, task.result, task.return_status))
-                print(task.output)
-
-
-class HyperparameterSearch(object):
-    """Perform distributed hyperparameter search.
-
-    This class conducts and manages distributed hyperparameter search using the
-    data structures, heuristics, and techniques described in REFERENCE. The
-    search is fully configurable, meaning users may define the expected runtime
-    environments, whether to direct the search using complexity and priority
-    heuristics, and stopping conditions.
-
-    Parameters
-    ----------
-    spec : dict
-        Specification to build an OrderedSearchForest.
-    ccs : list(shadho.ComputeClass)
-        The ordered list of compute classes that will connect.
-    wq_config : {dict, shadho.WQConfig}
-        Work Queue master and task configurations.
-    use_complexity: {True, False}, optional
-        If True, use the complexity heuristic to adjust search proportions.
-    use_priority: {True, False}, optional
-        If True, use the priority heuristic to adjust search proportions.
-    timeout: {600, int}, optional
-        Search timeout in seconds.
-    max_tasks: {100, int}, optional
-        The maximum number of concurrent searches to maintain.
-
-    See Also
-    --------
-
-    """
-
-    def __init__(self, spec, ccs, wq_config, use_complexity=True,
+    def __init__(self, cmd, spec, ccs=None, files=None, use_complexity=True,
                  use_priority=True, timeout=600, max_tasks=100):
-        self.wq_config = WQConfig(**wq_config) \
-                            if isinstance(wq_config, dict) else wq_config
-        work_queue.cctools_debug_flags_set("all")
-        work_queue.cctools_debug_config_file(self.wq_config['debug'])
-        work_queue.cctools_debug_config_file_size(0)
-        self.wq = WorkQueue(port=int(self.wq_config['port']),
-                            name=str(self.wq_config['name']),
-                            catalog=self.wq_config['catalog'],
-                            exclusive=self.wq_config['exclusive'],
-                            shutdown=self.wq_config['shutdown']
-                            )
-        self.forest = OrderedSearchForest(spec)
-        self.ccs = [] if ccs is None else ccs
+        self.config = ShadhoConfig()
+        self.cmd = cmd
+        self.spec = spec
         self.use_complexity = use_complexity
         self.use_priority = use_priority
         self.timeout = timeout
         self.max_tasks = max_tasks
-        self.wq.specify_log(self.wq_config['logfile'])
 
-    def optimize(self):
-        """Run the distributed hyperparameter search.
-        """
-        start = time.time()
-        elapsed = 0
-        if len(self.ccs) > 0:
-            self.assign_to_ccs()
-            for cc in self.ccs:
-                print(str(cc))
-        while elapsed < self.timeout:
-            n_tasks = self.max_tasks - self.wq.stats.tasks_waiting
-            tasks = self.__generate_tasks(n_tasks)
-            for task in tasks:
-                self.wq.submit(task)
-            task = self.wq.wait(timeout=30)
-            if task is not None:
-                if task.result == work_queue.WORK_QUEUE_RESULT_SUCCESS:
-                    self.__success(task)
+        self.ccs = OrderedDict()
+
+        self.files = []
+        if files is not None:
+            for f in files:
+                if not isinstance(f, WQFile):
+                    self.add_input_file(f)
                 else:
-                    self.__failure(task)
-            elapsed = time.time() - start
-            if len(self.ccs) > 0:
-                for cc in self.ccs:
-                    print(str(cc))
+                    self.files.append(f)
+        self.assignments = {}
 
-        self.forest.write_all()
+        self.__tmpdir = tempfile.mkdtemp(prefix='shadho_', suffix='_output')
 
-    def __generate_tasks(self, n_tasks):
-        """Generate values to search.
+        self.add_input_file(os.path.join(
+            self.config['global']['shadho_dir'],
+            self.config['global']['wrapper']))
+
+        self.config.save_config(self.__tmpdir)
+        self.add_input_file(os.path.join(self.__tmpdir, '.shadhorc'))
+
+    def __del__(self):
+        if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
+            os.rmdir(self.__tmpdir)
+
+    def add_input_file(self, localpath, remotepath=None, cache=True):
+        """Add an input file to the global file list.
 
         Parameters
         ----------
-        n_tasks : int
-            The number of tasks to generate.
+        localpath : str
+            Path to the file on the local filesystem.
+        remotepath : str, optional
+            Path to write the file to on the remote worker. If omitted, the
+            basename of ``localpath`` (e.g. "foo/bar.baz" => "bar.baz").
+        cache : bool, optional
+            Whether to cache the file on the remote worker. If True (default),
+            will be cached on the worker between tasks, reducing network
+            transfer overhead. If False, will be re-transferred to the worker
+            on each task.
+        """
+        self.files.append((localpath, remotepath, 'input', cache))
+
+    def add_output_file(self, localpath, remotepath=None, cache=False):
+        """Add an input file to the global file list.
+
+        Output files are expected to be discovered on the remote worker after a
+        task has completed. They are returned to the `shadho.Shadho` instance
+        and will be stored for further review without additional processing.
+
+        Parameters
+        ----------
+        localpath : str
+            Path to the file on the local filesystem.
+        remotepath : str, optional
+            Path to write the file to on the remote worker. If omitted, the
+            basename of ``localpath`` (e.g. "foo/bar.baz" => "bar.baz").
+        cache : bool, optional
+            Whether to cache the file on the remote worker. It is recommended
+            that this be set to False for output files.
+
+        Notes
+        -----
+        `shadho.Shadho` automatically parses the output file specified in
+        ``.shadhorc``, so and output file added through this method will not be
+        processed, but rather stored for later review.
+        """
+        self.files.append((localpath, remotepath, 'output', cache))
+
+    def add_compute_class(self, name, resource, value, max_tasks=100):
+        """Add a compute class representing a set of consistent recources.
+
+        Parameters
+        ----------
+        name : str
+            The name of this set of compute resources.
+        resource : str
+            The resource to match, e.g. gpu_name, cores, etc.
+        value
+            The value of the resource that should be matched, e.g. "TITAN X
+            (Pascal)", 8, etc.
+        max_tasks : int, optional
+            The maximum number of tasks to queue for this compute class,
+            default 100.
+        """
+        cc = ComputeClass(name, resource, value, max_tasks)
+        self.ccs[cc.id] = cc
+
+    def run(self):
+        """Search hyperparameter values on remote workers.
+        """
+        if not hasattr(self, 'manager'):
+            self.manager = create_manager(
+                manager_type=self.config['global']['manager'],
+                config=self.config,
+                tmpdir=self.__tmpdir)
+
+        if not hasattr(self, 'backend'):
+            self.backend = create_backend(
+                backend_type=self.config['global']['backend'],
+                config=self.config)
+
+        if len(self.ccs) == 0:
+            cc = ComputeClass('all', None, None, self.max_tasks)
+            self.ccs[cc.id] = cc
+
+        self.trees = self.backend.make_forest(
+            self.spec,
+            use_complexity=self.use_complexity,
+            use_priority=self.use_priority)
+
+        start = time.time()
+        elapsed = 0
+        try:
+            while elapsed < self.timeout:
+                self.assign_to_ccs()
+                params = self.generate()
+                for p in params:
+                    tag = '.'.join([p[0], p[1]])
+                    cc = self.ccs[p[1]]
+                    self.manager.add_task(self.cmd,
+                                          tag,
+                                          p[-1],
+                                          files=self.files,
+                                          resource=cc.resource,
+                                          value=cc.value)
+                result = self.manager.run_task()
+                if result is not None:
+                    if len(result) == 4:
+                        print('Received result with loss {}'.format(result[2]))
+                        self.success(*result)
+                    else:
+                        self.failure(*result)
+                elapsed = time.time() - start
+        except KeyboardInterrupt:
+            if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
+                os.rmdir(self.__tmpdir)
+
+        self.backend.checkpoint()
+        opt = self.backend.get_optimal(mode='global')
+        print("Optimal loss: {}".format(opt[0]))
+        print("With parameters: {}".format(opt[1]))
+        print("And additional results: {}".format(opt[2]))
+
+    def generate(self):
+        """Generate hyperparameter values to test.
 
         Returns
         -------
-        tasks : list(work_queue.Task)
-            The tasks to submit to Work Queue.
+        params : list of tuple
+            A list of triples (result_id, compute_class_id, parameter_values).
+        """
+        params = []
+        for ccid in self.ccs:
+            cc = self.ccs[ccid]
+            n = cc.max_tasks - cc.current_tasks
+            assignments = self.assignments[ccid]
+            rng = scipy.stats.randint(0, len(assignments))
+            for i in range(n):
+                idx = rng.rvs()
+                rid, param = self.backend.generate(assignments[idx])
+                param = (rid, ccid, param)
+                params.append(param)
+            cc.current_tasks = cc.max_tasks
+        return params
+
+    def make_tasks(self, params):
+        """Create tasks to test hyperparameter values.
+
+        Parameters
+        ----------
+        params : list of dict
+            The hyperparameter values ot test.
+
+        Returns
+        -------
+        tasks : list of `work_queue.Task`
+            Tasks to submit to the distributed manager.
         """
         tasks = []
-        if len(self.ccs) == 0:
-            self.forest.set_ranks(use_priority=self.use_priority,
-                                  use_complexity=self.use_complexity)
-            for i in range(n_tasks):
-                task = work_queue.Task(self.wq_config['command'])
-
-                tid, spec = self.forest.generate()
-                tag = '.'.join([str(uuid.uuid4()), tid])
-                task.specify_tag(tag)
-
-                for f in self.wq_config['files']:
-                    f.add_to_task(task, tag=''
-                                  if f.type == work_queue.WORK_QUEUE_INPUT
-                                  else str(tag + '.'))
-
-                task.specify_buffer(str(json.dumps(spec)),
-                                    remote_name=str('hyperparameters.json'),
-                                    flags=work_queue.WORK_QUEUE_NOCACHE
-                                    )
-                tasks.append(task)
-        else:
-            self.assign_to_ccs()
-            for cc in self.ccs:
-                specs = cc.generate()
-                for s in specs:
-                    tid, spec = s
-                    task = work_queue.Task(self.wq_config['command'])
-
-                    tag = '.'.join([str(uuid.uuid4()), cc.name, tid])
-                    task.specify_tag(tag)
-                    if cc.resource == 'cores':
-                        task.specify_cores(cc.value)
-
-                    for f in self.wq_config['files']:
-                        f.add_to_task(task, tag=''
-                                      if f.type == work_queue.WORK_QUEUE_INPUT
-                                      else str(tag + '.'))
-
-                    task.specify_buffer(str(json.dumps(spec)),
-                                        remote_name=str('hyperparameters.json'),
-                                        flags=work_queue.WORK_QUEUE_NOCACHE
-                                        )
-                    tasks.append(task)
+        for p in params:
+            tag = '.'.join([p[0], p[1]])
+            buff = WQBuffer(str(json.dumps(p[2])),
+                            self.config['global']['param_file'],
+                            cache=False)
+            outfile = WQFile(os.path.join(
+                                self.__tmpdir,
+                                '.'.join([tag,
+                                          self.config['global']['output']])),
+                             remotepath=self.config['global']['output'],
+                             ftype='output',
+                             cache=False)
+            files = [f for f in self.files]
+            files.append(outfile)
+            files.append(buff)
+            task = self.manager.make_task(self.cmd, tag, files)
+            tasks.append(task)
         return tasks
 
     def assign_to_ccs(self):
-        """Assign hyperparameter search spaces to compute classes.
-
-        This function iterates over the set of trees five times and over the
-        compute classes twice. If we can reduce this, that would be suuuuper.
+        """Assign trees to compute classes.
         """
-        # TODO: Reduce the number of times iterating over things
-        # TODO: Make the assignments agnostic to the number of trees and ccs
-        # Clear the assignments within both trees and Compute Classes
-        for cc in self.ccs:
-            cc.clear_assignments()
+        self.backend.update_rank()
 
-        self.forest.set_ranks(use_priority=self.use_priority,
-                              use_complexity=self.use_complexity)
-        trees = [self.forest.trees[key] for key in self.forest.trees]
-        trees.sort(key=lambda x: x.rank)
+        if len(self.ccs) == 1:
+            self.assignments[list(self.ccs.keys())[0]] = self.trees
+            return
 
-        # larger, smaller = (trees, self.ccs) \
-        #     if len(trees) > len(self.ccs) else (self.ccs, trees)
-        x = float(len(larger)) / float(len(smaller))
-        y = x - 1
-        j = 0
-        n = len(larger) / 2
-
-        for i in range(len(larger)):
-            if i > np.ceil(y):
-                j += 1
-                y += x
-            larger[i].assign(smaller[j])
-            smaller[j].assign(larger[i])
-
-            if i <= n:
-                larger[i].assign(smaller[j + 1])
-                smaller[j + 1].assign(larger[i])
-
-            if i > n:
-                larger[i].assign(smaller[j - 1])
-                smaller[j - 1].assign(larger[i])
-
-    def __success(self, task):
-        """Default handling for successful task completion.
-        """
-        # Task tag is unique and contains information about the tree its values
-        # came from and the compute class it was assigned to.
-        tag = str(task.tag)
-        print('Task {} was successful'.format(tag))
-        ids = tag.split('.')
-
-        # Get the correct tree from the OSF
-        tree_id = ids[-1]
-        tree = self.forest.trees[tree_id]
-
-        # Extract the results from the output tar file.
-        try:
-            result = tarfile.open('.'.join([tag, 'out.tar.gz']), 'r')
-            resultstring = result.extractfile('performance.json').read()
-            result.close()
-        except IOError:
-            print('Error opening task {} result'.format(tag))
-
-        # Load the results from file and store them to the correct tree
-        result = json.loads(resultstring.decode('utf-8'))
-        result['task_id'] = task.id
-        tree.add_result(result['params'],
-                        result,
-                        update_priority=self.use_priority)
-
-        # If using Compute Classes, update task statistics.
-        if len(self.ccs) > 0:
-            ccid = ids[1]
+        else:
             for cc in self.ccs:
-                if cc.name == ccid:
-                    cc.submitted_tasks -= 1
+                self.assignments[cc] = []
 
-        # Clean up
-        os.remove('.'.join([tag, 'out.tar.gz']))
+            ccids = list(self.ccs.keys())
+            larger = self.trees if len(self.trees) >= len(ccids) else ccids
+            smaller = self.trees if len(self.trees) < len(ccids) else ccids
 
-    def __failure(self, task):
-        """Default handling for task failure.
+            x = float(len(larger)) / float(len(smaller))
+            y = x - 1
+            j = 0
+            n = len(larger) / 2
+
+            for i in range(len(larger)):
+                if i > np.ceil(y):
+                    j += 1
+                    y += x
+
+                if smaller[j] in self.assignments:
+                    self.assignments[smaller[j]].append(larger[i])
+                    if i <= n:
+                        self.assignments[smaller[j + 1]].append(larger[i])
+                    else:
+                        self.assignments[smaller[j - 1]].append(larger[i])
+                else:
+                    self.assignments[larger[i]].append(smaller[j])
+                    if i <= n:
+                        self.assignments[larger[i]].append(smaller[j + 1])
+                    else:
+                        self.assignments[larger[i]].append(smaller[j - 1])
+
+    def success(self, rid, ccid, loss, results):
+        """Handle successful task completion.
+
+        Parameters
+        ----------
+        task : `work_queue.Task`
+            The task to process.
         """
-        # Report the failure and print any output for debugging.
-        print('Task {} failed with result {} and WQ status {}'
-              .format(task.tag, task.result, task.return_status))
-        print(task.output)
+        self.backend.register_result(rid, loss, results=results)
+        self.ccs[ccid].current_tasks -= 1
 
-        # If using Compute Classes, update task statistics.
-        if len(self.ccs) > 0:
-            ccid = task.tag.split('.')[1]
-            for cc in self.ccs:
-                if cc.name == ccid:
-                    cc.submitted_tasks -= 1
+
+    def failure(self, rid, ccid):
+        """Handle task failure.
+
+        Parameters
+        ----------
+        task : `work_queue.Task`
+            The failed task to process.
+        """
+        self.ccs[ccid].current_tasks -= 1

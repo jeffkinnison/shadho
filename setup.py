@@ -55,7 +55,6 @@ class InstallCCToolsCommand(install):
         CCTools and moves the related Python module and shared library to the
         site-packages directory.
         """
-        json.dump(sys.argv, open('/home/jeff/dev/shadho/argv.json', 'w'))
         print('Installing CCTools suite')
         global MAJ
         global SHADHO_DIR

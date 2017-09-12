@@ -67,7 +67,7 @@ def load_config(path='.shadhorc'):
                 try:
                     t = type(DEFAULTS[section][option])
                 except KeyError:
-                    t = str
+                    continue
                 if t is bool:
                     val = cfg.getboolean(section, option)
                 elif t is int:

@@ -1,6 +1,8 @@
 """
 """
+import json
 import os
+import tarfile
 
 import work_queue
 
@@ -27,7 +29,8 @@ class WQManager(work_queue.WorkQueue):
 
     """
 
-    def __init__(self, name='shadho', port=9123, exclusive=True, shutdown=True,
+    def __init__(self, param_file, out_file, results_file, opt_value,
+                 name='shadho', port=9123, exclusive=True, shutdown=True,
                  logfile='shadho_wq.log', debugfile='shadho_wq.debug'):
         work_queue.cctools_debug_flags_set("all")
         work_queue.cctools_debug_config_file(debugfile)
@@ -41,7 +44,12 @@ class WQManager(work_queue.WorkQueue):
 
         self.specify_log(logfile)
 
-    def make_task(self, cmd, tag, files):
+        self.param_file = param_file
+        self.out_file = out_file
+        self.results_file = results_file
+        self.opt_value = opt_value
+
+    def add_task(self, cmd, tag, params, files=None, resource=None, value=None):
         """Create a task for this manager.
 
         Parameters
@@ -51,7 +59,7 @@ class WQManager(work_queue.WorkQueue):
             ``python script.py``.
         tag : str
             The tag to give this task.
-        files : list of `WQFile` or `WQBuffer`
+        files : list of `WQFile` or `WQBuffer`, optional
             The input and output files and data buffers that this task will
             send/receive.
 
@@ -69,14 +77,116 @@ class WQManager(work_queue.WorkQueue):
         task = work_queue.Task(cmd)
         task.specify_tag(tag)
 
+        if files is None:
+            files = []
+
         for f in files:
+            if isinstance(f, tuple):
+                f = WQFile(f[0], remotepath=f[1], ftype=f[2], cache=f[3])
             f.add_to_task(task)
 
-        return task
+        out = WQFile(os.path.join(self.__tmpdir,
+                                  '.'.join([tag, self.out_file])),
+                     remotepath=self.config['global']['output'],
+                     ftype='output',
+                     cache=False)
+
+        buff = WQBuffer(str(json.dumps(params)),
+                        self.param_file,
+                        cache=False)
+
+        out.add_to_task(task)
+        buff.add_to_task(task)
+
+        if resource is not None:
+            if resource == 'cores':
+                task.specify_cores(value)
+            else:
+                task.specify_resource(resource, value)
+
+        self.submit(task)
+
+    def run_task(self):
+        task = None
+        while task is None:
+            task = self.wait(timeout=10)
+            if self.task_succeeded():
+                return self.success(task)
+            else:
+                return self.failure(task)
+            task = None
 
     def task_succeeded(self, task):
+        """Determine whether or not a task succeeded.
+
+        Parameters
+        ----------
+        task : work_queue.Task
+            The task to check.
+
+        Returns
+        -------
+        True if the task succeeded, False otherwise.
+        """
         return task is not None and \
-               task.result == work_queue.WORK_QUEUE_RESULT_SUCCESS
+            task.result == work_queue.WORK_QUEUE_RESULT_SUCCESS
+
+    def success(self, task):
+        """Handle Work Queue task success.
+
+        Parameters
+        ----------
+        task : work_queue.Task
+            The successful task with results to process.
+
+        Returns
+        -------
+        result_id : str
+            The id of the database entry representing this result.
+        cc_id : str
+            The id of the compute class that ran this result.
+        loss : float
+            The value being optimized.
+        results : dict
+            Other results returned by the task.
+        """
+        # Extract the result and compute class ids
+        rid, ccid = str(task.tag).split('.')
+
+        try:
+            # Open the result tarfile and get the results file.
+            outfile = '.'.join([task.tag, self.out_file])
+            result = tarfile.open(os.path.join(self.__tmpdir, outfile), 'r')
+            resultstr = result.extractfile(self.result_file).read()
+            result.close()
+        except IOError:
+            print("Error opening task {} result".format(rid))
+
+        result = json.loads(resultstr.decode('utf-8'))
+        loss = result[self.opt_value]
+        return (rid, ccid, loss, result)
+
+    def failure(self, task):
+        """Handle Work Queue task failure.
+
+        Parameters
+        ----------
+        task : work_queue.Task
+            The failed task to process.
+
+        Returns
+        -------
+        result_id : str
+            The id of the database entry representing this result.
+        cc_id : str
+            The id of the compute class that ran this result.
+        """
+        print('Task {} failed with result {} and WQ status {}'
+              .format(task.tag, task.result, task.return_status))
+        print(task.output)
+
+        rid, ccid = str(task.tag).split('.')
+        return (rid, ccid)
 
 
 class WQFile(object):

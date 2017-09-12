@@ -1,10 +1,11 @@
 """
 """
-from .backend import *
+from .backend import create_backend
 from .config import ShadhoConfig
 from .hardware import ComputeClass
-from .managers import *
+from .managers import create_manager
 
+from collections import OrderedDict
 import json
 import os
 import tarfile
@@ -12,6 +13,7 @@ import tempfile
 import time
 
 import numpy as np
+import scipy.stats
 
 
 def shadho():
@@ -61,18 +63,15 @@ class Shadho(object):
 
     def __init__(self, cmd, spec, ccs=None, files=None, use_complexity=True,
                  use_priority=True, timeout=600, max_tasks=100):
-        self.cmd = cmd
         self.config = ShadhoConfig()
-        # self.backend = JSONBackend()
-        # self.manager = WQManager(name=self.config['workqueue']['name'],
-        #                          port=self.config['workqueue']['port'],
-        #                          exclusive=self.config['workqueue']['exclusive'],
-        #                          shutdown=self.config['workqueue']['shutdown'],
-        #                          logfile=self.config['workqueue']['logfile'],
-        #                          debugfile=self.config['workqueue']['debugfile'])
+        self.cmd = cmd
+        self.spec = spec
+        self.use_complexity = use_complexity
+        self.use_priority = use_priority
         self.timeout = timeout
-        self.ccs = ccs if ccs is not None and len(ccs) > 0 \
-            else [ComputeClass('all', None, None, max_tasks)]
+        self.max_tasks = max_tasks
+
+        self.ccs = OrderedDict()
 
         self.files = []
         if files is not None:
@@ -81,14 +80,16 @@ class Shadho(object):
                     self.add_input_file(f)
                 else:
                     self.files.append(f)
-
-        self.trees = self.backend.make_forest(spec,
-                                              use_complexity=use_complexity,
-                                              use_priority=use_priority)
-
         self.assignments = {}
 
         self.__tmpdir = tempfile.mkdtemp(prefix='shadho_', suffix='_output')
+
+        self.add_input_file(os.path.join(
+            self.config['global']['shadho_dir'],
+            self.config['global']['wrapper']))
+
+        self.config.save_config(self.__tmpdir)
+        self.add_input_file(os.path.join(self.__tmpdir, '.shadhorc'))
 
     def __del__(self):
         if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
@@ -110,10 +111,7 @@ class Shadho(object):
             transfer overhead. If False, will be re-transferred to the worker
             on each task.
         """
-        self.files.append(WQFile(localpath,
-                                 remotepath=remotepath,
-                                 ftype='input',
-                                 cache=cache))
+        self.files.append((localpath, remotepath, 'input', cache))
 
     def add_output_file(self, localpath, remotepath=None, cache=False):
         """Add an input file to the global file list.
@@ -139,10 +137,7 @@ class Shadho(object):
         ``.shadhorc``, so and output file added through this method will not be
         processed, but rather stored for later review.
         """
-        self.files.append(WQFile(localpath,
-                                 remotepath=remotepath,
-                                 ftype='output',
-                                 cache=cache))
+        self.files.append((localpath, remotepath, 'output', cache))
 
     def add_compute_class(self, name, resource, value, max_tasks=100):
         """Add a compute class representing a set of consistent recources.
@@ -160,17 +155,30 @@ class Shadho(object):
             The maximum number of tasks to queue for this compute class,
             default 100.
         """
-        self.ccs.append(ComputeClass(name, resource, value, max_tasks))
+        cc = ComputeClass(name, resource, value, max_tasks)
+        self.ccs[cc.id] = cc
 
     def run(self):
         """Search hyperparameter values on remote workers.
         """
         if not hasattr(self, 'manager'):
-            create_manager(manager_type=self.config['global']['manager'],
-                           config=self.config)
+            self.manager = create_manager(
+                manager_type=self.config['global']['manager'],
+                config=self.config)
 
         if not hasattr(self, 'backend'):
-            create_backend(backend_type=self.config['global']['backend'])
+            self.backend = create_backend(
+                backend_type=self.config['global']['backend'],
+                config=self.config)
+
+        if len(self.ccs) == 0:
+            cc = ComputeClass('all', None, None, self.max_tasks)
+            self.ccs[cc.id] = cc
+
+        self.trees = self.backend.make_forest(
+            self.spec,
+            use_complexity=self.use_complexity,
+            use_priority=self.use_priority)
 
         start = time.time()
         elapsed = 0
@@ -178,21 +186,31 @@ class Shadho(object):
             while elapsed < self.timeout:
                 self.assign_to_ccs()
                 params = self.generate()
-                tasks = self.make_tasks(params)
-                for t in tasks:
-                    self.manager.submit(t)
-                task = self.manager.wait(timeout=10)
-                if task is not None:
-                    if self.manager.task_succeeded(task):
-                        self.__success(task)
+                for p in params:
+                    print(p)
+                    tag = '.'.join([p[0], p[1]])
+                    cc = self.ccs[p[1]]
+                    self.manager.add_task(self.cmd,
+                                          tag,
+                                          p[-1],
+                                          files=self.files,
+                                          resource=cc.resource,
+                                          value=cc.value)
+                result = self.manager.run_task()
+                if result is not None:
+                    if len(result) == 4:
+                        self.success(*result)
                     else:
-                        self.__failure(task)
+                        self.failure(*result)
                 elapsed = time.time() - start
         except KeyboardInterrupt:
             if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
                 os.rmdir(self.__tmpdir)
 
-        print(self.backend.get_optimal(mode='global'))
+        opt = self.backend.get_optimal(mode='global')
+        print("Optimal loss: {}".format(opt[0]))
+        print("With parameters: {}".format(opt[1]))
+        print("And additional results: {}".format(opt[2]))
 
     def generate(self):
         """Generate hyperparameter values to test.
@@ -203,13 +221,15 @@ class Shadho(object):
             A list of triples (result_id, compute_class_id, parameter_values).
         """
         params = []
-        for cc in self.ccs:
+        for ccid in self.ccs:
+            cc = self.ccs[ccid]
             n = cc.max_tasks - cc.current_tasks
-            assignments = self.assignments[cc]
+            assignments = self.assignments[ccid]
+            rng = scipy.stats.randint(0, len(assignments))
             for i in range(n):
-                idx = np.random.randint(len(assignments))
-                param = self.backend.generate(assignments[idx])
-                param = (param[0], cc.id, param[1])
+                idx = rng.rvs()
+                rid, param = self.backend.generate(assignments[idx])
+                param = (rid, ccid, param)
                 params.append(param)
             cc.current_tasks = cc.max_tasks
         return params
@@ -233,15 +253,16 @@ class Shadho(object):
             buff = WQBuffer(str(json.dumps(p[2])),
                             self.config['global']['param_file'],
                             cache=False)
-            outfile = WQFile(os.path.join(self.__tmpdir,
-                                          '.'.join([tag,
-                                            self.config['global']['output']])),
+            outfile = WQFile(os.path.join(
+                                self.__tmpdir,
+                                '.'.join([tag,
+                                          self.config['global']['output']])),
                              remotepath=self.config['global']['output'],
                              ftype='output',
                              cache=False)
             files = [f for f in self.files]
-            files.append(buff)
             files.append(outfile)
+            files.append(buff)
             task = self.manager.make_task(self.cmd, tag, files)
             tasks.append(task)
         return tasks
@@ -252,39 +273,40 @@ class Shadho(object):
         self.backend.update_rank()
 
         if len(self.ccs) == 1:
-            self.assignments[self.ccs[0]] = self.trees
+            self.assignments[list(self.ccs.keys())[0]] = self.trees
             return
 
-        for cc in self.ccs:
-            self.assignments[cc] = []
+        else:
+            for cc in self.ccs:
+                self.assignments[cc] = []
 
-        larger = self.trees if len(self.trees) >= len(self.ccs) else self.ccs
-        smaller = self.trees if len(self.trees) < len(self.ccs) else self.ccs
+            larger = self.trees if len(self.trees) >= len(self.ccs) else self.ccs
+            smaller = self.trees if len(self.trees) < len(self.ccs) else self.ccs
 
-        x = float(len(larger)) / float(len(smaller))
-        y = x - 1
-        j = 0
-        n = len(larger) / 2
+            x = float(len(larger)) / float(len(smaller))
+            y = x - 1
+            j = 0
+            n = len(larger) / 2
 
-        for i in range(len(larger)):
-            if i > np.ceil(y):
-                j += 1
-                y += x
+            for i in range(len(larger)):
+                if i > np.ceil(y):
+                    j += 1
+                    y += x
 
-            if smaller[j] in self.assignments:
-                self.assignments[smaller[j]].append(larger[i])
-                if i <= n:
-                    self.assignments[smaller[j + 1]].append(larger[i])
+                if smaller[j] in self.assignments:
+                    self.assignments[smaller[j]].append(larger[i])
+                    if i <= n:
+                        self.assignments[smaller[j + 1]].append(larger[i])
+                    else:
+                        self.assignments[smaller[j - 1]].append(larger[i])
                 else:
-                    self.assignments[smaller[j - 1]].append(larger[i])
-            else:
-                self.assignments[larger[i]].append(smaller[j])
-                if i <= n:
-                    self.assignments[larger[i]].append(smaller[j + 1])
-                else:
-                    self.assignments[larger[i]].append(smaller[j - 1])
+                    self.assignments[larger[i]].append(smaller[j])
+                    if i <= n:
+                        self.assignments[larger[i]].append(smaller[j + 1])
+                    else:
+                        self.assignments[larger[i]].append(smaller[j - 1])
 
-    def __success(self, task):
+    def success(self, rid, ccid, loss, results):
         """Handle successful task completion.
 
         Parameters
@@ -292,28 +314,11 @@ class Shadho(object):
         task : `work_queue.Task`
             The task to process.
         """
-        # Extract the result and compute class ids
-        rid, ccid = str(task.tag).split('.')
-
-        try:
-            # Open the result tarfile and get the results file.
-            outfile = '.'.join([task.tag,
-                                self.config['global']['output']])
-            result = tarfile.open(os.path.join(self.__tmpdir, outfile), 'r')
-            resultstr = result.extractfile(self.config['global']['result_file']).read()
-            result.close()
-        except IOError:
-            print("Error opening task {} result".format(rid))
-
-        result = json.loads(resultstr.decode('utf-8'))
-        self.backend.register_result(rid, result['loss'], result)
-
-        for cc in self.ccs:
-            if cc.id == ccid:
-                cc.current_tasks -= 1
+        self.backend.register_result(rid, loss, results=results)
+        self.ccs[ccid].current_tasks -= 1
 
 
-    def __failure(self, task):
+    def failure(self, rid, ccid):
         """Handle task failure.
 
         Parameters
@@ -321,11 +326,4 @@ class Shadho(object):
         task : `work_queue.Task`
             The failed task to process.
         """
-        print('Task {} failed with result {} and WQ status {}'
-              .format(task.tag, task.result, task.return_status))
-        print(task.output)
-
-        ccid = str(task.tag).split('.')[1]
-        for cc in self.ccs:
-            if cc.id == ccid:
-                cc.current_tasks -= 1
+        self.ccs[ccid].current_tasks -= 1

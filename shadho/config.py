@@ -28,7 +28,9 @@ class ShadhoConfig(object):
             'output': 'out.tar.gz',
             'result_file': 'performance.json',
             'optimize': 'loss',
-            'param_file': 'hyperparameters.json'
+            'param_file': 'hyperparameters.json',
+            'backend': 'json',
+            'manager': 'workqueue'
         },
         'workqueue': {
             'port': 9123,
@@ -57,6 +59,8 @@ class ShadhoConfig(object):
             if not os.path.isfile(configfile):
                 raise ShadhorcDoesNotExistError(configfile)
 
+            self.configfile = configfile
+
             # Load custom settings
             cfg = configparser.ConfigParser()
             with open(configfile, 'r') as f:
@@ -67,7 +71,11 @@ class ShadhoConfig(object):
 
             for section in cfg.sections():
                 for option in cfg.options(section):
-                    t = type(ShadhoConfig.DEFAULTS[section][option])
+                    try:
+                        t = type(ShadhoConfig.DEFAULTS[section][option])
+                    except KeyError:
+                        t = str
+
                     if t is bool:
                         val = cfg.getboolean(section, option)
                     elif t is int:
@@ -92,3 +100,18 @@ class ShadhoConfig(object):
             home = ''
 
         return home
+
+    def save_config(self, path):
+        try:
+            config = configparser.ConfigParser()
+            config.read_dict(self.config)
+        except AttributeError:
+            config = configparser.RawConfigParser()
+            for section in self.config:
+                config.add_section(str(section))
+                for entry in self.config[section]:
+                    config.set(str(section),
+                               str(entry),
+                               str(self.config[section][entry]))
+        with open(os.path.join(path, '.shadhorc'), 'w') as f:
+            config.write(f)

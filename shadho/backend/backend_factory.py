@@ -1,5 +1,5 @@
 from .jsondb import JSONBackend
-from .sqldb import SQLBackend
+#from .sqldb import SQLBackend
 
 
 def create_backend(backend_type='json', config=None):

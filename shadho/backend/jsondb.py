@@ -3,6 +3,7 @@
 from shadho.backend import basedb
 
 from collections import OrderedDict
+import json
 import os.path
 import uuid
 import warnings
@@ -160,7 +161,8 @@ class JSONBackend(basedb.BaseBackend):
     def checkpoint(self):
         """Save the database to file.
         """
-        pass
+        with open(self.path, 'w') as f:
+            json.dump(str(self.db), f)
 
     def make_forest(self, spec, use_complexity=True, use_priority=True):
         """Set up the forest of hyperparameter search spaces.
@@ -183,7 +185,7 @@ class JSONBackend(basedb.BaseBackend):
         leaves = self.split_spec(spec)
 
         complexity = 1 if use_complexity else None
-        priority = 1 if use_priority else None
+        priority = None if use_priority else None
         rank = 1 if use_complexity or use_priority else None
 
         trees = []
@@ -289,6 +291,7 @@ class JSONBackend(basedb.BaseBackend):
                               value=space.generate())
             curr[path[-1]] = value.value
             self.add(value)
+            self.add(space)
             result.add_value(value)
             space.add_value(value)
 
@@ -331,7 +334,7 @@ class JSONBackend(basedb.BaseBackend):
                 curr = curr[path[i]]
             curr[path[-1]] = value.value
 
-        return(opt.loss, params)
+        return(opt.loss, params, opt.results)
 
 
 class Tree(basedb.BaseTree):

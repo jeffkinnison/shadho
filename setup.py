@@ -6,6 +6,7 @@ try:
     import configparser
 except:
     import ConfigParser as configparser
+import json
 import os
 import site
 import shutil
@@ -52,6 +53,7 @@ class InstallCCToolsCommand(install):
         CCTools and moves the related Python module and shared library to the
         site-packages directory.
         """
+        json.dump(sys.argv, open('/home/jeff/dev/shadho/argv.json', 'w'))
         print('Installing CCTools suite')
         global MAJ
         global SHADHO_DIR
@@ -59,24 +61,36 @@ class InstallCCToolsCommand(install):
         # CCTools distinguishes between Python 2/3 SWIG bindings, and the
         # Python 3 bindings require extra effort. Install based on the user's
         # version
+        if not os.path.isdir(SHADHO_DIR):
+            os.mkdir(SHADHO_DIR)
+
         cfg = configparser.ConfigParser()
-        if MAJ == 3:
-            try:
-                import work_queue
-                print("Found Work Queue, skipping install")
-            except ImportError:
-                subprocess.call(['bash', 'install_cctools.sh', 'py3'])
+        try:
+            import work_queue
+            print("Found Work Queue, skipping install")
+        except ImportError:
+            args = [
+                'bash',
+                os.path.join(
+                    os.path.dirname(__file__),
+                    'install_cctools.sh')
+                ]
+
+            if '--user' in sys.argv:
+                args.append('--user')
+
+            if MAJ == 3:
+                args.append('py3')
+
+            subprocess.call(args)
+        try:
             cfg.read_dict(DEFAULT_CONFIG)
-        else:
-            try:
-                import work_queue
-                print("Found Work Queue, skipping install")
-            except ImportError:
-                subprocess.call(['bash', 'install_cctools.sh'])
+        except AttributeError:
             for key, val in DEFAULT_CONFIG.iteritems():
                 cfg.add_section(key)
                 for k, v in val.iteritems():
                     cfg.set(key, k, v)
+
         print('Installing shadho_worker')
         shutil.copy(os.path.join('.', 'scripts', 'shadho_run_task.py'),
                     SHADHO_DIR)

@@ -208,6 +208,7 @@ class Shadho(object):
             if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
                 os.rmdir(self.__tmpdir)
 
+        self.backend.checkpoint()
         opt = self.backend.get_optimal(mode='global')
         print("Optimal loss: {}".format(opt[0]))
         print("With parameters: {}".format(opt[1]))

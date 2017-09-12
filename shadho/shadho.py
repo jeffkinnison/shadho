@@ -282,9 +282,9 @@ class Shadho(object):
             for cc in self.ccs:
                 self.assignments[cc] = []
 
-            ccids = list(self.ccs.keys)
-            larger = self.trees if len(self.trees) >= len(self.ccs) else ccids
-            smaller = self.trees if len(self.trees) < len(self.ccs) else ccids
+            ccids = list(self.ccs.keys())
+            larger = self.trees if len(self.trees) >= len(ccids) else ccids
+            smaller = self.trees if len(self.trees) < len(ccids) else ccids
 
             x = float(len(larger)) / float(len(smaller))
             y = x - 1

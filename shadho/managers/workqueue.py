@@ -88,7 +88,7 @@ class WQManager(work_queue.WorkQueue):
 
         out = WQFile(os.path.join(tmpdir,
                                   '.'.join([tag, self.out_file])),
-                     remotepath=self.config['global']['output'],
+                     remotepath=self.out_file,
                      ftype='output',
                      cache=False)
 

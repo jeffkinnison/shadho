@@ -116,6 +116,7 @@ setup(
     packages=['shadho',
               'shadho.backend',
               'shadho.heuristics',
+              'shadho.helpers',
               'shadho.managers',
               'shadho.searches',
               'shadho.strategies'],

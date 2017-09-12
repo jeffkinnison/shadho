@@ -158,7 +158,7 @@ class WQManager(work_queue.WorkQueue):
             # Open the result tarfile and get the results file.
             outfile = '.'.join([task.tag, self.out_file])
             result = tarfile.open(os.path.join(self.tmpdir, outfile), 'r')
-            resultstr = result.extractfile(self.result_file).read()
+            resultstr = result.extractfile(self.results_file).read()
             result.close()
         except IOError:
             print("Error opening task {} result".format(rid))

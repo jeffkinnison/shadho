@@ -111,11 +111,11 @@ class WQManager(work_queue.WorkQueue):
         task = None
         while task is None:
             task = self.wait(timeout=10)
-            if self.task_succeeded(task):
-                return self.success(task)
-            else:
-                return self.failure(task)
-            task = None
+            if task is not None
+                if self.task_succeeded(task):
+                    return self.success(task)
+                else:
+                    return self.failure(task)
 
     def task_succeeded(self, task):
         """Determine whether or not a task succeeded.

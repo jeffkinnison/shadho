@@ -123,7 +123,7 @@ def run(task, cfgpath='.shadhorc'):
 
     except IOError as err:
         print(err)
-    except json.decoder.JSONDecodeError as err:
+    except ValueError as err:
         print("Error decoding parameters in {}"
               .format(cfg['global']['param_file']))
         print(err)

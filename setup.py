@@ -95,7 +95,7 @@ class InstallCCToolsCommand(install):
                     cfg.set(key, k, v)
 
         print('Installing shadho_worker')
-        shutil.copy(os.path.join('.', 'scripts', 'shadho_run_task.py'),
+        shutil.copy(os.path.join('.', 'scripts', 'shadho_worker.py'),
                     SHADHO_DIR)
 
         print('Copying default .shadhorc to home directory')

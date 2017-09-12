@@ -18,7 +18,7 @@ MAJ = sys.version_info[0]
 SHADHO_DIR = os.path.join(os.environ['HOME'], '.shadho')
 DEFAULT_CONFIG = {
     'global': {
-        'wrapper': 'shadho_run_task.py',
+        'wrapper': 'shadho_worker.py',
         'output': 'out.tar.gz',
         'result_file': 'performance.json',
         'optimize': 'loss',

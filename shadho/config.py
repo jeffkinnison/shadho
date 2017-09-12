@@ -24,7 +24,7 @@ class ShadhorcDoesNotExistError(Exception):
 class ShadhoConfig(object):
     DEFAULTS = {
         'global': {
-            'wrapper': 'shadho_run_task.py',
+            'wrapper': 'shadho_worker.py',
             'output': 'out.tar.gz',
             'result_file': 'performance.json',
             'optimize': 'loss',

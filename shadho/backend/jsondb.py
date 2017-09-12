@@ -487,9 +487,10 @@ class Space(basedb.BaseSpace):
             self.domain = distribution(*domain['args'],
                                        **domain['kwargs'])
             rng = np.random.RandomState()
-            state = domain['rng']
-            rng.set_state(tuple([state[0], np.array(state[1]), state[2],
-                                 state[3], state[4]]))
+            if 'rng' in domain:
+                state = domain['rng']
+                rng.set_state(tuple([state[0], np.array(state[1]), state[2],
+                                     state[3], state[4]]))
             self.domain.random_state = rng
         else:
             self.domain = domain

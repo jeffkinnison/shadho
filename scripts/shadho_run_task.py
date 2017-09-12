@@ -1,12 +1,88 @@
+"""Routines for automatically running functions and commands through `shadho`.
+
+Functions
+---------
+load_config
+    Load configurations sent from the `shadho` master.
+run_task
+    Run the user-defined task and save the result to file.
+"""
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+import copy
 import json
 import os
 try:
     import cPickle as pickle
-except:
+except ImportError:
     import pickle
+import tarfile
 
 
-def run_task(task, params='hyperparameters.json', out='results.json'):
+DEFAULTS = {
+    'global': {
+        'wrapper': 'shadho_run_task.py',
+        'output': 'out.tar.gz',
+        'result_file': 'performance.json',
+        'optimize': 'loss',
+        'param_file': 'hyperparameters.json'
+    }
+}
+
+
+def load_config(path='.shadhorc'):
+    """Load the configuration for this task.
+
+    In most cases, the ``path`` parameter should be omitted in favor of using
+    the configuration provided by the `shadho` master. This will ensure that
+    the local configuration matches the global configuration and reduce
+    headaches.
+
+    Parameters
+    ----------
+    path : str, optional
+        Path to the configuration file. It is recommended to use the default
+        value in most cases. This will load the configuration provided by the
+        `shadho` master and ensure that the local configuration matches the
+        global configuration.
+
+    Returns
+    -------
+    cfg : dict
+        The configuration to use with this task.
+    """
+    cfg = copy.deepcopy(DEFAULTS)
+
+    if os.path.isfile(path):
+        cfg = configparser.ConfigParser()
+        with open(path, 'r') as f:
+            try:
+                cfg.read_file(f)
+            except AttributeError:
+                cfg.readfp(f)
+        for section in cfg.sections():
+            for option in cfg.options(section):
+                try:
+                    t = type(DEFAULTS[section][option])
+                except KeyError:
+                    t = str
+                if t is bool:
+                    val = cfg.getboolean(section, option)
+                elif t is int:
+                    val = cfg.getint(section, option)
+                elif t is float:
+                    val = cfg.getfloat(section, option)
+                else:
+                    val = cfg.get(section, option)
+
+                cfg[section][option] = val
+
+    return cfg
+
+
+def run(task, cfgpath='.shadhorc'):
     """Run a function with arguments pulled from a JSON source.
 
     For simple use cases, SHADHO should be able to run without user-defined
@@ -17,39 +93,39 @@ def run_task(task, params='hyperparameters.json', out='results.json'):
     ----------
     task : callable
         The function/callable object to run.
-    params : {'hyperparameters.json', str, dict, callable}
-        The path to the JSON file defining the Hyperparameter values, a dict
-        containing the hyperparameter values, or a JSON string containing to
-        be decoded.
-    out : {'results.json', str, callable}
-        The path to the results file to be written. File type determined by the
-        extension. If a function/ callable object, call on the results of task.
+    cfgpath : str, optional
+        The path to the `shadho` configuration file for this task.
     """
     try:
+        # Load the configuration
+        cfg = load_config(path=cfgpath)
+
+        # Load hyperparameters to test
         spec = {}
-
-        if os.path.isfile(params):
-            with open(params, 'r') as f:
+        if os.path.isfile(cfg['global']['param_file']):
+            with open(cfg['global']['param_file'], 'r') as f:
                 spec = json.load(f)
-        elif isinstance(params, dict):
-            spec = params
-        else:
-            spec = json.loads(params)
-        result = task(spec)
 
-        if callable(out):
-            out(result)
-        else:
-            (_, ext) = os.path.splitext(out)
-            with open(out, 'w') as f:
-                if ext == '.pkl':
-                    pickle.dump(result, f, protocol=2)
-                else:
-                    json.dump(result, f)
+        # Run the task and save the results in a format `shahdo` recognizes.
+        result = task(spec)
+        if isinstance(result, float):
+            result = {cfg['global']['optimize']: result}
+
+        # Dump the results to file.
+        with open(cfg['global']['result_file'], 'w') as f:
+            json.dump(result, f)
+
+        # Compress into the expected output file.
+        ext = os.path.splitext(cfg['global']['output'])
+        mode = ':'.join(['w', ext]) if ext in ['gz', 'bz2'] else 'w'
+        with tarfile.open(cfg['global']['output'], mode) as f:
+            f.add(cfg['global']['result_file'])
 
     except IOError as err:
         print(err)
     except json.decoder.JSONDecodeError as err:
-        print("Error decoding parameters: {}".format(err))
+        print("Error decoding parameters in {}"
+              .format(cfg['global']['param_file']))
+        print(err)
     except TypeError as err:
         print(err)

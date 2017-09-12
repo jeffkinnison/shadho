@@ -49,7 +49,8 @@ class WQManager(work_queue.WorkQueue):
         self.results_file = results_file
         self.opt_value = opt_value
 
-    def add_task(self, cmd, tag, params, files=None, resource=None, value=None):
+    def add_task(self, cmd, tag, params, files=None, resource=None, value=None,
+                 tmpdir=None):
         """Create a task for this manager.
 
         Parameters
@@ -85,7 +86,7 @@ class WQManager(work_queue.WorkQueue):
                 f = WQFile(f[0], remotepath=f[1], ftype=f[2], cache=f[3])
             f.add_to_task(task)
 
-        out = WQFile(os.path.join(self.__tmpdir,
+        out = WQFile(os.path.join(tmpdir,
                                   '.'.join([tag, self.out_file])),
                      remotepath=self.config['global']['output'],
                      ftype='output',

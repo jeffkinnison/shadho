@@ -195,7 +195,8 @@ class Shadho(object):
                                           p[-1],
                                           files=self.files,
                                           resource=cc.resource,
-                                          value=cc.value)
+                                          value=cc.value,
+                                          tmpdir=self.__tmpdir)
                 result = self.manager.run_task()
                 if result is not None:
                     if len(result) == 4:

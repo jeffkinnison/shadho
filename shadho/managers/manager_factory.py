@@ -6,6 +6,10 @@ def create_manager(manager_type='local', config=None):
     print(config.config)
     if manager_type == 'workqueue':
         return WQManager(
+            config['global']['param_file'],
+            config['global']['output'],
+            config['global']['result_file'],
+            config['global']['optimize'],
             name=config['workqueue']['name'],
             port=config['workqueue']['port'],
             exclusive=config['workqueue']['exclusive'],

@@ -161,7 +161,7 @@ class JSONBackend(basedb.BaseBackend):
     def checkpoint(self):
         """Save the database to file.
         """
-        with open(self.path, 'w') as f:
+        with open(os.path.join(self.path, 'shadho.json'), 'w') as f:
             json.dump(str(self.db), f)
 
     def make_forest(self, spec, use_complexity=True, use_priority=True):

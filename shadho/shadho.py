@@ -188,7 +188,6 @@ class Shadho(object):
                 self.assign_to_ccs()
                 params = self.generate()
                 for p in params:
-                    print(p)
                     tag = '.'.join([p[0], p[1]])
                     cc = self.ccs[p[1]]
                     self.manager.add_task(self.cmd,
@@ -200,6 +199,7 @@ class Shadho(object):
                 result = self.manager.run_task()
                 if result is not None:
                     if len(result) == 4:
+                        print('Received result with loss {}'.format(result[2]))
                         self.success(*result)
                     else:
                         self.failure(*result)

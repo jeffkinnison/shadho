@@ -111,7 +111,7 @@ class WQManager(work_queue.WorkQueue):
         task = None
         while task is None:
             task = self.wait(timeout=10)
-            if task is not None
+            if task is not None:
                 if self.task_succeeded(task):
                     return self.success(task)
                 else:
@@ -257,8 +257,6 @@ class WQFile(object):
         If this file is an output file, `tag` is prepended to the local path
         name, then
         """
-        #if self.ftype == WQFile.TYPES['output']:
-        print(self.localpath)
         task.specify_file(self.localpath,
                           remote_name=self.remotepath,
                           type=self.ftype,

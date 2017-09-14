@@ -121,7 +121,7 @@ class BaseTree(object):
             curr[path[-1]] = space.generate()
         return params
 
-    def calculate_priority(self):
+    def calculate_priority(self, results=None):
         """Calculate the priority of searching this tree.
 
         The priority is a measure of the covariance between hyperparameter

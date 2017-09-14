@@ -306,6 +306,7 @@ class TestJSONBackend(TestBaseBackend):
         assert len(b.db['spaces']) == 1
         spec['tree'] = t.id
         spec['values'] = []
+        spec['path'] = ''
         assert b.db['spaces'][t.spaces[0]] == spec
         assert t.priority == 1
         assert t.complexity == complexity([1, 2, 3])
@@ -334,8 +335,10 @@ class TestJSONBackend(TestBaseBackend):
         assert len(b.db['spaces']) == 2
         spec['a']['tree'] = t.id
         spec['a']['values'] = []
+        spec['a']['path'] = 'a'
         spec['b']['tree'] = t.id
         spec['b']['values'] = []
+        spec['b']['path'] = 'b'
         assert b.db['spaces'][t.spaces[0]] == spec['a']
         assert b.db['spaces'][t.spaces[1]] == spec['b']
         assert t.priority is None
@@ -369,8 +372,10 @@ class TestJSONBackend(TestBaseBackend):
         assert len(b.db['spaces']) == 2
         spec['a']['tree'] = t1.id
         spec['a']['values'] = []
+        spec['a']['path'] = 'a'
         spec['b']['tree'] = t2.id
         spec['b']['values'] = []
+        spec['b']['path'] = 'b'
         assert b.db['spaces'][t1.spaces[0]] == spec['a']
         assert b.db['spaces'][t2.spaces[0]] == spec['b']
         assert t1.priority == 1
@@ -409,8 +414,10 @@ class TestJSONBackend(TestBaseBackend):
         assert len(b.db['spaces']) == 2
         spec['a']['tree'] = t1.id
         spec['a']['values'] = []
+        spec['a']['path'] = 'a'
         spec['b']['tree'] = t1.id
         spec['b']['values'] = []
+        spec['b']['path'] = 'b'
         assert b.db['spaces'][t1.spaces[0]] == spec['a']
         assert b.db['spaces'][t1.spaces[1]] == spec['b']
         assert t1.priority is None
@@ -452,8 +459,10 @@ class TestJSONBackend(TestBaseBackend):
         assert len(b.db['spaces']) == 2
         spec['a']['tree'] = t1.id
         spec['a']['values'] = []
+        spec['a']['path'] = 'a'
         spec['b']['tree'] = t2.id
         spec['b']['values'] = []
+        spec['b']['path'] = 'b'
         assert b.db['spaces'][t1.spaces[0]] == spec['a']
         assert b.db['spaces'][t2.spaces[0]] == spec['b']
         assert t1.priority == 1

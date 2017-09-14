@@ -21,6 +21,7 @@ class TestBaseBackend(object):
         }
 
         tree = b.split_spec(spec)
+        spec['path'] = ''
         assert tree == [[spec]]
         assert spec['path'] == ''
 
@@ -39,34 +40,32 @@ class TestBaseBackend(object):
         }
 
         tree = b.split_spec(spec)
+        spec['a']['path'] = 'a'
+        spec['b']['path'] = 'b'
         assert tree == [[spec['a'], spec['b']]]
-        assert spec['a']['path'] == 'a'
-        assert spec['b']['path'] == 'b'
 
         # Test exclusive flag
         spec['exclusive'] = True
         tree = b.split_spec(spec)
-
+        spec['a']['path'] = 'a'
+        spec['b']['path'] = 'b'
         assert tree == [[spec['a']], [spec['b']]]
-        assert spec['a']['path'] == 'a'
-        assert spec['b']['path'] == 'b'
         del spec['exclusive']
 
         # Test optional flag
         spec['optional'] = True
 
         tree = b.split_spec(spec)
+        spec['a']['path'] = 'a'
+        spec['b']['path'] = 'b'
         assert tree == [[spec['a'], spec['b']], []]
-        assert spec['a']['path'] == 'a'
-        assert spec['b']['path'] == 'b'
 
         # Test both flags
         spec['exclusive'] = True
         tree = b.split_spec(spec)
-
+        spec['a']['path'] = 'a'
+        spec['b']['path'] = 'b'
         assert tree == [[spec['a']], [spec['b']], []]
-        assert spec['a']['path'] == 'a'
-        assert spec['b']['path'] == 'b'
         del spec['exclusive']
         del spec['optional']
 
@@ -226,16 +225,18 @@ class TestBaseBackend(object):
 
         tree = b.split_spec(spec)
 
+        spec['A']['a']['path'] = 'A/a'
+        spec['A']['b']['path'] = 'A/b'
+        spec['A']['c']['path'] = 'A/c'
+        spec['B']['d']['path'] = 'B/d'
+        spec['B']['e']['path'] = 'B/e'
+        spec['C']['f']['path'] = 'C/f'
+        spec['C']['g']['path'] = 'C/g'
+        spec['D']['h']['path'] = 'D/h'
+        spec['D']['i']['path'] = 'D/i'
+
         assert tree == result
-        assert spec['A']['a']['path'] == 'A/a'
-        assert spec['A']['b']['path'] == 'A/b'
-        assert spec['A']['c']['path'] == 'A/c'
-        assert spec['B']['d']['path'] == 'B/d'
-        assert spec['B']['e']['path'] == 'B/e'
-        assert spec['C']['f']['path'] == 'C/f'
-        assert spec['C']['g']['path'] == 'C/g'
-        assert spec['D']['h']['path'] == 'D/h'
-        assert spec['D']['i']['path'] == 'D/i'
+
 
     def test_new_tree(self):
         # Test defaults

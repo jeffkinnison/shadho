@@ -185,7 +185,7 @@ class JSONBackend(basedb.BaseBackend):
         leaves = self.split_spec(spec)
 
         complexity = 1 if use_complexity else None
-        priority = None if use_priority else None
+        priority = 1 if use_priority else None
         rank = 1 if use_complexity or use_priority else None
 
         trees = []
@@ -309,8 +309,18 @@ class JSONBackend(basedb.BaseBackend):
         tree = self.get(Tree, result.tree)
         tree.add_result(result)
         if tree.priority is not None and len(tree.results) % 10 == 0:
-            tree.calculate_priority()
+            self.calculate_priority()
         self.add(tree)
+
+    def calculate_priority(tree):
+        results = [self.make(Result, rid) for rid in tree.results]
+        for r in results:
+            values = [self.make(Value, vid) for vid in r.values]
+            for v in values:
+                v.space = self.make(Space, v.space)
+            r.values = values
+        tree.results = result
+        tree.calculate_priority()
 
     def get_optimal(self, mode='global'):
         opt = None

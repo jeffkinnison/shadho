@@ -51,8 +51,9 @@ class BaseBackend(object):
         if all(key in spec for key in ('domain', 'strategy', 'scaling')):
             # Update spec directly to avoid creating new objects; returns the
             # reference to spec.
-            spec['path'] = path
-            return [[spec]]
+            c = copy.deepcopy(spec)
+            c['path'] = path
+            return [[c]]
 
         # Recurse through subtrees to create the path from root to leaf and
         # split into disjoint search spaces.

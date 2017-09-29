@@ -279,6 +279,7 @@ class Shadho(object):
             return
 
         else:
+            self.trees = self.backend.order_trees()
             for cc in self.ccs:
                 self.assignments[cc] = []
 

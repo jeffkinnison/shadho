@@ -4,7 +4,7 @@ import scipy.stats
 # Uniform distribution
 def uniform(lo, hi):
     return {
-        'domain': {
+        'domain': {# scipy.stats.uniform(loc=lo, scale=hi),
             'distribution': 'uniform',
             'args': (),
             'kwargs': {'loc': lo, 'scale': hi},
@@ -16,7 +16,7 @@ def uniform(lo, hi):
 
 def ln_uniform(lo, hi):
     return {
-        'domain': {
+        'domain': {# scipy.stats.uniform(loc=lo, scale=hi),
             'distribution': 'uniform',
             'args': (),
             'kwargs': {'loc': lo, 'scale': hi},
@@ -28,7 +28,7 @@ def ln_uniform(lo, hi):
 
 def log10_uniform(lo, hi):
     return {
-        'domain': {
+        'domain': {# scipy.stats.uniform(loc=lo, scale=hi),
             'distribution': 'uniform',
             'args': (),
             'kwargs': {'loc': lo, 'scale': hi},
@@ -37,10 +37,10 @@ def log10_uniform(lo, hi):
         'strategy': 'random'
     }
 
-
+    
 def log2_uniform(lo, hi):
     return {
-        'domain': {
+        'domain': {#scipy.stats.uniform(loc=lo, scale=hi),
             'distribution': 'uniform',
             'args': (),
             'kwargs': {'loc': lo, 'scale': hi},
@@ -104,6 +104,30 @@ def randint(lo, hi):
     return {
         'domain': list(range(lo, hi)),
         'scaling': 'linear',
+        'strategy': 'random'
+    }
+
+
+def ln_randint(lo, hi):
+    return {
+        'domain': list(range(lo, hi)),
+        'scaling': 'ln',
+        'strategy': 'random'
+    }
+
+
+def log10_randint(lo, hi):
+    return {
+        'domain': list(range(lo, hi)),
+        'scaling': 'log_10',
+        'strategy': 'random'
+    }
+
+
+def log2_randint(lo, hi):
+    return {
+        'domain': list(range(lo, hi)),
+        'scaling': 'log_2',
         'strategy': 'random'
     }
 

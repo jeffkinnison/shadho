@@ -40,6 +40,9 @@ class Shadho(object):
         Number of seconds to search for.
     max_tasks : int, optional
         Number of tasks to queue at a time.
+    max_resubmissions: int, optional
+        Maximum number of times to resubmit a particular parameterization for
+        processing if task failure occurs. Default is not to resubmit.
 
     Attributes
     ----------
@@ -58,11 +61,15 @@ class Shadho(object):
         Record of trees assigned to compute classes.
     timeout : int
         Number of seconds to search for.
+    max_resubmissions: int
+        Maximum number of times to resubmit a particular parameterization for
+        processing if task failure occurs. Default is not to resubmit.
 
     """
 
     def __init__(self, cmd, spec, ccs=None, files=None, use_complexity=True,
-                 use_priority=True, timeout=600, max_tasks=100):
+                 use_priority=True, timeout=600, max_tasks=100,
+                 max_resubmissions=0):
         self.config = ShadhoConfig()
         self.cmd = cmd
         self.spec = spec
@@ -70,6 +77,7 @@ class Shadho(object):
         self.use_priority = use_priority
         self.timeout = timeout
         self.max_tasks = max_tasks
+        self.max_resubmissions = max_resubmissions
 
         self.ccs = OrderedDict()
 
@@ -330,4 +338,16 @@ class Shadho(object):
         task : `work_queue.Task`
             The failed task to process.
         """
-        self.ccs[ccid].current_tasks -= 1
+        submissions, params = self.backend.register_result(rid, None)
+        if submissions < self.max_resubmissions:
+            tag = '.'.join([rid, ccid)
+            cc = self.ccs[ccid]
+            self.manager.add_task(self.cmd,
+                                  tag,
+                                  params,
+                                  files=self.files,
+                                  resource=cc.resource,
+                                  value=cc.value)
+        else:
+            self.ccs[ccid].current_tasks -= 1
+

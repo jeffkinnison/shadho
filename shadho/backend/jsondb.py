@@ -302,6 +302,24 @@ class JSONBackend(basedb.BaseBackend):
         """
         """
         result = self.get(Result, rid)
+
+        if loss is None:
+            params = {}
+            for vid in result.values:
+                value = self.get(Value, vid)
+                space = self.get(Space, value.space)
+                curr = params
+                path = space.path.split('/')
+                for i in range(len(path) - 1):
+                    if path[i] not in curr:
+                        curr[path[i]] = {}
+                    curr = curr[path[i]]
+                curr[path[-1]] = value.value
+            result.submissions += 1
+            self.add(result)
+            return (result.submissions, params)
+
+        result = self.get(Result, rid)
         result.loss = loss
         result.results = results
         self.add(result)
@@ -606,7 +624,8 @@ class Result(basedb.BaseResult):
         The tree that this space belongs to.
     values : list of str or list of `shadho.backend.jsondb.Value`, optional
         The values generated from this space, in order.
-
+    submissions : int, optional
+        The number of times this result has been submitted for processing.
 
     Attributes
     ----------
@@ -620,14 +639,17 @@ class Result(basedb.BaseResult):
         The database id of the tree that this space belongs to.
     values : list of str
         The dtabase ids of the values generated from this space, in order.
+    submissions : int
+        The number of times this result has been submitted for processing.
     """
     __tablename__ = 'results'
 
-    def __init__(self, id=None, loss=None, results=None, tree=None,
-                 values=None):
+    def __init__(self, id=None, loss=None, results=None, submissions=None,
+                 tree=None, values=None):
         self.id = id if id is not None else str(uuid.uuid4())
         self.loss = loss
         self.results = results
+        self.submissions = submissions if submissions is not None else 0
         self.tree = tree.id if hasattr(tree, 'id') else tree
 
         self.values = []

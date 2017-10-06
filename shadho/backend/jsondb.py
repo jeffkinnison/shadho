@@ -1,6 +1,7 @@
 """Backend based on JSON format using Python dictionaries in memory.
 """
 from shadho.backend import basedb
+from shadho.heuristics import priority
 
 from collections import OrderedDict
 import json
@@ -162,7 +163,7 @@ class JSONBackend(basedb.BaseBackend):
         """Save the database to file.
         """
         with open(os.path.join(self.path, 'shadho.json'), 'w') as f:
-            json.dump(str(self.db), f)
+            json.dump(self.db, f)
 
     def make_forest(self, spec, use_complexity=True, use_priority=True):
         """Set up the forest of hyperparameter search spaces.
@@ -185,7 +186,7 @@ class JSONBackend(basedb.BaseBackend):
         leaves = self.split_spec(spec)
 
         complexity = 1 if use_complexity else None
-        priority = None if use_priority else None
+        priority = [1] if use_priority else None
         rank = 1 if use_complexity or use_priority else None
 
         trees = []
@@ -200,6 +201,7 @@ class JSONBackend(basedb.BaseBackend):
                 if use_complexity:
                     t_comp += space.complexity
             tree.complexity = t_comp if use_complexity else None
+            tree.spaces = sorted(tree.spaces)
             self.add(tree)
             trees.append(tree.id)
 
@@ -240,7 +242,7 @@ class JSONBackend(basedb.BaseBackend):
             self.db['trees'][tree]['rank'] = 1 if self.db['trees'][tree]['rank'] is not None else None
 
         if self.db['trees'][trees[0]]['priority'] is not None:
-            trees.sort(key=lambda x: self.db['trees'][x]['priority'],
+            trees.sort(key=lambda x: self.db['trees'][x]['priority'][-1],
                        reverse=True)
             for i in range(len(trees)):
                 self.db['trees'][trees[i]]['rank'] *= i
@@ -280,20 +282,25 @@ class JSONBackend(basedb.BaseBackend):
         for sid in tree.spaces:
             space = self.get(Space, sid)
             path = space.path.split('/')
-            curr = params
-            for i in range(len(path) - 1):
-                if path[i] not in curr:
-                    curr[path[i]] = {}
-                curr = curr[path[i]]
             value = self.make(Value,
                               space=space,
                               result=result,
                               value=space.generate())
-            curr[path[-1]] = value.value
+            if len('path') > 0 and path[0] != '':
+                curr = params
+                for i in range(len(path) - 1):
+                    if path[i] not in curr:
+                        curr[path[i]] = {}
+                    curr = curr[path[i]]
+                curr[path[-1]] = value.value
+            elif len(path) == 1 and path[0] == '':
+                params = value.value
+            else:
+                params = None
             self.add(value)
-            self.add(space)
             result.add_value(value)
             space.add_value(value)
+            self.add(space)
 
         self.add(result)
         return (result.id, params)
@@ -327,8 +334,27 @@ class JSONBackend(basedb.BaseBackend):
         tree = self.get(Tree, result.tree)
         tree.add_result(result)
         if tree.priority is not None and len(tree.results) % 10 == 0:
-            tree.calculate_priority()
+            self.calculate_priority(tree)
         self.add(tree)
+
+    def calculate_priority(self, tree):
+        feats = np.zeros((len(tree.results), len(tree.spaces)),
+                         dtype=np.float64)
+        losses = np.zeros((len(tree.results)), dtype=np.float64)
+
+        spaces = {}
+
+        for i in range(len(tree.results)):
+            result = self.db['results'][tree.results[i]]
+            losses[i] += result['loss']
+            
+            for j in range(len(self.db['results'][tree.results[i]]['values'])):
+                value = self.db['values'][result['values'][j]]
+                if value['space'] not in spaces:
+                    spaces[value['space']] = self.get(Space, value['space'])
+                feats[i][j] += spaces[value['space']].get_label(value['value'])
+        
+        tree.priority.append(priority(feats, losses.transpose()))
 
     def get_optimal(self, mode='global'):
         opt = None
@@ -399,7 +425,10 @@ class Tree(basedb.BaseTree):
     def __init__(self, id=None, priority=None, complexity=None, rank=None,
                  spaces=None, results=None):
         self.id = id if id is not None else str(uuid.uuid4())
-        self.priority = priority
+        if isinstance(priority, int):
+            self.priority = [priority]
+        else:
+            self.priority = priority
         self.complexity = complexity
         self.rank = rank
 
@@ -498,8 +527,10 @@ class Space(basedb.BaseSpace):
     __tablename__ = 'spaces'
 
     def __init__(self, id=None, domain=None, path=None, strategy=None,
-                 scaling=None, tree=None, values=None):
+                 scaling=None, tree=None, values=None, exhaustive=False,
+                 exhaustive_idx=None):
         self.id = id if id is not None else str(uuid.uuid4())
+        self.exhaustive_idx = exhaustive_idx
         if isinstance(domain, dict):
             distribution = getattr(scipy.stats, domain['distribution'])
             self.domain = distribution(*domain['args'],
@@ -510,8 +541,13 @@ class Space(basedb.BaseSpace):
                 rng.set_state(tuple([state[0], np.array(state[1]), state[2],
                                      state[3], state[4]]))
             self.domain.random_state = rng
+        elif exhaustive and isinstance(domain, list) and exhaustive_idx is None:
+            self.domain = domain
+            self.exhaustive_idx = 0
         else:
             self.domain = domain
+
+        self.exhaustive = exhaustive
 
         self.path = path
 
@@ -551,7 +587,7 @@ class Space(basedb.BaseSpace):
                 'distribution': self.domain.dist.name,
                 'args': self.domain.args,
                 'kwargs': self.domain.kwds,
-                'rng': [rng[0], list(rng[1]), rng[2], rng[3], rng[4]]
+                'rng': [rng[0], rng[1].tolist(), rng[2], rng[3], rng[4]]
             }
         else:
             domain = self.domain
@@ -563,6 +599,8 @@ class Space(basedb.BaseSpace):
             'scaling': self.scaling,
             'tree': self.tree,
             'values': self.values,
+            'exhaustive': self.exhaustive,
+            'exhaustive_idx': self.exhaustive_idx,
         }
 
 

@@ -134,7 +134,7 @@ class BaseTree(object):
         The priority is stored internally in each instance of the Tree class.
         """
         try:
-            feats = np.zeros((len(self.results), len(self.results[0].values)),
+            feats = np.zeros((len(self.results), len(self.spaces)),
                              dtype=np.float64)
             losses = np.zeros((1, len(self.results)), dtype=np.float64)
         except IndexError:
@@ -222,7 +222,7 @@ class BaseSpace(object):
         --------
         `shadho.heuristics.complexity`
         """
-        return complexity(self.domain)
+        return complexity(self.domain if not self.exhaustive else self.domain[0])
 
     def get_label(self, value):
         """Transform categorical values into their numeric labels.
@@ -239,7 +239,10 @@ class BaseSpace(object):
             over a real-valued range), then simply return `value`.
         """
         try:
-            label = self.domain.index(value)
+            if self.exhaustive:
+                label = self.domain[0].index(value)
+            else:
+                label = self.domain.index(value)
         except (TypeError, AttributeError):
             if hasattr(self.domain, 'dist') and \
                isinstance(self.domain.dist, scipy.stats.rv_continuous):
@@ -262,7 +265,7 @@ class BaseSpace(object):
 
         Notes
         -----
-        If the space is defined over a contiuous probability dristribution,
+        If the space is defined over a continuous probability dristribution,
         returns a value from the random variate.
 
         If the space is defined over a discrete set of values, returns a
@@ -274,6 +277,12 @@ class BaseSpace(object):
            isinstance(self.domain.dist, scipy.stats.rv_continuous):
             value = scale_value(next_value(self.domain, self.strategy),
                                 self.scaling)
+        elif self.exhaustive:
+            if self.exhaustive_idx < len(self.domain):
+                value = self.domain[self.exhaustive_idx]
+                self.exhaustive_idx += 1
+            else:
+                value = None
         elif isinstance(self.domain, list) and len(self.domain) > 0:
             rv = scipy.stats.randint(low=0, high=len(self.domain))
             idx = next_value(rv, self.strategy)

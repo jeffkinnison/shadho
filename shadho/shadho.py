@@ -69,7 +69,7 @@ class Shadho(object):
 
     def __init__(self, cmd, spec, ccs=None, files=None, use_complexity=True,
                  use_priority=True, timeout=600, max_tasks=100,
-                 max_resubmissions=0):
+                 await_pending=False, max_resubmissions=0):
         self.config = ShadhoConfig()
         self.cmd = cmd
         self.spec = spec
@@ -78,6 +78,7 @@ class Shadho(object):
         self.timeout = timeout
         self.max_tasks = max_tasks
         self.max_resubmissions = max_resubmissions
+        self.await_pending = await_pending
 
         self.ccs = OrderedDict()
 
@@ -211,7 +212,22 @@ class Shadho(object):
                         self.success(*result)
                     else:
                         self.failure(*result)
+                if len(self.backend.db['results']) % 50 == 0:
+                    self.backend.checkpoint()
                 elapsed = time.time() - start
+                if self.manager.empty():
+                    break
+            
+            if self.await_pending:
+                while not self.manager.empty():
+                    result = self.manager.run_task()
+                    if result is not None:
+                        if len(result) == 4:
+                            print('Received result with loss {}'.format(result[2]))
+                            self.success(*result)
+                        else:
+                            self.failure(*result)
+        
         except KeyboardInterrupt:
             if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
                 os.rmdir(self.__tmpdir)
@@ -235,11 +251,14 @@ class Shadho(object):
             cc = self.ccs[ccid]
             n = cc.max_tasks - cc.current_tasks
             assignments = self.assignments[ccid]
-            rng = scipy.stats.randint(0, len(assignments))
+            aplus = len(assignments) + 1
+            probs = np.array([1.0 - ((i + 1) * (1.0 / aplus)) for i in range(len(assignments))])
+            probs /= np.sum(probs)
             for i in range(n):
-                idx = rng.rvs()
+                idx = np.random.choice(len(assignments), p=probs)
                 rid, param = self.backend.generate(assignments[idx])
                 param = (rid, ccid, param)
+                print(param)
                 params.append(param)
             cc.current_tasks = cc.max_tasks
         return params
@@ -340,7 +359,7 @@ class Shadho(object):
         """
         submissions, params = self.backend.register_result(rid, None)
         if submissions < self.max_resubmissions:
-            tag = '.'.join([rid, ccid)
+            tag = '.'.join([rid, ccid])
             cc = self.ccs[ccid]
             self.manager.add_task(self.cmd,
                                   tag,

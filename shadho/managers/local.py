@@ -30,6 +30,10 @@ class LocalManager(object):
     def __init__(self, opt_value):
         self.tasks = deque()
         self.opt_value = opt_value
+        self.tasks_submitted = 0
+
+    def empty(self):
+        return len(self.tasks) == 0
 
     def add_task(self, cmd, tag, params, files=None, resource=None,
                  value=None):
@@ -53,6 +57,7 @@ class LocalManager(object):
         """
         task = LocalTask(cmd, tag, params)
         self.tasks.append(task)
+        self.tasks_submitted += 1
 
     def run_task(self):
         """Run the next task on the task list and return its result.

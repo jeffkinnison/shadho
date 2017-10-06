@@ -49,6 +49,7 @@ class WQManager(work_queue.WorkQueue):
         self.results_file = results_file
         self.opt_value = opt_value
         self.tmpdir = tmpdir
+        self.tasks_submitted = self.stats.tasks_submitted
 
     def add_task(self, cmd, tag, params, files=None, resource=None, value=None):
         """Create a task for this manager.
@@ -106,6 +107,7 @@ class WQManager(work_queue.WorkQueue):
                 task.specify_resource(resource, value)
 
         self.submit(task)
+        self.tasks_submitted = self.stats.tasks_submitted
 
     def run_task(self):
         task = None
@@ -166,6 +168,9 @@ class WQManager(work_queue.WorkQueue):
         print(resultstr)
         result = json.loads(resultstr.decode('utf-8'))
         loss = result[self.opt_value]
+        result['submit_time'] = task.submit_time
+        result['start_time'] = task.execute_cmd_start
+        result['finish_time'] = task.finish_time
         return (rid, ccid, loss, result)
 
     def failure(self, task):

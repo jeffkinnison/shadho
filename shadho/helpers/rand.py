@@ -139,3 +139,12 @@ def choice(choices):
         'scaling': 'linear',
         'strategy': 'random'
     }
+
+
+def exhaustive(choices):
+    return {
+        'domain': list(choices) if isinstance(choices, (list, tuple, set)) else [choices],
+        'exhaustive': True,
+        'scaling': 'linear',
+        'strategy': 'random'
+    }

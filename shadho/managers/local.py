@@ -98,7 +98,7 @@ class LocalManager(object):
                         raise ValueError
             except TaskFailureError as e:
                 print("Error: Task failed due to the following error:")
-                print(str(e.e))
+                print(str(e))
             except ValueError:
                 print("Error: Invalid task result {}".format(result))
                 print("Task results must be of type float")
@@ -150,5 +150,5 @@ class LocalTask(object):
         """
         try:
             return self.cmd(self.params)
-        except Exception:
+        except Exception as e:
             raise TaskFailureError(str(e))

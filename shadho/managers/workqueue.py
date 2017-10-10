@@ -165,7 +165,6 @@ class WQManager(work_queue.WorkQueue):
         except IOError:
             print("Error opening task {} result".format(rid))
 
-        print(resultstr)
         result = json.loads(resultstr.decode('utf-8'))
         loss = result[self.opt_value]
         result['submit_time'] = task.submit_time

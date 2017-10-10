@@ -46,11 +46,13 @@ class JSONBackend(basedb.BaseBackend):
         self.path = os.path.abspath(os.path.expanduser(path))
 
         self.db = {
-            'trees': OrderedDict(),
-            'spaces': OrderedDict(),
-            'values': OrderedDict(),
-            'results': OrderedDict(),
+            'trees': {},
+            'spaces': {},
+            'values': {},
+            'results': {},
         }
+        
+        self.spaces = {}
 
     def add(self, obj):
         """Add an object to the database.
@@ -198,6 +200,7 @@ class JSONBackend(basedb.BaseBackend):
                 space = self.make(Space, tree=tree.id, **leaf)
                 tree.add_space(space)
                 self.add(space)
+                self.spaces[space.id] = space
                 if use_complexity:
                     t_comp += space.complexity
             tree.complexity = t_comp if use_complexity else None
@@ -280,7 +283,7 @@ class JSONBackend(basedb.BaseBackend):
         params = {}
 
         for sid in tree.spaces:
-            space = self.get(Space, sid)
+            space = self.spaces[sid]
             path = space.path.split('/')
             value = self.make(Value,
                               space=space,
@@ -314,7 +317,7 @@ class JSONBackend(basedb.BaseBackend):
             params = {}
             for vid in result.values:
                 value = self.get(Value, vid)
-                space = self.get(Space, value.space)
+                space = self.spaces[value.space]
                 curr = params
                 path = space.path.split('/')
                 for i in range(len(path) - 1):
@@ -333,9 +336,12 @@ class JSONBackend(basedb.BaseBackend):
 
         tree = self.get(Tree, result.tree)
         tree.add_result(result)
+        update = False
         if tree.priority is not None and len(tree.results) % 10 == 0:
             self.calculate_priority(tree)
+            update = True
         self.add(tree)
+        return update
 
     def calculate_priority(self, tree):
         feats = np.zeros((len(tree.results), len(tree.spaces)),
@@ -369,7 +375,7 @@ class JSONBackend(basedb.BaseBackend):
         opt = self.get(Result, opt)
         for v in opt.values:
             value = self.get(Value, v)
-            space = self.get(Space, value.space)
+            space = self.spaces[value.space]
             path = space.path.split('/')
             curr = params
             for i in range(len(path) - 1):

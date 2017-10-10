@@ -76,7 +76,7 @@ class Shadho(object):
         self.use_complexity = use_complexity
         self.use_priority = use_priority
         self.timeout = timeout
-        self.max_tasks = max_tasks
+        self.max_tasks = 2 * max_tasks
         self.max_resubmissions = max_resubmissions
         self.await_pending = await_pending
 
@@ -164,7 +164,7 @@ class Shadho(object):
             The maximum number of tasks to queue for this compute class,
             default 100.
         """
-        cc = ComputeClass(name, resource, value, max_tasks)
+        cc = ComputeClass(name, resource, value, 2 * max_tasks)
         self.ccs[cc.id] = cc
 
     def run(self):
@@ -190,40 +190,31 @@ class Shadho(object):
             use_complexity=self.use_complexity,
             use_priority=self.use_priority)
 
+        self.assign_to_ccs()
+        self.register_probabilities()
+
         start = time.time()
         elapsed = 0
         try:
-            while elapsed < self.timeout:
-                self.assign_to_ccs()
-                params = self.generate()
-                for p in params:
-                    tag = '.'.join([p[0], p[1]])
-                    cc = self.ccs[p[1]]
-                    self.manager.add_task(self.cmd,
-                                          tag,
-                                          p[-1],
-                                          files=self.files,
-                                          resource=cc.resource,
-                                          value=cc.value)
+            while elapsed < self.timeout and (elapsed == 0 or not self.manager.empty()):
+                self.generate()
                 result = self.manager.run_task()
                 if result is not None:
                     if len(result) == 4:
-                        print('Received result with loss {}'.format(result[2]))
+                        #print('Received result with loss {}'.format(result[2]))
                         self.success(*result)
                     else:
                         self.failure(*result)
                 if len(self.backend.db['results']) % 50 == 0:
                     self.backend.checkpoint()
                 elapsed = time.time() - start
-                if self.manager.empty():
-                    break
             
             if self.await_pending:
                 while not self.manager.empty():
                     result = self.manager.run_task()
                     if result is not None:
                         if len(result) == 4:
-                            print('Received result with loss {}'.format(result[2]))
+                            #print('Received result with loss {}'.format(result[2]))
                             self.success(*result)
                         else:
                             self.failure(*result)
@@ -246,22 +237,22 @@ class Shadho(object):
         params : list of tuple
             A list of triples (result_id, compute_class_id, parameter_values).
         """
-        params = []
         for ccid in self.ccs:
             cc = self.ccs[ccid]
             n = cc.max_tasks - cc.current_tasks
             assignments = self.assignments[ccid]
-            aplus = len(assignments) + 1
-            probs = np.array([1.0 - ((i + 1) * (1.0 / aplus)) for i in range(len(assignments))])
-            probs /= np.sum(probs)
             for i in range(n):
-                idx = np.random.choice(len(assignments), p=probs)
+                idx = np.random.choice(len(assignments), p=cc.probs)
                 rid, param = self.backend.generate(assignments[idx])
-                param = (rid, ccid, param)
-                print(param)
-                params.append(param)
+                tag = '.'.join([rid, ccid])
+                self.manager.add_task(
+                    self.cmd,
+                    tag,
+                    param,
+                    files=self.files,
+                    resource=cc.resource,
+                    value=cc.value)
             cc.current_tasks = cc.max_tasks
-        return params
 
     def make_tasks(self, params):
         """Create tasks to test hyperparameter values.
@@ -306,37 +297,49 @@ class Shadho(object):
             return
 
         else:
-            self.trees = self.backend.order_trees()
-            for cc in self.ccs:
-                self.assignments[cc] = []
+            trees = self.backend.order_trees()
+            if trees != self.trees or len(self.assignments) == 0:
+                for cc in self.ccs:
+                    self.assignments[cc] = []
 
-            ccids = list(self.ccs.keys())
-            larger = self.trees if len(self.trees) >= len(ccids) else ccids
-            smaller = self.trees if len(self.trees) < len(ccids) else ccids
+                ccids = list(self.ccs.keys())
+                larger = self.trees if len(self.trees) >= len(ccids) else ccids
+                smaller = self.trees if len(self.trees) < len(ccids) else ccids
 
-            x = float(len(larger)) / float(len(smaller))
-            y = x - 1
-            j = 0
-            n = len(larger) / 2
+                x = float(len(larger)) / float(len(smaller))
+                y = x - 1
+                j = 0
+                n = len(larger) / 2
 
-            for i in range(len(larger)):
-                if i > np.ceil(y):
-                    j += 1
-                    y += x
+                for i in range(len(larger)):
+                    if i > np.ceil(y):
+                        j += 1
+                        y += x
 
-                if smaller[j] in self.assignments:
-                    self.assignments[smaller[j]].append(larger[i])
-                    if i <= n:
-                        self.assignments[smaller[j + 1]].append(larger[i])
+                    if smaller[j] in self.assignments:
+                        self.assignments[smaller[j]].append(larger[i])
+                        if i <= n:
+                            self.assignments[smaller[j + 1]].append(larger[i])
+                        else:
+                            self.assignments[smaller[j - 1]].append(larger[i])
                     else:
-                        self.assignments[smaller[j - 1]].append(larger[i])
-                else:
-                    self.assignments[larger[i]].append(smaller[j])
-                    if i <= n:
-                        self.assignments[larger[i]].append(smaller[j + 1])
-                    else:
-                        self.assignments[larger[i]].append(smaller[j - 1])
+                        self.assignments[larger[i]].append(smaller[j])
+                        if i <= n:
+                            self.assignments[larger[i]].append(smaller[j + 1])
+                        else:
+                            self.assignments[larger[i]].append(smaller[j - 1])
 
+    def register_probabilities(self):
+        if self.use_complexity and self.use_priority:
+            for ccid in self.assignments:
+                cc = self.ccs[ccid]
+                probs = np.arange(len(self.assignments[ccid]), 0, -1, dtype=np.float32)
+                cc.probs = probs / np.sum(probs)
+        else:
+            for ccid in self.assignments:
+                self.ccs[ccid].probs = np.ones(len(self.assignments[ccid])) / len(self.assignments[ccid])
+            
+    
     def success(self, rid, ccid, loss, results):
         """Handle successful task completion.
 
@@ -345,7 +348,10 @@ class Shadho(object):
         task : `work_queue.Task`
             The task to process.
         """
-        self.backend.register_result(rid, loss, results=results)
+        results['cc'] = (self.ccs[ccid].resource, self.ccs[ccid].value)
+        update = self.backend.register_result(rid, loss, results=results)
+        if update:
+            self.assign_to_ccs()
         self.ccs[ccid].current_tasks -= 1
 
 

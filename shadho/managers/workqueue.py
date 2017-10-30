@@ -103,6 +103,8 @@ class WQManager(work_queue.WorkQueue):
         if resource is not None:
             if resource == 'cores':
                 task.specify_cores(value)
+            elif resource == 'feature':
+                task.specify_requirement(value)
             else:
                 task.specify_resource(resource, value)
 

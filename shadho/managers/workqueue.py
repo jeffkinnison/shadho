@@ -76,7 +76,7 @@ class WQManager(work_queue.WorkQueue):
         `shadho.managers.workqueue.WQBuffer`
         `work_queue.Task`
         """
-        task = work_queue.Task(cmd)
+        task = work_queue.Task(' '.join([cmd, tag]))
         task.specify_tag(tag)
 
         if files is None:

@@ -75,7 +75,8 @@ class Shadho(object):
         self.spec = spec
         self.use_complexity = use_complexity
         self.use_priority = use_priority
-        self.timeout = timeout
+        self.timeout = timeout if timeout is not None and timeout >= 0 \
+                       else float('inf')
         self.max_tasks = 2 * max_tasks
         self.max_resubmissions = max_resubmissions
         self.await_pending = await_pending

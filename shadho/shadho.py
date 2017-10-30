@@ -197,17 +197,20 @@ class Shadho(object):
         elapsed = 0
         try:
             while elapsed < self.timeout and (elapsed == 0 or not self.manager.empty()):
-                self.generate()
-                result = self.manager.run_task()
-                if result is not None:
-                    if len(result) == 4:
-                        #print('Received result with loss {}'.format(result[2]))
-                        self.success(*result)
-                    else:
-                        self.failure(*result)
-                if len(self.backend.db['results']) % 50 == 0:
-                    self.backend.checkpoint()
-                elapsed = time.time() - start
+                stop = self.generate()
+                if not stop:
+                    result = self.manager.run_task()
+                    if result is not None:
+                        if len(result) == 4:
+                            #print('Received result with loss {}'.format(result[2]))
+                            self.success(*result)
+                        else:
+                            self.failure(*result)
+                    if len(self.backend.db['results']) % 50 == 0:
+                        self.backend.checkpoint()
+                    elapsed = time.time() - start
+                else:
+                    break
             
             if self.await_pending:
                 while not self.manager.empty():
@@ -237,6 +240,7 @@ class Shadho(object):
         params : list of tuple
             A list of triples (result_id, compute_class_id, parameter_values).
         """
+        stop = True
         for ccid in self.ccs:
             cc = self.ccs[ccid]
             n = cc.max_tasks - cc.current_tasks
@@ -244,14 +248,16 @@ class Shadho(object):
             for i in range(n):
                 idx = np.random.choice(len(assignments), p=cc.probs)
                 rid, param = self.backend.generate(assignments[idx])
-                tag = '.'.join([rid, ccid])
-                self.manager.add_task(
-                    self.cmd,
-                    tag,
-                    param,
-                    files=self.files,
-                    resource=cc.resource,
-                    value=cc.value)
+                if param is not None:
+                    tag = '.'.join([rid, ccid])
+                    self.manager.add_task(
+                        self.cmd,
+                        tag,
+                        param,
+                        files=self.files,
+                        resource=cc.resource,
+                        value=cc.value)
+                    stop = False
             cc.current_tasks = cc.max_tasks
 
     def make_tasks(self, params):
@@ -355,7 +361,7 @@ class Shadho(object):
         self.ccs[ccid].current_tasks -= 1
 
 
-    def failure(self, rid, ccid):
+    def failure(self, rid, ccid, resub):
         """Handle task failure.
 
         Parameters
@@ -364,7 +370,7 @@ class Shadho(object):
             The failed task to process.
         """
         submissions, params = self.backend.register_result(rid, None)
-        if submissions < self.max_resubmissions:
+        if resub and submissions < self.max_resubmissions:
             tag = '.'.join([rid, ccid])
             cc = self.ccs[ccid]
             self.manager.add_task(self.cmd,

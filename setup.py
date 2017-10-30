@@ -98,11 +98,13 @@ class InstallCCToolsCommand(install):
         shutil.copy(os.path.join('.', 'scripts', 'shadho_worker.py'),
                     SHADHO_DIR)
 
-        print('Copying default .shadhorc to home directory')
         home = os.path.expanduser(os.environ['HOME'] if 'HOME' in os.environ
                                       else os.environ['USERPROFILE'])
-        with open(os.path.join(home, '.shadhorc'), 'w') as f:
-            cfg.write(f)
+        if not os.path.isfile(os.path.join(home, '.shadhorc')):
+            print('Copying default .shadhorc to home directory')
+            with open(os.path.join(home, '.shadhorc'), 'w') as f:
+                cfg.write(f)
+        
         install.run(self)
 
 

@@ -4,7 +4,7 @@ import scipy.stats
 # Uniform distribution
 def uniform(lo, hi):
     return {
-        'domain': {# scipy.stats.uniform(loc=lo, scale=hi),
+        'domain': {
             'distribution': 'uniform',
             'args': (),
             'kwargs': {'loc': lo, 'scale': hi},
@@ -16,7 +16,7 @@ def uniform(lo, hi):
 
 def ln_uniform(lo, hi):
     return {
-        'domain': {# scipy.stats.uniform(loc=lo, scale=hi),
+        'domain': {
             'distribution': 'uniform',
             'args': (),
             'kwargs': {'loc': lo, 'scale': hi},
@@ -28,7 +28,7 @@ def ln_uniform(lo, hi):
 
 def log10_uniform(lo, hi):
     return {
-        'domain': {# scipy.stats.uniform(loc=lo, scale=hi),
+        'domain': {
             'distribution': 'uniform',
             'args': (),
             'kwargs': {'loc': lo, 'scale': hi},
@@ -37,10 +37,10 @@ def log10_uniform(lo, hi):
         'strategy': 'random'
     }
 
-    
+
 def log2_uniform(lo, hi):
     return {
-        'domain': {#scipy.stats.uniform(loc=lo, scale=hi),
+        'domain': {
             'distribution': 'uniform',
             'args': (),
             'kwargs': {'loc': lo, 'scale': hi},
@@ -135,7 +135,8 @@ def log2_randint(lo, hi):
 # Choice
 def choice(choices):
     return {
-        'domain': list(choices) if isinstance(choices, (list, tuple, set)) else [choices],
+        'domain': list(choices) if isinstance(choices, (list, tuple, set))
+        else [choices],
         'scaling': 'linear',
         'strategy': 'random'
     }
@@ -143,7 +144,8 @@ def choice(choices):
 
 def exhaustive(choices):
     return {
-        'domain': list(choices) if isinstance(choices, (list, tuple, set)) else [choices],
+        'domain': list(choices) if isinstance(choices, (list, tuple, set))
+        else [choices],
         'exhaustive': True,
         'scaling': 'linear',
         'strategy': 'random'

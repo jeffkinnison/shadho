@@ -7,3 +7,5 @@ cctools
 *.pyd
 generated
 _build
+*.debug
+*.log

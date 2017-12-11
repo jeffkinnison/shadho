@@ -21,6 +21,12 @@ class ShadhorcDoesNotExistError(Exception):
         super(ShadhorcDoesNotExistError, self).__init__(msg)
 
 
+class ShadhoInstallNotfoundError(Exception):
+    def __init__(self, directory):
+        msg = "Could not find shadho installation at {}".format(directory)
+        super(ShadhoInstallNotfoundError, self).__init__(msg)
+
+
 class ShadhoConfig(object):
     DEFAULTS = {
         'global': {
@@ -30,7 +36,7 @@ class ShadhoConfig(object):
             'optimize': 'loss',
             'param_file': 'hyperparameters.json',
             'backend': 'json',
-            'manager': 'workqueue'
+            'manager': 'workqueue',
         },
         'workqueue': {
             'port': 9123,
@@ -50,6 +56,10 @@ class ShadhoConfig(object):
 
     def __init__(self, use_defaults=False):
         # Copy the defaults
+        if 'shadho_dir' not in ShadhoConfig.DEFAULTS:
+            shadho_dir = os.path.join(self.__get_home(), '.shadho')
+            ShadhoConfig.DEFAULTS['shadho_dir'] = shadho_dir
+
         self.config = copy.deepcopy(ShadhoConfig.DEFAULTS)
 
         if not use_defaults:
@@ -86,6 +96,9 @@ class ShadhoConfig(object):
                         val = cfg.get(section, option)
 
                     self.config[section][option] = val
+
+        if not os.path.isdir(self.config['shadho_dir']):
+            raise ShadhoInstallNotfoundError(self.config['shadho_dir'])
 
     def __getitem__(self, key):
         return self.config[key]

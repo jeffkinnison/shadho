@@ -11,12 +11,12 @@ class TestShadhoConfig(object):
         dummyrc = os.path.abspath(
                     os.path.join('.', 'shadho', 'tests', '.shadhorc'))
 
-        defaults = copy.deepcopy(ShadhoConfig.DEFAULTS)
-        defaults['workqueue']['port'] = 9123
-
         # Test the default configuration.
         cfg = ShadhoConfig(use_defaults=True)
         assert cfg.config == ShadhoConfig.DEFAULTS
+
+        defaults = copy.deepcopy(ShadhoConfig.DEFAULTS)
+        defaults['workqueue']['port'] = 9123
 
         # Test loading from a dummy .shadhorc file using the SHADHORC
         # environment variable.

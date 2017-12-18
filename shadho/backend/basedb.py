@@ -12,6 +12,18 @@ import scipy.stats
 
 
 class BaseBackend(object):
+    def create(self, obj):
+        raise NotImplementedError
+
+    def read(self, obj, id):
+        raise NotImplementedError
+
+    def update(self, obj):
+        raise NotImplementedError
+
+    def delete(self, obj, id):
+        raise NotImplementedError
+
     def split_spec(self, spec, path=''):
         """Split a specification into a forest of trees.
 

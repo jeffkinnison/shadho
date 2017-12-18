@@ -104,7 +104,7 @@ class InstallCCToolsCommand(install):
             print('Copying default .shadhorc to home directory')
             with open(os.path.join(home, '.shadhorc'), 'w') as f:
                 cfg.write(f)
-        
+
         install.run(self)
 
 
@@ -117,6 +117,10 @@ setup(
     author_email='jkinniso@nd.edu',
     packages=['shadho',
               'shadho.backend',
+              'shadho.backend.base',
+              'shadho.backend.json',
+              'shadho.backend.mongo',
+              'shadho.backend.sql',
               'shadho.heuristics',
               'shadho.helpers',
               'shadho.managers',

@@ -46,10 +46,15 @@ Random Search
 
 Randomly searching values from a pre-defined (discrete) set or (continuous) range
 is just about as easy to implement as grid search, and it can plug the holes in
-the grid. James Bergstra and Yoshua Bengio demonstrated in [1]_ that random search
+the grid. Bergstra and Bengio demonstrated in [1]_ that random search
 is in general more successful than grid search. Most hyperparameter optimization
 software, including SHADHO, implements this method. In fact, this is what SHADHO
 does by default!
+
+Bayesian Optimization
+---------------------
+
+
 
 Remarks
 -------

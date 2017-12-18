@@ -15,7 +15,6 @@ SHADHO runs a Work Queue master behind-the-scenes, and it
 Installing Work Queue
 ---------------------
 
-Work Queue is written in C and bound with
 
 Configuring Work Queue
 ----------------------

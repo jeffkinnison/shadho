@@ -59,7 +59,7 @@ Dependencies
 * ``numpy >= 0.12.1``
 * ``scikit-learn >= 0.18.1``
 * ``pandas >= 0.18.1``
-* `Work Queue <https://github.com/nkremerh/cctools/tree/hyperopt_worker>`_
+* `Work Queue <https://github.com/nkremerh/cctools/tree/shadho_wq>`_
 
 SHADHO uses parts of the scientific Python stack to manage the search (defining
 search spaces, learning from the searches, and more!). It also uses `Work Queue

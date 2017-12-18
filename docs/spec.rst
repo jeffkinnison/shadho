@@ -30,10 +30,10 @@ Instead, we want to define a range of values to search, for example the integers
 
 ::
 
-    from shadho import randint
+    from shadho import rand
 
     space = {
-        'ints': randint(0, 11)
+        'ints': rand.randint(0, 11)
     }
 
 This creates a space called 'ints' containing all integers in range
@@ -43,10 +43,10 @@ to search over powers of two instead?
 
 ::
 
-    from shadho import log2_randint
+    from shadho import rand
 
     space = {
-        'pow2': log2_randint(0, 11)
+        'pow2': rand.log2_randint(0, 11)
     }
 
 Now, instead of generating one of 0, ..., 10, SHADHO will randomly
@@ -64,10 +64,10 @@ define a continuous space using a probability distribution.
 
 ::
 
-    from shadho import uniform
+    from shadho import rand
 
     space = {
-        'uni': uniform(-7.0, 32.4)
+        'uni': rand.uniform(-7.0, 32.4)
     }
 
 
@@ -84,10 +84,10 @@ way integers are.
 
 ::
 
-    from shadho import choose
+    from shadho import rand
 
     space = {
-        'vals': choose(['hi', 4.2, None, True, 78])
+        'vals': rand.choice(['hi', 4.2, None, True, 78])
     }
 
 This space will randomly choose one of the values passed to it with equal
@@ -105,11 +105,11 @@ meaning that multiple dimensions are necessary.
 
 ::
 
-    from shadho import randint
+    from shadho import rand
 
     space = {
-        'ints1': randint(0, 11, step=2)
-        'ints2': randint(1, 11, step=2)
+        'ints1': rand.randint(0, 11, step=2)
+        'ints2': rand.randint(1, 11, step=2)
     }
 
 This search space now has two dimensions: ints1 which includes even numbers in
@@ -120,19 +120,19 @@ Now let's look at a more complicated multidimenisonal space.
 
 ::
 
-    from shadho import randint, uniform, choose
+    from shadho import rand
 
     space = {
-        'ints': randint(0, 10),
-        'uni': uniform(-7.0, 34.2),
-        'vals': choose(['hi', 4.2, None, True, 78])
+        'ints': rand.randint(0, 10),
+        'uni': rand.uniform(-7.0, 34.2),
+        'vals': rand.choice(['hi', 4.2, None, True, 78])
     }
 
 We've added a few new things here, so let's break this search space down. First,
 there are three dimensions to this search space. SHADHO allows you to search
 over any number of dimensions (provided the space can fit in memory!). Second,
 each of the three dimensions of the search is over a different "type" of space.
-This search space includes an integer search, a continuous search, and a choose
+This search space includes an integer search, a continuous search, and a choice
 search. By mixing and matching search types and by adding additional dimensions
 to the search space, we can create rich searches that meet the needs of the
 optimization problem.
@@ -146,15 +146,15 @@ the search, we can use nested dictionaries.
 
 ::
 
-    from shadho import randint, uniform, choose
+    from shadho import rand
 
     space = {
         'nest1': {
-            'ints': randint(0, 10),
-            'uni': uniform(-7.0, 34.2)
+            'ints': rand.randint(0, 10),
+            'uni': rand.uniform(-7.0, 34.2)
         },
         'nest2': {
-            'vals': choose(['hi', 4.2, None, True, 78])
+            'vals': rand.choice(['hi', 4.2, None, True, 78])
         }
     }
 
@@ -177,16 +177,16 @@ a nested space.
 
 ::
 
-    from shadho import randint, uniform, choose
+    from shadho import rand
 
     space = {
         'nest1': {
-            'ints': randint(0, 10),
-            'uni': uniform(-7.0, 34.2)
+            'ints': rand.randint(0, 10),
+            'uni': rand.uniform(-7.0, 34.2)
         },
         'nest2': {
             'optional': True,
-            'vals': choose(['hi', 4.2, None, True, 78])
+            'vals': rand.choice(['hi', 4.2, None, True, 78])
         }
     }
 
@@ -195,7 +195,7 @@ for ``nest2`` with the condition
 
 ::
 
-    if space['nest2']:
+    if 'nest2' in space:
         # Do something awesome with values in nest2
     else:
         # Handle the case where nest2 is excluded
@@ -211,16 +211,16 @@ Exclusive spaces allow you to test disjoint models, for example different kernel
 functions with different hyperparameter sets or different neural network layers.
 Like optional spaces, exclusive spaces are indicated using a flag::
 
-    from shadho import randint, uniform, choose
+    from shadho import rand
 
     space = {
         'nest1': {
             'exclusive': True,
-            'ints': randint(0, 10),
-            'uni': uniform(-7.0, 34.2)
+            'ints': rand.randint(0, 10),
+            'uni': rand.uniform(-7.0, 34.2)
         },
         'nest2': {
-            'vals': choose(['hi', 4.2, None, True, 78])
+            'vals': rand.choice(['hi', 4.2, None, True, 78])
         }
     }
 
@@ -228,24 +228,24 @@ When hyperparameter values are generated, either ``space['nest1']['ints']`` or
 ``space['nest1']['uni']`` will be included, but not both. Exclusive spaces may
 also be made optional::
 
-    from shadho import randint, uniform, choose
+    from shadho import rand
 
     space = {
         'nest1': {
             'exclusive': True,
             'optional': True,
-            'ints': randint(0, 10),
-            'uni': uniform(-7.0, 34.2)
+            'ints': rand.randint(0, 10),
+            'uni': rand.uniform(-7.0, 34.2)
         },
         'nest2': {
-            'vals': choose(['hi', 4.2, None, True, 78])
+            'vals': rand.choice(['hi', 4.2, None, True, 78])
         }
     }
 
 In this case, there is also the possibility that ``space['nest1']`` will be
 excluded entirely. This may be handled like so::
 
-    if space['nest1']:
+    if 'nest1' in space:
         if 'ints' in space['nest1']:
             # Handle using space['nest1']['ints']
         elif 'uni' in spaces['nest1']:

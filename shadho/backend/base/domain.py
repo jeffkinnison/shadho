@@ -1,4 +1,9 @@
-"""Facilities for working with hyperparameter search domains
+"""Facilities for working with hyperparameter search domains.
+
+Classes
+-------
+BaseDomain
+    Base class for the Domain data model.
 """
 from shadho.heuristics import complexity
 from shadho.strategies import next_value
@@ -11,11 +16,13 @@ import scipy.stats
 
 
 class BaseDomain(object):
-    """Base class for Domain data models."""
+    """Hyperparameter domain data model."""
+
+    __tablename__ = 'domains'
 
     @property
     def complexity(self):
-        """Calculate the complexity of searching this space.
+        """Calculate the complexity of searching this domain.
 
         The complexity is an approximation of the size of the domain being
         searched.
@@ -33,12 +40,12 @@ class BaseDomain(object):
         Returns
         -------
         label : int or float
-            If the space is categorical (e.g. ['foo', 'bar', 'baz'], [1, 2,
+            If the domain is categorical (e.g. ['foo', 'bar', 'baz'], [1, 2,
             3]), return the integer index of the categorical value.
 
-            If the space is constant (e.g. 1, 'hello', None), return 0.
+            If the domain is constant (e.g. 1, 'hello', None), return 0.
 
-            If the space is a continuous space (e.g. a uniform distribution
+            If the domain is a continuous domain (e.g. a uniform distribution
             over a real-valued range), then simply return `value`.
         """
         try:
@@ -58,23 +65,23 @@ class BaseDomain(object):
         return label
 
     def generate(self):
-        """Generate a new value from this space.
+        """Generate a new value from this domain.
 
         Returns
         -------
         value
-            A value from this space's `domain` generated using the `strategy`
-            and `scaling` functions specified in this space.
+            A value from this domain's `domain` generated using the `strategy`
+            and `scaling` functions specified in this domain.
 
         Notes
         -----
-        If the space is defined over a continuous probability dristribution,
+        If the domain is defined over a continuous probability dristribution,
         returns a value from the random variate.
 
-        If the space is defined over a discrete set of values, returns a
+        If the domain is defined over a discrete set of values, returns a
         randomly-selected value.
 
-        If the space contains a single value, returns the value unaltered.
+        If the domain contains a single value, returns the value unaltered.
         """
         if hasattr(self.domain, 'dist') and \
            isinstance(self.domain.dist, scipy.stats.rv_continuous):
@@ -94,3 +101,18 @@ class BaseDomain(object):
             value = self.domain
 
         return value
+
+    def add_value(self, value):
+        """Add a new value to this domain.
+
+        Parameters
+        ----------
+        value : `BaseValue`
+            The value to add.
+
+        Notes
+        -----
+        This method should be overridden in subclasses to add appropriate
+        handling for the data storage backend.
+        """
+        raise NotImplementedError

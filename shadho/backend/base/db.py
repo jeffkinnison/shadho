@@ -5,13 +5,15 @@ Classes
 BaseBackend
     Base class for other backends to subclass.
 """
-from shadho.backend.base.model import Model
-from shadho.backend.base.domain import Domain
-from shadho.backend.base.result import Result
-from shadho.backend.base.value import Value
+from shadho.backend.base.model import BaseModel
+from shadho.backend.base.domain import BaseDomain
+from shadho.backend.base.result import BaseResult
+from shadho.backend.base.value import BaseValue
 from shadho.heuristics import complexity, priority
 
 import copy
+
+import numpy as np
 
 
 class BaseBackend(object):

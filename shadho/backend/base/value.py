@@ -22,3 +22,6 @@ class BaseValue(object):
     """
 
     __tablename__ = 'values'
+
+    def to_numeric(self):
+        return self.domain.get_label(self.value)

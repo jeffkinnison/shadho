@@ -87,7 +87,7 @@ class BaseDomain(object):
            isinstance(self.domain.dist, scipy.stats.rv_continuous):
             value = scale_value(next_value(self.domain, self.strategy),
                                 self.scaling)
-        elif self.exhaustive:
+        elif hasattr(self, 'exhaustive') and self.exhaustive:
             if self.exhaustive_idx < len(self.domain):
                 value = self.domain[self.exhaustive_idx]
                 self.exhaustive_idx += 1

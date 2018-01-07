@@ -6,6 +6,8 @@ from collections import OrderedDict
 
 
 class TestBaseBackend(object):
+    __test__ = False
+    
     def test_split_spec(self):
         b = BaseBackend()
 
@@ -16,8 +18,8 @@ class TestBaseBackend(object):
             'strategy': 'random'
         }
 
-        tree = b.split_spec(spec)
-        assert tree == [[spec]]
+        model = b.split_spec(spec)
+        assert model == [[spec]]
         assert spec['path'] == ''
 
         # Test a flat search with multiple spaces
@@ -34,16 +36,16 @@ class TestBaseBackend(object):
             'strategy': 'random'
         }
 
-        tree = b.split_spec(spec)
-        assert tree == [[spec['a'], spec['b']]]
+        model = b.split_spec(spec)
+        assert model == [[spec['a'], spec['b']]]
         assert spec['a']['path'] == 'a'
         assert spec['b']['path'] == 'b'
 
         # Test exclusive flag
         spec['exclusive'] = True
-        tree = b.split_spec(spec)
+        model = b.split_spec(spec)
 
-        assert tree == [[spec['a']], [spec['b']]]
+        assert model == [[spec['a']], [spec['b']]]
         assert spec['a']['path'] == 'a'
         assert spec['b']['path'] == 'b'
         del spec['exclusive']
@@ -51,23 +53,23 @@ class TestBaseBackend(object):
         # Test optional flag
         spec['optional'] = True
 
-        tree = b.split_spec(spec)
-        assert tree == [[spec['a'], spec['b']], []]
+        model = b.split_spec(spec)
+        assert model == [[spec['a'], spec['b']], []]
         assert spec['a']['path'] == 'a'
         assert spec['b']['path'] == 'b'
 
         # Test both flags
         spec['exclusive'] = True
-        tree = b.split_spec(spec)
+        model = b.split_spec(spec)
 
-        assert tree == [[spec['a']], [spec['b']], []]
+        assert model == [[spec['a']], [spec['b']], []]
         assert spec['a']['path'] == 'a'
         assert spec['b']['path'] == 'b'
         del spec['exclusive']
         del spec['optional']
 
         # Complex, multi-level test
-        # The tree will look like
+        # The model will look like
         #              root
         #     /       /    \      \
         #    A       B      C      D
@@ -220,9 +222,9 @@ class TestBaseBackend(object):
              spec['B']['e']]
             ]
 
-        tree = b.split_spec(spec)
+        model = b.split_spec(spec)
 
-        assert tree == result
+        assert model == result
         assert spec['A']['a']['path'] == 'A/a'
         assert spec['A']['b']['path'] == 'A/b'
         assert spec['A']['c']['path'] == 'A/c'

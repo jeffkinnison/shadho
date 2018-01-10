@@ -17,7 +17,32 @@ import numpy as np
 
 
 class BaseBackend(object):
-    """Base class with common functionality for other backend classes."""
+    """Base class with common functionality for other backend classes.
+
+    Attributes
+    ----------
+    commit_frequency : int
+        The frequency with which whanges should be committed to the database.
+        Commits automatically occur when registering results.
+    update_frequency : int
+        The frequency with which to update model priority. Updates
+        automatically occur when registering results if the priority heuristic
+        is in use.
+    """
+
+    def __init__(self, commit_frequency=10, update_frequency=10):
+        self.commit_frequency = commit_frequency
+        self.update_frequency = update_frequency
+
+    def commit(self):
+        """Commit pending changes to the database.
+
+        Notes
+        -----
+        Subclasses should use this method to implement batch updates for
+        performance.
+        """
+        raise NotImplementedError
 
     def count(self, objclass):
         """Count the number of objects of a class.
@@ -56,6 +81,21 @@ class BaseBackend(object):
         ------
         InvalidObjectClassError
             Raised when an invalid object class is supplied.
+        """
+        raise NotImplementedError
+
+    def delete(self, obj):
+        """Remove an existing object from the database.
+
+        Parameters
+        ----------
+        obj : object id or BaseModel or BaseDomain or BaseResult or BaseValue
+            Id or instance of the object to delete.
+
+        Notes
+        -----
+        If the specified object does not exist in the database, no action is
+        taken.
         """
         raise NotImplementedError
 
@@ -112,31 +152,6 @@ class BaseBackend(object):
         """
         raise NotImplementedError
 
-    def delete(self, obj):
-        """Remove an existing object from the database.
-
-        Parameters
-        ----------
-        obj : object id or BaseModel or BaseDomain or BaseResult or BaseValue
-            Id or instance of the object to delete.
-
-        Notes
-        -----
-        If the specified object does not exist in the database, no action is
-        taken.
-        """
-        raise NotImplementedError
-
-    def commit(self):
-        """Commit pending changes.
-
-        Notes
-        -----
-        Subclasses should use this method to implement batch updates for
-        performance.
-        """
-        raise NotImplementedError
-
     def make_forest(self, spec, use_complexity=True, use_priority=True):
         """Create the forest of models and search spaces.
 
@@ -162,10 +177,10 @@ class BaseBackend(object):
 
         models = []
         for leafset in leaves:
-            model = self.create('model', priority=priority,
+            model = self.create('models', priority=priority,
                                 complexity=complexity, rank=rank)
             for leaf in leafset:
-                domain = self.create('domain')
+                domain = self.create('domains')
                 model.add_domain(domain)
                 self.update(domain)
                 if use_complexity:
@@ -372,10 +387,12 @@ class BaseBackend(object):
 
             model = self.find('model', result.model)
             model.add_result(result)
-            reorder = self.count('results') % self.update_frequency
-            if model.priority is not None and reorder == 0:
+            reorder = len(model.results) >= self.update_frequency
+            if model.priority is not None and reorder:
                 self.update_priority(model)
                 update = True
+            if self.count('results') >= self.update_frequency:
+                self.commit()
         # TODO: Add resubmission logic here
         return update
 

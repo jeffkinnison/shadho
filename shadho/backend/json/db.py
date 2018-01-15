@@ -32,8 +32,11 @@ class JsonBackend(BaseBackend):
         'values': Value
     }
 
-    def __init__(self, path='.', commit_frequency=10, update_frequency=10):
+    def __init__(self, path='shadho.json', commit_frequency=10, update_frequency=10):
         self.path = os.path.abspath(path)
+        if os.path.isdir(self.path):
+            self.path = os.path.join(self.path, 'shadho.json')
+
         self.db = {
             'models': {},
             'domains': {},

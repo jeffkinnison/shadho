@@ -1,5 +1,4 @@
-from shadho.backend.base import BaseDomain
-from shahdo.backend.json.model import Model
+from shadho.backend.base.domain import BaseDomain
 from shadho.backend.json.value import Value
 
 import uuid
@@ -34,10 +33,7 @@ class Domain(BaseDomain):
         self.strategy = strategy if strategy is not None else 'random'
         self.scaling = scaling if scaling is not None else 'linear'
 
-        if isinstance(model, Model):
-            self.model = model.id
-        else:
-            self.model = model
+        self.model = model.id if hasattr(model, 'id') else model
 
         self.values = [] if values is None or len(values) == 0 else values
         values = values if values is not None else []
@@ -67,7 +63,7 @@ class Domain(BaseDomain):
             'path': self.path,
             'strategy': self.strategy,
             'scaling': self.scaling,
-            'tree': self.tree,
+            'model': self.model,
             'values': self.values,
             'exhaustive': self.exhaustive,
             'exhaustive_idx': self.exhaustive_idx

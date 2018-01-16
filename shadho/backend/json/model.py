@@ -35,6 +35,6 @@ class Model(BaseModel):
             'priority': self.priority,
             'complexity': self.complexity,
             'rank': self.rank,
-            'spaces': self.spaces,
+            'domains': self.spaces,
             'results': self.results,
         }

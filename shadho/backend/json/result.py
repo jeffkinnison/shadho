@@ -1,5 +1,4 @@
 from shadho.backend.base.result import BaseResult
-from shadho.backend.json.model import Model
 from shadho.backend.json.value import Value
 
 import uuid
@@ -7,12 +6,12 @@ import uuid
 
 class Result(BaseResult):
     def __init__(self, id=None, loss=None, results=None, submissions=None,
-                 tree=None, values=None):
+                 model=None, values=None):
         self.id = id if id is not None else str(uuid.uuid4())
         self.loss = loss
         self.results = results
         self.submissions = submissions if submissions is not None else 0
-        self.tree = tree.id if hasattr(tree, 'id') else tree
+        self.model = model.id if hasattr(model, 'id') else model
 
         self.values = []
         map(self.add_value, values if values is not None else [])
@@ -29,6 +28,6 @@ class Result(BaseResult):
         return {
             'loss': self.loss,
             'results': self.results,
-            'tree': self.tree,
+            'model': self.model,
             'values': self.values,
         }

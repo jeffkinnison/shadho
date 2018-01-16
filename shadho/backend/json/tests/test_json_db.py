@@ -63,4 +63,9 @@ class TestJsonBackend(object):
 
     def test_count(self):
         """Ensure that the correct counts are returned for object classes"""
-        
+        # Test count on empty database
+        b = JsonBackend()
+        assert b.count('trees') == 0
+        assert b.count('domains') == 0
+        assert b.count('results') == 0
+        assert b.count('values') == 0

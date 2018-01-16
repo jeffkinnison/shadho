@@ -52,7 +52,7 @@ class JsonBackend(BaseBackend):
 
     def count(self, objclass):
         if objclass in self.db:
-            return len(self.db['objclass'])
+            return len(self.db[objclass])
         else:
             raise InvalidObjectClassError(objclass)
 
@@ -70,7 +70,7 @@ class JsonBackend(BaseBackend):
     def find(self, objclass, oid):
         if objclass in self.db:
             if oid in self.db[objclass]:
-                return self.create(objclass, **self.db[objclass], oid)
+                return self.create(objclass, **self.db[objclass][oid])
             else:
                 return None
         else:

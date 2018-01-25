@@ -4,6 +4,8 @@ from shadho.backend.json.domain import Domain
 from shadho.backend.json.result import Result
 from shadho.backend.json.value import Value
 
+from shadho.backend.utils import InvalidObjectClassError, InvalidObjectError
+
 import json
 import os
 
@@ -54,13 +56,13 @@ class JsonBackend(BaseBackend):
         if objclass in self.db:
             return len(self.db[objclass])
         else:
-            raise InvalidObjectClassError(objclass)
+            raise InvalidObjectClassError(objclass, list(self.db.keys()))
 
     def create(self, objclass, *args, **kwargs):
         if objclass in self.data_classes:
             return self.data_classes[objclass](*args, **kwargs)
         else:
-            raise InvalidObjectClassError(objclass)
+            raise InvalidObjectClassError(objclass, list(self.db.keys()))
 
     def delete(self, obj):
         if hasattr(obj, '__tablename__') and obj.__tablename__ in self.db:
@@ -74,20 +76,21 @@ class JsonBackend(BaseBackend):
             else:
                 return None
         else:
-            raise InvalidObjectClassError
+            raise InvalidObjectClassError(objclass, list(self.db.keys()))
 
     def find_all(self, objclass):
         if objclass in self.db:
             return list(map(lambda o: self.create(objclass, **o),
                             self.db[objclass].values()))
         else:
-            raise InvalidObjectClassError
+            raise InvalidObjectClassError(objclass, list(self.db.keys()))
 
     def update(self, obj):
         if hasattr(obj, '__tablename__') and obj.__tablename__ in self.db:
-            if hasattr(obj, 'id'):
+            if isinstance(obj, self.data_classes[obj.__tablename__]):
                 self.db[obj.__tablename__][obj.id] = obj.to_json()
             else:
-                raise InvalidObjectError
+                raise InvalidObjectError(obj)
         else:
-            raise InvalidObjectClassError(obj.__tablename__)
+            raise InvalidObjectClassError(obj.__tablename__,
+                                          list(self.db.keys()))

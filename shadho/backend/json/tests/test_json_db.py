@@ -1,11 +1,12 @@
 import pytest
 
-from shadho.backend.base.tests.test_db import TestBaseBackend
+from shadho.backend.base.tests.test_base_db import TestBaseBackend
 from shadho.backend.json.db import JsonBackend
 
 import json
 import os
 import shutil
+import tempfile
 
 
 class TestJsonBackend(object):
@@ -46,11 +47,12 @@ class TestJsonBackend(object):
 
     def test_commit(self):
         """Ensure that commit writes to file and the file is loadable."""
-        temp = shutil.mkdtemp()
-        fpath = os.path.join(temp, 'shahdo.json')
+        temp = tempfile.mkdtemp()
+        fpath = os.path.join(temp, 'shadho.json')
 
         # Test saving and loading
         b = JsonBackend(path=temp)
+        b.commit()
         assert os.path.isfile(fpath)
         with open(fpath, 'r') as f:
             db = json.load(f)
@@ -65,7 +67,7 @@ class TestJsonBackend(object):
         """Ensure that the correct counts are returned for object classes"""
         # Test count on empty database
         b = JsonBackend()
-        assert b.count('trees') == 0
+        assert b.count('models') == 0
         assert b.count('domains') == 0
         assert b.count('results') == 0
         assert b.count('values') == 0

@@ -2,6 +2,11 @@ import pytest
 
 from shadho.backend.base.tests.test_base_db import TestBaseBackend
 from shadho.backend.json.db import JsonBackend
+from shadho.backend.json.model import Model
+from shadho.backend.json.domain import Domain
+from shadho.backend.json.result import Result
+from shadho.backend.json.value import Value
+from shadho.backend.utils import InvalidObjectClassError, InvalidObjectError
 
 import json
 import os
@@ -71,3 +76,30 @@ class TestJsonBackend(object):
         assert b.count('domains') == 0
         assert b.count('results') == 0
         assert b.count('values') == 0
+
+        b.db['models'] = {str(i): i for i in range(10)}
+        b.db['domains'] = {str(i): i for i in range(20)}
+        b.db['results'] = {str(i): i for i in range(30)}
+        b.db['values'] = {str(i): i for i in range(40)}
+        assert b.count('models') == 10
+        assert b.count('domains') == 20
+        assert b.count('results') == 30
+        assert b.count('values') == 40
+
+        with pytest.raises(InvalidObjectClassError):
+            b.count('foo')
+
+    def test_create(self):
+        """Ensure objects are created and instantied correctly."""
+        b = JsonBackend()
+
+        # Test creating standard objects with no args
+        model = b.create('models')
+        domain = b.create('domains')
+        result = b.create('results')
+        value = b.create('values')
+
+        assert isinstance(model, Model)
+        assert isinstance(domain, Domain)
+        assert isinstance(result, Result)
+        assert isinstance(value, Value)

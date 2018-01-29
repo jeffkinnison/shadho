@@ -1,4 +1,4 @@
-"""Base backend class that splits search spaces into disjoint models.
+"""Base backend class that splits search domains into disjoint models.
 
 Classes
 -------
@@ -153,7 +153,7 @@ class BaseBackend(object):
         raise NotImplementedError
 
     def make_forest(self, spec, use_complexity=True, use_priority=True):
-        """Create the forest of models and search spaces.
+        """Create the forest of models and search domains.
 
         Parameters
         ----------
@@ -185,7 +185,7 @@ class BaseBackend(object):
                 self.update(domain)
                 if use_complexity:
                     model.complexity += domain.complexity
-            model.spaces.sort(key=lambda x: x.complexity)
+            model.domains.sort(key=lambda x: x.complexity)
             self.update(model)
         models.append(model)
 
@@ -203,8 +203,8 @@ class BaseBackend(object):
 
         Returns
         -------
-        spaces : list of list of dict
-            The set of disjoint search spaces created from this specification.
+        domains : list of list of dict
+            The set of disjoint search domains created from this specification.
 
         Notes
         -----
@@ -212,10 +212,10 @@ class BaseBackend(object):
         the fact that 1) Python dictionary keys are unique to a particular
         dictionary and 2) keys from nested dictionaries can form a unique
         root-to-leaf path similar to a URL. Since a single hyperparameter
-        search space is always a leaf in its model, the entire model can be
-        reconstructed on-the-fly by keeping track of the search spaces it
-        contains and storing the path to each space as an attribute in each
-        space.
+        search domain is always a leaf in its model, the entire model can be
+        reconstructed on-the-fly by keeping track of the search domains it
+        contains and storing the path to each domain as an attribute in each
+        domain.
         """
         # Recursive base case.
         if not isinstance(spec, dict):
@@ -233,28 +233,28 @@ class BaseBackend(object):
             return [[c]]
 
         # Recurse through submodels to create the path from root to leaf and
-        # split into disjoint search spaces.
+        # split into disjoint search domains.
         exclusive = 'exclusive' in spec and spec['exclusive']
         optional = 'optional' in spec and spec['optional']
-        spaces = [] if exclusive else [[]]
+        domains = [] if exclusive else [[]]
         for key in spec:
             if key not in ('exclusive', 'optional'):
                 subpath = '/'.join([path, str(key)]) if path != '' \
                           else str(key)
                 split = self.split_spec(spec[key], path=subpath)
                 if exclusive:
-                    spaces.extend(split)
+                    domains.extend(split)
                 else:
-                    newspaces = []
-                    for space in spaces:
+                    newdomains = []
+                    for domain in domains:
                         for s in split:
-                            newspace = [c for c in space]
-                            newspace.extend(s)
-                            newspaces.append(newspace)
-                    spaces = newspaces
+                            newdomain = [c for c in domain]
+                            newdomain.extend(s)
+                            newdomains.append(newdomain)
+                    domains = newdomains
         if optional:
-            spaces.append([])
-        return spaces
+            domains.append([])
+        return domains
 
     def order_models(self, models=None):
         """Order the models in the forest by their rank.
@@ -354,7 +354,7 @@ class BaseBackend(object):
             result.add_value(value)
             domain.add_value(value)
             self.update(value)
-            self.update(space)
+            self.update(domain)
 
         self.update(result)
         return(result.id, params)

@@ -103,3 +103,68 @@ class TestJsonBackend(object):
         assert isinstance(domain, Domain)
         assert isinstance(result, Result)
         assert isinstance(value, Value)
+
+    def test_delete(self):
+        b = JsonBackend()
+
+        # Test deleting existing db entries
+        b.db['models']['1'] = 1
+        b.db['domains']['1'] = 1
+        b.db['results']['2'] = 10934
+        b.db['values']['3'] = -3489571
+
+        correct = {
+            'models': {'1': 1},
+            'domains': {'1': 1},
+            'results': {'2': 10934},
+            'values': {'3': -3489571}
+        }
+
+        # Exists in db
+        m = Model(id='1')
+        d = Domain(id='1')
+        r = Result(id='2')
+        v = Value(id='3')
+
+        # Does not exist in db
+        m2 = Model(id='19')
+        d2 = Domain(id='48')
+        r2 = Result(id='3485')
+        v2 = Value(id='231486')
+
+        assert b.db == correct
+
+        # Test removing non-existent entries
+        b.delete(m2)
+        assert b.db == correct
+        b.delete(d2)
+        assert b.db == correct
+        b.delete(r2)
+        assert b.db == correct
+        b.delete(v2)
+        assert b.db == correct
+
+        # Test removing an invalid object
+        m.__tablename__ = 'trees'
+        b.delete(m)
+        assert b.db == correct
+        m.__tablename__ = 'models'
+
+        invalids = [1, 1.0, '1', [1], (1,), {'1': 1}, JsonBackend()]
+        for i in invalids:
+            b.delete(i)
+            assert b.db == correct
+
+        # Test removing existing entries
+        b.delete(m)
+        correct['models'] = {}
+        assert b.db == correct
+        b.delete(d)
+        correct['domains'] = {}
+        assert b.db == correct
+        b.delete(r)
+        correct['results'] = {}
+        assert b.db == correct
+        b.delete(v)
+        correct['values'] = {}
+        assert b.db == correct

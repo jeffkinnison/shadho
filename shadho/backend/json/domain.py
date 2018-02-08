@@ -1,5 +1,6 @@
 from shadho.backend.base.domain import BaseDomain
 from shadho.backend.json.value import Value
+from shadho.backend.utils import InvalidObjectError
 
 import uuid
 
@@ -35,7 +36,7 @@ class Domain(BaseDomain):
 
         self.model = model.id if hasattr(model, 'id') else model
 
-        self.values = [] if values is None or len(values) == 0 else values
+        self.values = []
         values = values if values is not None else []
         for value in values:
             self.add_value(value)
@@ -44,9 +45,9 @@ class Domain(BaseDomain):
         if isinstance(value, Value):
             self.values.append(value.id)
         elif isinstance(value, (int, str)):
-            self.values.add(value)
+            self.values.append(value)
         else:
-            raise InvalidObjectClassError
+            raise InvalidObjectError(value)
 
     def to_json(self):
         if hasattr(self.domain, dist):

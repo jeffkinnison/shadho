@@ -4,6 +4,9 @@ from shadho.backend.utils import InvalidObjectError
 
 import uuid
 
+import numpy as np
+import scipy.stats
+
 
 class Domain(BaseDomain):
     def __init__(self, id=None, domain=None, path=None, strategy=None,
@@ -37,17 +40,18 @@ class Domain(BaseDomain):
         self.model = model.id if hasattr(model, 'id') else model
 
         self.values = []
-        values = values if values is not None else []
+        values = [values] if not isinstance(values, list) else values
         for value in values:
             self.add_value(value)
 
     def add_value(self, value):
-        if isinstance(value, Value):
-            self.values.append(value.id)
-        elif isinstance(value, (int, str)):
-            self.values.append(value)
-        else:
-            raise InvalidObjectError(value)
+        if value is not None:
+            if isinstance(value, Value):
+                self.values.append(value.id)
+            elif isinstance(value, (int, str)):
+                self.values.append(value)
+            else:
+                raise InvalidObjectError(value)
 
     def to_json(self):
         if hasattr(self.domain, dist):

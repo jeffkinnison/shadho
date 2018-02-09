@@ -100,7 +100,7 @@ def log2_normal(mu, sigma):
 
 
 # Randint distributions
-def randint(lo, hi):
+def randint(lo, hi, step=1):
     return {
         'domain': list(range(lo, hi)),
         'scaling': 'linear',
@@ -108,7 +108,7 @@ def randint(lo, hi):
     }
 
 
-def ln_randint(lo, hi):
+def ln_randint(lo, hi, step=1):
     return {
         'domain': list(range(lo, hi)),
         'scaling': 'ln',
@@ -116,7 +116,7 @@ def ln_randint(lo, hi):
     }
 
 
-def log10_randint(lo, hi):
+def log10_randint(lo, hi, step=1):
     return {
         'domain': list(range(lo, hi)),
         'scaling': 'log_10',
@@ -124,7 +124,7 @@ def log10_randint(lo, hi):
     }
 
 
-def log2_randint(lo, hi):
+def log2_randint(lo, hi, step=1):
     return {
         'domain': list(range(lo, hi)),
         'scaling': 'log_2',

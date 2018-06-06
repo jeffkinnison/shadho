@@ -1,10 +1,12 @@
 """
 """
 import uuid
-from pyrameter import ModelGroup
+import sys
+sys.path.append("./pyrameter")
+from pyrameter.modelgroup import ModelGroup
 
 class ComputeClass(object):
-    def __init__(self, name, resource, value, max_tasks):
+    def __init__(self, name, resource, value, max_tasks, model):
         self.id = str(uuid.uuid4())
         self.name = name
         self.resource = resource
@@ -12,7 +14,7 @@ class ComputeClass(object):
         self.max_tasks = max_tasks
         self.current_tasks = 0
 
-        self.model_group = ModelGroup()
+        self.model_group = ModelGroup(model)
 
     def __hash__(self):
         return hash((self.id, self.name, self.resource, self.value))

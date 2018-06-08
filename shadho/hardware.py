@@ -4,9 +4,10 @@ import uuid
 import sys
 sys.path.append("./pyrameter")
 from pyrameter.modelgroup import ModelGroup
+from pyrameter.models.model import Model
 
 class ComputeClass(object):
-    def __init__(self, name, resource, value, max_tasks, model):
+    def __init__(self, name, resource, value, max_tasks):
         self.id = str(uuid.uuid4())
         self.name = name
         self.resource = resource
@@ -14,7 +15,7 @@ class ComputeClass(object):
         self.max_tasks = max_tasks
         self.current_tasks = 0
 
-        self.model_group = ModelGroup(model)
+        self.model_group = None
 
     def __hash__(self):
         return hash((self.id, self.name, self.resource, self.value))
@@ -23,7 +24,10 @@ class ComputeClass(object):
         return self.model_group.generate(model_id)
 
     def add_model(self, model):
-        self.model_group.add_model(model)
+        if not self.model_group:
+            self.model_group = ModelGroup(model)
+        else:
+            self.model_group.add_model(model)
 
     def remove_model(self, model_id):
         self.model_group.remove_model(model_id)

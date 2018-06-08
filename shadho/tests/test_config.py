@@ -70,3 +70,7 @@ class TestShadhoConfig(object):
 
         if userprofile is not None:
             os.environ['USERPROFILE'] = userprofile
+
+    def test_save_config(self):
+        cfg = ShadhoConfig()
+        cfg.save_config('')

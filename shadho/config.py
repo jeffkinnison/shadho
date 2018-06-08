@@ -123,8 +123,9 @@ class ShadhoConfig(object):
             for section in self.config:
                 config.add_section(str(section))
                 for entry in self.config[section]:
-                    config.set(str(section),
-                               str(entry),
-                               str(self.config[section][entry]))
+                    if type(self.config[section]) is dict:
+                        config.set(str(section),
+                                   str(entry),
+                                   str(self.config[section][entry]))
         with open(os.path.join(path, '.shadhorc'), 'w') as f:
             config.write(f)

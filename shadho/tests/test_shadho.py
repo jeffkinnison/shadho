@@ -1,8 +1,6 @@
 import pytest
 
-from shadho import Shadho
-
-
+from shadho.shadho import Shadho
 
 class TestShadho(object):
     def test_init(self):

@@ -1,8 +1,6 @@
 import pytest
 
-from shadho import Shadho
-
-
+from shadho.shadho import Shadho
 
 class TestShadho(object):
     def test_init(self):
@@ -14,12 +12,12 @@ class TestShadho(object):
     def test_add_input_file(self):
         s = Shadho('echo "hello"', {})
 
-
     def test_add_output_file(self):
         pass
 
     def test_generate(self):
-        pass
+        s = Shadho('echo "hello"', {'a': 6, 'b': 3654})
+        s.generate()
 
     def test_make_tasks(self):
         pass
@@ -32,3 +30,4 @@ class TestShadho(object):
 
     def test_run(self):
         pass
+

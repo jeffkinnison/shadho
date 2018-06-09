@@ -1,6 +1,6 @@
 """
 """
-from .backend import create_backend
+#from .backend import create_backend
 from .config import ShadhoConfig
 from .hardware import ComputeClass
 from .managers import create_manager
@@ -248,7 +248,11 @@ class Shadho(object):
             assignments = self.assignments[ccid]
             for i in range(n):
                 idx = np.random.choice(len(assignments), p=cc.probs)
-                rid, param = self.backend.generate(assignments[idx])
+                #rid, param = self.backend.generate(assignments[idx])
+                rid, param = cc.generate(assignments[idx])            #generate through CC
+
+                print("\nrid: {}\nparam: {}".format(rid, param)) 
+
                 if param is not None:
                     tag = '.'.join([rid, ccid])
                     self.manager.add_task(

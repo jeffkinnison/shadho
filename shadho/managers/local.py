@@ -82,7 +82,7 @@ class LocalManager(object):
             task = None
         if task is not None:
             result = None
-            ret = str(task.tag).split('.')
+            ret = [task.tag]
             #print(ret)
             try:
                 result = task.run()

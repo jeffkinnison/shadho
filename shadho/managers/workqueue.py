@@ -155,9 +155,6 @@ class WQManager(work_queue.WorkQueue):
         results : dict
             Other results returned by the task.
         """
-        # Extract the result and compute class ids
-        rid, mid, ccid = str(task.tag).split('.')
-
         try:
             # Open the result tarfile and get the results file.
             outfile = '.'.join([task.tag, self.out_file])

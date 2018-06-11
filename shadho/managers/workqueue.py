@@ -156,7 +156,7 @@ class WQManager(work_queue.WorkQueue):
             Other results returned by the task.
         """
         # Extract the result and compute class ids
-        rid, ccid = str(task.tag).split('.')
+        rid, mid, ccid = str(task.tag).split('.')
 
         try:
             # Open the result tarfile and get the results file.
@@ -172,7 +172,7 @@ class WQManager(work_queue.WorkQueue):
         result['submit_time'] = task.submit_time
         result['start_time'] = task.execute_cmd_start
         result['finish_time'] = task.finish_time
-        return (rid, ccid, loss, result)
+        return (task.tag loss, result)
 
     def failure(self, task):
         """Handle Work Queue task failure.

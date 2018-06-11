@@ -297,8 +297,6 @@ class Shadho(object):
 
     def assign_to_ccs(self):
         """Assign trees to compute classes.
-           Assign trees/models to the modelgroups of the compute classes they
-           are assigned to.
         """
         self.backend.update_rank()
 
@@ -311,7 +309,6 @@ class Shadho(object):
             if trees != self.trees or len(self.assignments) == 0:
                 for cc in self.ccs:
                     self.assignments[cc] = []
-                    cc.model_group = ModelGroup()
 
                 ccids = list(self.ccs.keys())
                 larger = self.trees if len(self.trees) >= len(ccids) else ccids
@@ -329,22 +326,16 @@ class Shadho(object):
 
                     if smaller[j] in self.assignments:
                         self.assignments[smaller[j]].append(larger[i])
-                        self.ccs[smaller[j]].model_group.add_model(larger[i])
                         if i <= n:
                             self.assignments[smaller[j + 1]].append(larger[i])
-                            self.ccs[smaller[j + 1]].model_group.add_model(larger[i])
                         else:
                             self.assignments[smaller[j - 1]].append(larger[i])
-                            self.ccs[smaller[j - 1]].model_group.add_model(larger[i])
                     else:
                         self.assignments[larger[i]].append(smaller[j])
-                        self.ccs[larger[i]].model_group.add_model(smaller[j])
                         if i <= n:
                             self.assignments[larger[i]].append(smaller[j + 1])
-                            self.ccs[larger[i]].model_group.add_model(smaller[j + 1])
                         else:
                             self.assignments[larger[i]].append(smaller[j - 1])
-                            self.ccs[larger[i]].model_group.add_model(smaller[j - 1])
 
     def register_probabilities(self):
         if self.use_complexity and self.use_priority:

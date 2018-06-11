@@ -351,7 +351,7 @@ class Shadho(object):
                 self.ccs[ccid].probs = np.ones(len(self.assignments[ccid])) / len(self.assignments[ccid])
             
     
-    def success(self, rid, ccid, loss, results):
+    def success(self, tag, loss, results):
         """Handle successful task completion.
 
         Parameters
@@ -359,8 +359,11 @@ class Shadho(object):
         task : `work_queue.Task`
             The task to process.
         """
+        result_id, model_id, ccid = tag.split('.')
+
         results['cc'] = (self.ccs[ccid].resource, self.ccs[ccid].value)
-        update = self.backend.register_result(rid, loss, results=results)
+        self.ccs[ccid].register_result(model_id, result_id, loss, results=results)
+
         if update:
             self.assign_to_ccs()
         self.ccs[ccid].current_tasks -= 1

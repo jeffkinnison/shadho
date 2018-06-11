@@ -32,3 +32,5 @@ class ComputeClass(object):
     def remove_model(self, model_id):
         self.model_group.remove_model(model_id)
 
+    def register_result(self, model_id, result_id, loss, results=None):
+        self.model_group.register_result(model_id, result_id, loss, results=results)

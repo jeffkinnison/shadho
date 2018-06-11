@@ -106,4 +106,3 @@ class TestComputeClass(object):
 
         cc.remove_model(1)
         assert len(cc.model_group.models.keys()) == 0
-

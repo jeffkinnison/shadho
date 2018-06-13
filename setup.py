@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-from setuptools import setup
+#!/usr/bin/env python 
+from setuptools import setup 
 from setuptools.command.install import install
 
 try:
@@ -12,7 +12,7 @@ import site
 import shutil
 import subprocess
 import sys
-
+import tempfile
 
 MAJ = sys.version_info[0]
 SHADHO_DIR = os.path.join(os.environ['HOME'], '.shadho')
@@ -41,7 +41,6 @@ DEFAULT_CONFIG = {
         'url': 'sqlite:///:memory:'
     }
 }
-
 
 class InstallCCToolsCommand(install):
     """Helper to install CCTools.
@@ -72,20 +71,72 @@ class InstallCCToolsCommand(install):
             import work_queue
             print("Found Work Queue, skipping install")
         except ImportError:
+
+            tmpdir = tempfile.mkdtemp()
+
+            logfile=open(os.path.join(tmpdir, "install.log"), 'wb')
+
+            #install pcre
+            args = [
+                'bash',
+                os.path.join(
+                    os.path.dirname(__file__),
+                    'install_pcre.sh')
+                ]
+            args.append(tmpdir)
+
+            subprocess.call(args, stdout=logfile)
+
+            #install perl
+            args = [
+                'bash',
+                os.path.join(
+                    os.path.dirname(__file__),
+                    'install_perl.sh')
+                ]
+            args.append(tmpdir)
+
+            subprocess.call(args, stdout=logfile)
+
+            #get python paths
+            args = [
+                'bash',
+                os.path.join(
+                    os.path.dirname(__file__),
+                    'get_py_paths.sh')
+                ]
+            args.append(tmpdir)
+            if MAJ == 3:
+                args.append('py3')
+
+            subprocess.call(args, stdout=logfile)
+
+            #install swig
+            args = [
+                'bash',
+                os.path.join(
+                    os.path.dirname(__file__),
+                    'install_swig.sh')
+                ]
+            args.append(tmpdir)
+
+            subprocess.call(args, stdout=logfile)
+
+            #install cctools
             args = [
                 'bash',
                 os.path.join(
                     os.path.dirname(__file__),
                     'install_cctools.sh')
                 ]
-
+            args.append(tmpdir)
             if '--user' in sys.argv:
                 args.append('--user')
 
-            if MAJ == 3:
-                args.append('py3')
+            subprocess.call(args, stdout=logfile)
 
-            subprocess.call(args)
+            shutil.rmtree(tmpdir)
+
         try:
             cfg.read_dict(DEFAULT_CONFIG)
         except AttributeError:
@@ -107,7 +158,6 @@ class InstallCCToolsCommand(install):
 
         install.run(self)
 
-
 setup(
     name='shadho',
     version='0.1a1',
@@ -116,16 +166,8 @@ setup(
     author='Jeff Kinnison',
     author_email='jkinniso@nd.edu',
     packages=['shadho',
-#              'shadho.backend',
-#              'shadho.backend.base',
-#              'shadho.backend.json',
-#              'shadho.backend.mongo',
-#              'shadho.backend.sql',
-#              'shadho.heuristics',
               'shadho.helpers',
               'shadho.managers'],
-#              'shadho.searches',
-#              'shadho.strategies'],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',

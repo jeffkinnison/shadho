@@ -1,26 +1,6 @@
 Library Reference
 =================
 
-Core
-----
-
-.. currentmodule:: shadho
-
-.. autosummary::
-    :toctree: generated/
-
-    Shadho
-
-Hardware
---------
-
-.. currentmodule:: shadho.hardware
-
-.. autosummary::
-    :toctree: generated/
-
-    ComputeClass
-
 Specification Helpers
 ---------------------
 
@@ -38,21 +18,10 @@ Specification Helpers
     log10_normal
     log2_normal
     randint
+    ln_randint
     log10_randint
     log2_randint
-    choose
-
-WorkQueue Managers
-------------------
-
-.. currentmodule:: shadho.managers.workqueue
-
-.. autosummary::
-    :toctree: generated/
-
-    WQManager
-    WQFile
-    WQBuffer
+    choice
 
 Scaling Functions
 -----------------
@@ -62,7 +31,8 @@ Scaling Functions
 .. autosummary::
     :toctree: generated/
 
+    scale_value
     linear
     ln
-    log10
-    log2
+    log_10
+    log_2

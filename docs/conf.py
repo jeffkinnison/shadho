@@ -20,9 +20,9 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
-import shadho
-sys.path.append("./pyrameter")
+sys.path.append(os.path.abspath("../shadho/pyrameter"))
 import pyrameter
+import shadho
 
 # -- General configuration ------------------------------------------------
 

@@ -35,3 +35,7 @@ class ComputeClass(object):
     def clear(self):
         for model_id in self.model_group.model_ids:
             self.remove_model(model_id)
+
+    def register_result(self, model_id, result_id, loss, results=None):
+        self.model_group.register_result(model_id, result_id, loss,
+                                         results=results)

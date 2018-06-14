@@ -15,7 +15,7 @@ class ComputeClass(object):
         self.max_tasks = max_tasks
         self.current_tasks = 0
 
-        self.model_group = ModelGroup()
+        self.model_group = None
 
     def __hash__(self):
         return hash((self.id, self.name, self.resource, self.value))

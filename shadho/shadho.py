@@ -13,6 +13,7 @@ import tempfile
 import time
 
 import numpy as np
+import pyrameter
 import scipy.stats
 
 
@@ -178,18 +179,11 @@ class Shadho(object):
                 tmpdir=self.__tmpdir)
 
         if not hasattr(self, 'backend'):
-            self.backend = create_backend(
-                backend_type=self.config['global']['backend'],
-                config=self.config)
+            self.backend = pyrameter.build(self.spec)
 
         if len(self.ccs) == 0:
             cc = ComputeClass('all', None, None, self.max_tasks)
             self.ccs[cc.id] = cc
-
-        self.trees = self.backend.make_forest(
-            self.spec,
-            use_complexity=self.use_complexity,
-            use_priority=self.use_priority)
 
         self.assign_to_ccs()
         self.register_probabilities()
@@ -212,7 +206,7 @@ class Shadho(object):
                     elapsed = time.time() - start
                 else:
                     break
-            
+
             if self.await_pending:
                 while not self.manager.empty():
                     result = self.manager.run_task()
@@ -222,7 +216,7 @@ class Shadho(object):
                             self.success(*result)
                         else:
                             self.failure(*result)
-        
+
         except KeyboardInterrupt:
             if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
                 os.rmdir(self.__tmpdir)
@@ -251,7 +245,7 @@ class Shadho(object):
                 #rid, param = self.backend.generate(assignments[idx])
                 rid, param = cc.generate(assignments[idx])            #generate through CC
 
-                print("\nrid: {}\nparam: {}".format(rid, param)) 
+                print("\nrid: {}\nparam: {}".format(rid, param))
 
                 if param is not None:
                     tag = '.'.join([rid, ccid])
@@ -304,18 +298,21 @@ class Shadho(object):
         self.backend.update_rank()
 
         if len(self.ccs) == 1:
-            self.assignments[list(self.ccs.keys())[0]] = self.trees
+            self.assignments[list(self.ccs.keys())[0]].model_group = \
+                self.backend
             return
 
         else:
-            trees = self.backend.order_trees()
-            if trees != self.trees or len(self.assignments) == 0:
+            model_ids = [mid for mid in self.backend.model_ids]
+            self.backend.sort_models()
+            if model_ids != self.backend.model_ids or len(self.assignments) == 0:
+                model_ids = self.backend.model_ids
                 for cc in self.ccs:
-                    self.assignments[cc] = []
+                    cc.clear()
 
                 ccids = list(self.ccs.keys())
-                larger = self.trees if len(self.trees) >= len(ccids) else ccids
-                smaller = self.trees if len(self.trees) < len(ccids) else ccids
+                larger = model_ids if len(self.trees) >= len(ccids) else ccids
+                smaller = model_ids if len(self.trees) < len(ccids) else ccids
 
                 x = float(len(larger)) / float(len(smaller))
                 y = x - 1
@@ -328,17 +325,17 @@ class Shadho(object):
                         y += x
 
                     if smaller[j] in self.assignments:
-                        self.assignments[smaller[j]].append(larger[i])
+                        self.assignments[smaller[j]].add_model(larger[i])
                         if i <= n:
-                            self.assignments[smaller[j + 1]].append(larger[i])
+                            self.assignments[smaller[j + 1]].add_model(larger[i])
                         else:
-                            self.assignments[smaller[j - 1]].append(larger[i])
+                            self.assignments[smaller[j - 1]].add_model(larger[i])
                     else:
-                        self.assignments[larger[i]].append(smaller[j])
+                        self.assignments[larger[i]].add_model(smaller[j])
                         if i <= n:
-                            self.assignments[larger[i]].append(smaller[j + 1])
+                            self.assignments[larger[i]].add_model(smaller[j + 1])
                         else:
-                            self.assignments[larger[i]].append(smaller[j - 1])
+                            self.assignments[larger[i]].add_model(smaller[j - 1])
 
     def register_probabilities(self):
         if self.use_complexity and self.use_priority:
@@ -349,8 +346,8 @@ class Shadho(object):
         else:
             for ccid in self.assignments:
                 self.ccs[ccid].probs = np.ones(len(self.assignments[ccid])) / len(self.assignments[ccid])
-            
-    
+
+
     def success(self, rid, ccid, loss, results):
         """Handle successful task completion.
 
@@ -386,4 +383,3 @@ class Shadho(object):
                                   value=cc.value)
         else:
             self.ccs[ccid].current_tasks -= 1
-

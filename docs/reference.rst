@@ -1,23 +1,10 @@
 Library Reference
 =================
 
-
-.. currentmodule:: shadho
-
-Core
-----
-
-.. autosummary::
-    :toctree: generated/
-
-    HyperparameterSearch
-    OrderedSearchForest
-    ComputeClass
-    WQConfig
-    WQFile
-
 Specification Helpers
 ---------------------
+
+.. currentmodule:: shadho.helpers.rand
 
 .. autosummary::
     :toctree: generated/
@@ -31,54 +18,21 @@ Specification Helpers
     log10_normal
     log2_normal
     randint
+    ln_randint
     log10_randint
     log2_randint
-    choose
-
-Tree
-----
-
-.. currentmodule:: shadho.tree
-
-.. autosummary::
-    :toctree: generated/
-
-    SearchTree
-    SearchTreeNode
-    SearchTreeLeaf
-
-Search Spaces
--------------
-
-.. currentmodule:: shadho.spaces
-
-.. autosummary::
-    :toctree: generated/
-
-    BaseSpace
-    ConstantSpace
-    ContinuousSpace
-    DiscreteSpace
-
-Search Strategies
------------------
-
-.. currentmodule:: shadho.strategies
-
-.. autosummary::
-    :toctree: generated/
-
-    random
+    choice
 
 Scaling Functions
 -----------------
 
-.. currentmodule:: shadho.scales
+.. currentmodule:: shadho.scaling
 
 .. autosummary::
     :toctree: generated/
 
+    scale_value
     linear
     ln
-    log10
-    log2
+    log_10
+    log_2

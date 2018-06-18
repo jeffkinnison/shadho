@@ -55,6 +55,7 @@ class ShadhoConfig(object):
     }
 
     def __init__(self, use_defaults=False):
+
         # Copy the defaults
         if 'shadho_dir' not in ShadhoConfig.DEFAULTS:
             shadho_dir = os.path.join(self.__get_home(), '.shadho')
@@ -100,8 +101,10 @@ class ShadhoConfig(object):
         if not os.path.isdir(self.config['shadho_dir']):
             raise ShadhoInstallNotfoundError(self.config['shadho_dir'])
 
-    def __getitem__(self, key):
-        return self.config[key]
+        # Instantiate config group objects
+        self._global = ConfigGroup(self.config['global'])
+        self._workqueue = ConfigGroup(self.config['workqueue'])
+        self._backend = ConfigGroup(self.config['backend'])
 
     def __get_home(self):
         try:
@@ -129,3 +132,19 @@ class ShadhoConfig(object):
                                    str(self.config[section][entry]))
         with open(os.path.join(path, '.shadhorc'), 'w') as f:
             config.write(f)
+
+class ConfigGroup(object):
+
+    DATA = {}
+
+    def __init__(self, data):
+        ConfigGroup.DATA = data
+
+    def __getattr__(self, attr):
+        return ConfigGroup.DATA[attr]
+
+    def __setattr__(self, attr, val):
+        ConfigGroup.DATA[attr] = val
+
+    def __str__(self):
+        return str(ConfigGroup.DATA)

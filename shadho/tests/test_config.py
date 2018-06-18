@@ -22,7 +22,7 @@ class TestShadhoConfig(object):
         # environment variable.
         os.environ['SHADHORC'] = dummyrc
         cfg = ShadhoConfig()
-        assert cfg.config['workqueue']['port'] == 9123
+        assert cfg.config._workqueue.port == 9123
         assert cfg.config == defaults
         del os.environ['SHADHORC']
 
@@ -36,13 +36,13 @@ class TestShadhoConfig(object):
 
         os.environ['HOME'] = os.path.dirname(dummyrc)
         cfg = ShadhoConfig()
-        assert cfg.config['workqueue']['port'] == 9123
+        assert cfg.config._workqueue.port == 9123
         assert cfg.config == defaults
         del os.environ['HOME']
 
         os.environ['USERPROFILE'] = os.path.dirname(dummyrc)
         cfg = ShadhoConfig()
-        assert cfg.config['workqueue']['port'] == 9123
+        assert cfg.config._workqueue.port == 9123
         assert cfg.config == defaults
         del os.environ['USERPROFILE']
 

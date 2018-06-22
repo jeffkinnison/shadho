@@ -1,6 +1,5 @@
 """
 """
-#from .backend import create_backend
 from .config import ShadhoConfig
 from .hardware import ComputeClass
 from .managers import create_manager
@@ -95,8 +94,8 @@ class Shadho(object):
         self.__tmpdir = tempfile.mkdtemp(prefix='shadho_', suffix='_output')
 
         self.add_input_file(os.path.join(
-            self.config['global']['shadho_dir'],
-            self.config['global']['wrapper']))
+            self.config._global.shadho_dir,
+            self.config._global.wrapper))
 
         self.config.save_config(self.__tmpdir)
         self.add_input_file(os.path.join(self.__tmpdir, '.shadhorc'))
@@ -173,13 +172,13 @@ class Shadho(object):
         """
         if not hasattr(self, 'manager'):
             self.manager = create_manager(
-                manager_type=self.config['global']['manager'],
+                manager_type=self.config._global.manager,
                 config=self.config,
                 tmpdir=self.__tmpdir)
 
         if not hasattr(self, 'backend'):
             self.backend = create_backend(
-                backend_type=self.config['global']['backend'],
+                backend_type=self.config._global.backend,
                 config=self.config)
 
         if len(self.ccs) == 0:
@@ -279,13 +278,13 @@ class Shadho(object):
         for p in params:
             tag = '.'.join([p[0], p[1]])
             buff = WQBuffer(str(json.dumps(p[2])),
-                            self.config['global']['param_file'],
+                            self.config._global.param_file,
                             cache=False)
             outfile = WQFile(os.path.join(
                                 self.__tmpdir,
                                 '.'.join([tag,
-                                          self.config['global']['output']])),
-                             remotepath=self.config['global']['output'],
+                                          self.config._global.output])),
+                             remotepath=self.config._global.output,
                              ftype='output',
                              cache=False)
             files = [f for f in self.files]

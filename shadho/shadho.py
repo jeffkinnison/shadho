@@ -1,6 +1,5 @@
 """
 """
-#from .backend import create_backend
 from .config import ShadhoConfig
 from .hardware import ComputeClass
 from .managers import create_manager
@@ -171,6 +170,17 @@ class Shadho(object):
 
     def run(self):
         """Search hyperparameter values on remote workers.
+
+        Generate and evaluate hyperparameters using the selected task manager
+        and search strategy. Hyperparameters will be evaluated until timeout,
+        and the optimal set will be printed to screen.
+
+        Notes
+        -----
+        If `self.await_pending` is True, Shadho will continue to evaluate
+        hyperparameters in the queue without generating new hyperparameter
+        values. This will continue until the queue is empty and all tasks have
+        returned.
         """
         if not hasattr(self, 'manager'):
             self.manager = create_manager(
@@ -229,6 +239,10 @@ class Shadho(object):
 
     def generate(self):
         """Generate hyperparameter values to test.
+
+        Hyperparameter values are generated from the search space specification
+        supplied at instantiation using the requested generation method (i.e.,
+        random search, TPE, Gaussian process Bayesian optimization, etc.).
 
         Returns
         -------
@@ -294,6 +308,22 @@ class Shadho(object):
 
     def assign_to_ccs(self):
         """Assign trees to compute classes.
+
+        Each independent model in the search (model being one of a disjoint set
+        of search domains) is assigned to at least two compute classes based on
+        its rank relative to other models. In this way, only a subset of models
+        are evaluated on each set of hardware.
+
+        Notes
+        -----
+        This method accounts for differing counts of models and compute
+        classes, adjusting for a greater number of models, a greater number of
+        compute classes, or equal counts of models and compute classes.
+
+        See Also
+        --------
+        `shadho.ComputeClass`
+        `pyrameter.ModelGroup`
         """
         self.backend.update_rank()
 
@@ -337,24 +367,24 @@ class Shadho(object):
                         else:
                             self.assignments[larger[i]].add_model(smaller[j - 1])
 
-    def register_probabilities(self):
-        if self.use_complexity and self.use_priority:
-            for ccid in self.assignments:
-                cc = self.ccs[ccid]
-                probs = np.arange(len(self.assignments[ccid]), 0, -1, dtype=np.float32)
-                cc.probs = probs / np.sum(probs)
-        else:
-            for ccid in self.assignments:
-                self.ccs[ccid].probs = np.ones(len(self.assignments[ccid])) / len(self.assignments[ccid])
-
-
     def success(self, tag, loss, results):
         """Handle successful task completion.
 
         Parameters
         ----------
-        task : `work_queue.Task`
-            The task to process.
+        tag : str
+            The task tag, encoding the result id, model id, and compute class
+            id as ``<result_id>.<model_id>.<cc_id>``.
+        loss : float
+            The loss value associated with this result.
+        results : dict
+            Additional metrics to be included with this result.
+
+        Notes
+        -----
+        This method will trigger a model/compute class reassignment in the
+        event that storing the result caused the model's priority to be
+        updated.
         """
         result_id, model_id, ccid = tag.split('.')
 
@@ -365,14 +395,17 @@ class Shadho(object):
             self.assign_to_ccs()
         self.ccs[ccid].current_tasks -= 1
 
-
-    def failure(self, rid, ccid, resub):
+    def failure(self, tag, resub):
         """Handle task failure.
 
         Parameters
         ----------
         task : `work_queue.Task`
             The failed task to process.
+
+        Notes
+        -----
+
         """
         submissions, params = self.backend.register_result(rid, None)
         if resub and submissions < self.max_resubmissions:

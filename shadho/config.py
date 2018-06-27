@@ -102,9 +102,19 @@ class ShadhoConfig(object):
             raise ShadhoInstallNotfoundError(self.config['shadho_dir'])
 
         # Instantiate config group objects
-        self.global = ConfigGroup(self.config['global'])
+        self.shadho = ConfigGroup(self.config['global'])
         self.workqueue = ConfigGroup(self.config['workqueue'])
         self.backend = ConfigGroup(self.config['backend'])
+
+    def __getattr__(self, attr):
+        if attr not in self.__dict__:
+            if attr in self.__dict__['shadho']:
+                return self.__dict__['shadho'].attr
+            else:
+                msg = '{} has not attribute {}'
+                raise AttributeError(msg.format(self.__class__.__name__, attr))
+        else:
+            return self.__dict__[attr]
 
     def __get_home(self):
         try:
@@ -144,20 +154,34 @@ class ConfigGroup(object):
 
     Notes
     -----
-    Configuration values should be accessed using the ``.`` operator.
+    Configuration values should be accglobalessed using the ``.`` operator.
 
     """
 
-    DATA = {}
-
-    def __init__(self, data):
-        ConfigGroup.DATA = data
+    def __init__(self, data=None, **kws):
+        if data is None:
+            data = {}
+        data.update(kws)
+        self.data = data
 
     def __getattr__(self, attr):
-        return ConfigGroup.DATA[attr]
+        if attr != 'data':
+            if attr in self.__dict__['data']:
+                return self.__dict__['data'][attr]
+            else:
+                msg = '{} has not attribute {}'
+                raise AttributeError(msg.format(self.__class__.__name__, attr))
+        else:
+            return self__dict__['data']
 
     def __setattr__(self, attr, val):
-        ConfigGroup.DATA[attr] = val
+        if attr != 'data':
+            self.__dict__['data'][attr] = val
+        else:
+            self.__dict__[attr] = val
+
+    def __contains__(self, key):
+        return key in self.data
 
     def __str__(self):
-        return str(ConfigGroup.DATA)
+        return str(self.data)

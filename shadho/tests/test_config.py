@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from shadho.config import ShadhoConfig, ShadhorcDoesNotExistError
+from shadho.config import ShadhoConfig, ConfigGroup, ShadhorcDoesNotExistError
 
 
 class TestShadhoConfig(object):
@@ -22,7 +22,7 @@ class TestShadhoConfig(object):
         # environment variable.
         os.environ['SHADHORC'] = dummyrc
         cfg = ShadhoConfig()
-        assert cfg.config._workqueue.port == 9123
+        assert cfg.workqueue.port == 9123
         assert cfg.config == defaults
         del os.environ['SHADHORC']
 
@@ -36,13 +36,13 @@ class TestShadhoConfig(object):
 
         os.environ['HOME'] = os.path.dirname(dummyrc)
         cfg = ShadhoConfig()
-        assert cfg.config._workqueue.port == 9123
+        assert cfg.workqueue.port == 9123
         assert cfg.config == defaults
         del os.environ['HOME']
 
         os.environ['USERPROFILE'] = os.path.dirname(dummyrc)
         cfg = ShadhoConfig()
-        assert cfg.config._workqueue.port == 9123
+        assert cfg.workqueue.port == 9123
         assert cfg.config == defaults
         del os.environ['USERPROFILE']
 
@@ -71,6 +71,30 @@ class TestShadhoConfig(object):
         if userprofile is not None:
             os.environ['USERPROFILE'] = userprofile
 
-    def test_save_config(self):
+    def test_save_config(self, tmpdir):
         cfg = ShadhoConfig()
-        cfg.save_config('')
+        cfg.save_config(tmpdir)
+
+
+class TestConfigGroup(object):
+    def test_init(self):
+        # Initialize with an empty dictionary
+        g = ConfigGroup()
+        assert g.data == {}
+
+        # Initialize with a simple dictionary passed to data
+        correct1 = {'a': 1, 'b': 'foo', 'c': 0.16854}
+        g = ConfigGroup(data=copy.deepcopy(correct1))
+        assert g.data == correct1
+
+        # Initialize with a simple dictionary passed to data
+        correct2 = {'d': 'bar', 'e': 65.68473, 'f': 8675}
+        g = ConfigGroup(**copy.deepcopy(correct2))
+        assert g.data == correct2
+
+        # Initialize with a simple dictionary passed to data
+        correct3 = copy.deepcopy(correct1)
+        correct3.update(correct2)
+        g = ConfigGroup(data=copy.deepcopy(correct1),
+                        **copy.deepcopy(correct2))
+        assert g.data == correct3

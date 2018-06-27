@@ -100,8 +100,8 @@ class Shadho(object):
         self.__tmpdir = tempfile.mkdtemp(prefix='shadho_', suffix='_output')
 
         self.add_input_file(os.path.join(
-            self.config._global.shadho_dir,
-            self.config._global.wrapper))
+            self.config.shadho_dir,
+            self.config.wrapper))
 
         self.config.save_config(self.__tmpdir)
         self.add_input_file(os.path.join(self.__tmpdir, '.shadhorc'))

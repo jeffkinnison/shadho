@@ -19,6 +19,9 @@ class TestShadho(object):
         s = Shadho('echo "hello"', {'a': 6, 'b': 3654})
         s.generate()
 
+    def test_assign_to_ccs(self):
+        s = Shadho('echo "hello"', {})
+
     def test_make_tasks(self):
         pass
 
@@ -30,4 +33,3 @@ class TestShadho(object):
 
     def test_run(self):
         pass
-

@@ -1,4 +1,9 @@
-"""
+"""Main driver for the SHADHO framework.
+
+Classes
+-------
+Shadho
+    Driver class for local and distributed hyperparameter optimization.
 """
 from .config import ShadhoConfig
 from .hardware import ComputeClass

@@ -102,9 +102,9 @@ class ShadhoConfig(object):
             raise ShadhoInstallNotfoundError(self.config['shadho_dir'])
 
         # Instantiate config group objects
-        self._global = ConfigGroup(self.config['global'])
-        self._workqueue = ConfigGroup(self.config['workqueue'])
-        self._backend = ConfigGroup(self.config['backend'])
+        self.global = ConfigGroup(self.config['global'])
+        self.workqueue = ConfigGroup(self.config['workqueue'])
+        self.backend = ConfigGroup(self.config['backend'])
 
     def __get_home(self):
         try:
@@ -133,7 +133,20 @@ class ShadhoConfig(object):
         with open(os.path.join(path, '.shadhorc'), 'w') as f:
             config.write(f)
 
+
 class ConfigGroup(object):
+    """Container class for hierarchical configuration.
+
+    Parameters
+    ----------
+    data : dict
+        Key/value pairs for configuration values.
+
+    Notes
+    -----
+    Configuration values should be accessed using the ``.`` operator.
+
+    """
 
     DATA = {}
 

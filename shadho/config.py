@@ -109,9 +109,9 @@ class ShadhoConfig(object):
     def __getattr__(self, attr):
         if attr not in self.__dict__:
             if attr in self.__dict__['shadho']:
-                return self.__dict__['shadho'].attr
+                return getattr(self.__dict__['shadho'], attr)
             else:
-                msg = '{} has not attribute {}'
+                msg = '{} has no attribute {}'
                 raise AttributeError(msg.format(self.__class__.__name__, attr))
         else:
             return self.__dict__[attr]
@@ -169,7 +169,7 @@ class ConfigGroup(object):
             if attr in self.__dict__['data']:
                 return self.__dict__['data'][attr]
             else:
-                msg = '{} has not attribute {}'
+                msg = '{} has no attribute {}'
                 raise AttributeError(msg.format(self.__class__.__name__, attr))
         else:
             return self__dict__['data']

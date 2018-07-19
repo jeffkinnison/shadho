@@ -105,8 +105,7 @@ class ComputeClass(object):
 
     def clear(self):
         """Remove all models from this compute class."""
-        for model_id in self.model_group.model_ids:
-            self.remove_model(model_id)
+        self.model_group.clear()
 
     def register_result(self, model_id, result_id, loss, results):
         """Add a result to a model in this compute class.

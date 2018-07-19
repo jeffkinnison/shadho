@@ -1,5 +1,5 @@
-#!/usr/bin/env python 
-from setuptools import setup 
+#!/usr/bin/env python
+from setuptools import setup
 from setuptools.command.install import install
 
 try:
@@ -189,9 +189,7 @@ setup(
     install_requires=[
         'scipy>=0.18.1',
         'numpy>=1.12.0',
-        'scikit-learn>=0.18.1',
-        'pandas>=0.18.1',
-        'sqlalchemy>=1.1.11'
+        'scikit-learn>=0.18.1'
     ],
     extras_require={
         'test': ['nose', 'coverage']

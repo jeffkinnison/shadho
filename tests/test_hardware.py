@@ -36,10 +36,13 @@ class TestComputeClass(object):
         cc = ComputeClass("name", "resource", 2, 100)
         cc.model_group = ModelGroup(m)
 
-        result = cc.generate(1)
+        result = cc.generate(m.id)
+        print(result)
 
-        assert isinstance(result[1][''], int)
-        assert result[1][''] in self.__discrete_domain__
+        assert result[0] == m.id
+        assert result[1] == m.results[0].id
+        assert isinstance(result[-1][''], int)
+        assert result[2][''] in self.__discrete_domain__
 
         # Test single model - with single ContinuousDomain
         m = RandomSearchModel(id=1)
@@ -50,8 +53,8 @@ class TestComputeClass(object):
 
         result = cc.generate(1)
 
-        assert isinstance(result[1][''], float)
-        assert result[1][''] >= 1.0 and result[1][''] <= 6.0
+        assert isinstance(result[-1][''], float)
+        assert result[-1][''] >= 1.0 and result[-1][''] <= 6.0
 
         # Test single model - with multiple Domains
         m = RandomSearchModel(id=1)
@@ -63,10 +66,10 @@ class TestComputeClass(object):
 
         result = cc.generate(1)
 
-        assert isinstance(result[1]['a'], int)
-        assert result[1]['a'] in self.__discrete_domain__
-        assert isinstance(result[1]['b'], float)
-        assert result[1]['b'] >= 1.0 and result[1]['b'] <= 6.0
+        assert isinstance(result[-1]['a'], int)
+        assert result[-1]['a'] in self.__discrete_domain__
+        assert isinstance(result[-1]['b'], float)
+        assert result[-1]['b'] >= 1.0 and result[-1]['b'] <= 6.0
 
         # Test multiple models
         m1 = RandomSearchModel(id=1)
@@ -82,10 +85,10 @@ class TestComputeClass(object):
         result1 = cc.generate(1)
         result2 = cc.generate(2)
 
-        assert isinstance(result1[1][''], int)
-        assert result1[1][''] in self.__discrete_domain__
-        assert isinstance(result2[1][''], int)
-        assert result2[1][''] in self.__discrete_domain__
+        assert isinstance(result1[-1][''], int)
+        assert result1[-1][''] in self.__discrete_domain__
+        assert isinstance(result2[-1][''], int)
+        assert result2[-1][''] in self.__discrete_domain__
 
     def test_add_model(self):
         m1 = Model(id=1)
@@ -112,7 +115,9 @@ class TestComputeClass(object):
 
         # Test clearing an empty CC (nothing should happen)
         cc = ComputeClass('name', 'resource', 1, 100)
+        assert len(cc.model_group) == 0
         cc.clear()
+        assert len(cc.model_group) == 0
 
         # Test clearing a single- and multi-model ModelGroup
         for i in range(1, len(models)):

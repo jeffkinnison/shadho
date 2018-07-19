@@ -9,7 +9,7 @@ from shadho.config import ShadhoConfig, ConfigGroup, ShadhorcDoesNotExistError
 class TestShadhoConfig(object):
     def test_init(self):
         dummyrc = os.path.abspath(
-                    os.path.join('.', 'shadho', 'tests', '.shadhorc'))
+                    os.path.join(os.path.dirname(__file__), '.shadhorc'))
 
         # Test the default configuration.
         cfg = ShadhoConfig(use_defaults=True)

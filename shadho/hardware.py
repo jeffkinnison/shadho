@@ -2,7 +2,7 @@
 """
 import uuid
 import sys
-sys.path.append("./pyrameter")
+
 from pyrameter.modelgroup import ModelGroup
 from pyrameter.models.model import Model
 
@@ -48,7 +48,7 @@ class ComputeClass(object):
         The maximum number of tasks to queue. Recommended to be 1.5-2x the
         number of expected nodes with this resource.
     current_tasks : int
-        The curent number of queued tasks.
+        The current number of queued tasks.
     model_group : `pyrameter.ModelGroup`
         The (possibly ordered) list of models assigned to this ComputeClass.
 
@@ -108,7 +108,7 @@ class ComputeClass(object):
         for model_id in self.model_group.model_ids:
             self.remove_model(model_id)
 
-    def register_result(self, model_id, result_id, loss, results=None):
+    def register_result(self, model_id, result_id, loss, results):
         """Add a result to a model in this compute class.
 
         Parameters
@@ -117,5 +117,7 @@ class ComputeClass(object):
             The id of the model to store the result in.
 
         """
-        self.model_group.register_result(model_id, result_id, loss,
-                                         results=results)
+        if not isinstance(results, dict):
+            results = {'results': results}
+        results['compute_class'] = (self.resource, self.value)
+        self.model_group.register_result(model_id, result_id, loss, results)

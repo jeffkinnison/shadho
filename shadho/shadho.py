@@ -189,7 +189,7 @@ class Shadho(object):
         """
         if not hasattr(self, 'manager'):
             self.manager = create_manager(
-                manager_type=self.config._global.manager,
+                manager_type=self.config.manager,
                 config=self.config,
                 tmpdir=self.__tmpdir)
 
@@ -201,7 +201,6 @@ class Shadho(object):
             self.ccs[cc.id] = cc
 
         self.assign_to_ccs()
-        self.register_probabilities()
 
         start = time.time()
         elapsed = 0
@@ -211,13 +210,12 @@ class Shadho(object):
                 if not stop:
                     result = self.manager.run_task()
                     if result is not None:
-                        if len(result) == 4:
-                            #print('Received result with loss {}'.format(result[2]))
+                        if len(result) == 3:
                             self.success(*result)
                         else:
                             self.failure(*result)
-                    if len(self.backend.db['results']) % 50 == 0:
-                        self.backend.checkpoint()
+                    if self.backend.result_count % 50 == 0:
+                        self.backend.save()
                     elapsed = time.time() - start
                 else:
                     break
@@ -227,7 +225,6 @@ class Shadho(object):
                     result = self.manager.run_task()
                     if result is not None:
                         if len(result) == 4:
-                            #print('Received result with loss {}'.format(result[2]))
                             self.success(*result)
                         else:
                             self.failure(*result)
@@ -236,9 +233,10 @@ class Shadho(object):
             if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
                 os.rmdir(self.__tmpdir)
 
-        self.backend.checkpoint()
-        opt = self.backend.get_optimal(mode='global')
-        print("Optimal loss: {}".format(opt[0]))
+        self.backend.save()
+        opt = self.backend.optimal(mode='best')
+        key = list(opt.keys())[0]
+        print("Optimal result: {}".format(opt[key]['loss']))
         print("With parameters: {}".format(opt[1]))
         print("And additional results: {}".format(opt[2]))
 
@@ -258,16 +256,11 @@ class Shadho(object):
         for ccid in self.ccs:
             cc = self.ccs[ccid]
             n = cc.max_tasks - cc.current_tasks
-            assignments = self.assignments[ccid]
             for i in range(n):
-                idx = np.random.choice(len(assignments), p=cc.probs)
-                #rid, param = self.backend.generate(assignments[idx])
-                rid, param = cc.generate(assignments[idx])            #generate through CC
-
-                print("\nrid: {}\nparam: {}".format(rid, param))
+                mid, rid, param = cc.generate()
 
                 if param is not None:
-                    tag = '.'.join([rid, ccid])
+                    tag = '.'.join([rid, mid, ccid])
                     self.manager.add_task(
                         self.cmd,
                         tag,
@@ -330,17 +323,13 @@ class Shadho(object):
         `shadho.ComputeClass`
         `pyrameter.ModelGroup`
         """
-        self.backend.update_rank()
-
         if len(self.ccs) == 1:
-            self.assignments[list(self.ccs.keys())[0]].model_group = \
-                self.backend
-            return
-
+            key = list(self.ccs.keys())[0]
+            self.ccs[key].model_group = self.backend
         else:
             model_ids = [mid for mid in self.backend.model_ids]
             self.backend.sort_models()
-            if model_ids != self.backend.model_ids or len(self.assignments) == 0:
+            if model_ids != self.backend.model_ids or len(self.ccs) == 0:
                 model_ids = self.backend.model_ids
                 for cc in self.ccs:
                     cc.clear()
@@ -360,17 +349,17 @@ class Shadho(object):
                         y += x
 
                     if smaller[j] in self.assignments:
-                        self.assignments[smaller[j]].add_model(larger[i])
+                        self.ccs[smaller[j]].add_model(larger[i])
                         if i <= n:
-                            self.assignments[smaller[j + 1]].add_model(larger[i])
+                            self.ccs[smaller[j + 1]].add_model(larger[i])
                         else:
-                            self.assignments[smaller[j - 1]].add_model(larger[i])
+                            self.ccs[smaller[j - 1]].add_model(larger[i])
                     else:
-                        self.assignments[larger[i]].add_model(smaller[j])
+                        self.ccs[larger[i]].add_model(smaller[j])
                         if i <= n:
-                            self.assignments[larger[i]].add_model(smaller[j + 1])
+                            self.ccs[larger[i]].add_model(smaller[j + 1])
                         else:
-                            self.assignments[larger[i]].add_model(smaller[j - 1])
+                            self.ccs[larger[i]].add_model(smaller[j - 1])
 
     def success(self, tag, loss, results):
         """Handle successful task completion.
@@ -392,11 +381,9 @@ class Shadho(object):
         updated.
         """
         result_id, model_id, ccid = tag.split('.')
+        self.ccs[ccid].register_result(model_id, result_id, loss, results)
 
-        results['cc'] = (self.ccs[ccid].resource, self.ccs[ccid].value)
-        self.ccs[ccid].register_result(model_id, result_id, loss, results=results)
-
-        if update:
+        if self.backend.result_count % 10 == 0:
             self.assign_to_ccs()
         self.ccs[ccid].current_tasks -= 1
 

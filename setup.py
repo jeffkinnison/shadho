@@ -42,6 +42,7 @@ DEFAULT_CONFIG = {
     }
 }
 
+
 class InstallCCToolsCommand(install):
     """Helper to install CCTools.
     """

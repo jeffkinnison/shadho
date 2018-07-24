@@ -10,3 +10,4 @@ generated
 _build
 *.debug
 *.log
+results.json

@@ -5,12 +5,13 @@ from scipy.stats import uniform
 from shadho.hardware import ComputeClass
 
 import sys
-sys.path.append("../pyrameter")
+
 from pyrameter.modelgroup import ModelGroup
 from pyrameter.models.model import Model
 from pyrameter.models.random_search import RandomSearchModel
 from pyrameter.models.gp import GPBayesModel
 from pyrameter.domain import Domain, DiscreteDomain, ContinuousDomain
+
 
 class TestComputeClass(object):
 

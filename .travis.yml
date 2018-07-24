@@ -26,6 +26,6 @@ before_install:
     mv "./travis_helpers/python3-config" "${py3path}/bin";
     chmod 755 "${py3path}/bin/python3-config";
     fi
-    - cd shadho
+  - cd shadho
 install: pip install .
 script: python -m pytest

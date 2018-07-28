@@ -11,6 +11,7 @@ before_install:
   - git clone https://github.com/jeffkinnison/pyrameter
   - pip install ./pyrameter
   - if [ "${TRAVIS_PYTHON_VERSION}" != "2.7" ]; then
+    apt-get install python-dev
     version="$(python -c 'import sys; print("{}.{}.{}".format(*sys.version_info[:3]))')";
     libpy="$(find /opt -name "libpython${TRAVIS_PYTHON_VERSION}m.so")";
     py3path="$(dirname "$(dirname $(command -v python3))")";

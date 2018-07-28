@@ -43,14 +43,24 @@ DEFAULT_CONFIG = {
 }
 
 
+class InstallError(Exception):
+    """Raised when an error occurs installing Work Queue"""
+    def __init__(self, logfile):
+        fname = logfile.name
+        logfile.close()
+        logfile = open(fname, 'r')
+        super(InstallError, self).__init__(logfile.read())
+
+
 class InstallCCToolsCommand(install):
-    """Helper to install CCTools.
-    """
+    """Helper to install CCTools."""
     description = "Install CCTools and set up SHADHO working directory"
+
     def run(self):
         """Install WorkQueue from the CCTools suite to site-packages.
 
-        SHADHO uses WorkQueue, a member of the `CCTools software suite<http://ccl.cse.nd.edu>`,
+        SHADHO uses WorkQueue, a member of the
+        `CCTools software suite<http://ccl.cse.nd.edu>`,
         to manage the distributed computing environment. This function installs
         CCTools and moves the related Python module and shared library to the
         site-packages directory.
@@ -73,70 +83,92 @@ class InstallCCToolsCommand(install):
             print("Found Work Queue, skipping install")
         except ImportError:
 
-            tmpdir = tempfile.mkdtemp()
+            tmpdir = tempfile.mkdtemp(prefix='shadho_install_')
 
-            logfile=open(os.path.join(tmpdir, "install.log"), 'wb')
+            try:
+                # Install Perl
+                logfile = open("perl_install.log", 'w')
+                args = [
+                    'bash',
+                    os.path.join(
+                        os.path.dirname(__file__),
+                        'install_perl.sh')
+                    ]
+                args.append(tmpdir)
 
-            #install pcre
-            args = [
-                'bash',
-                os.path.join(
-                    os.path.dirname(__file__),
-                    'install_pcre.sh')
-                ]
-            args.append(tmpdir)
+                subprocess.check_call(args, stdout=logfile,
+                                      stderr=subprocess.STDOUT)
+                logfile.close()
 
-            subprocess.call(args, stdout=logfile)
+                logfile = open("pcre_install.log", 'w')
 
-            #install perl
-            args = [
-                'bash',
-                os.path.join(
-                    os.path.dirname(__file__),
-                    'install_perl.sh')
-                ]
-            args.append(tmpdir)
+                # Install PCRE
+                args = [
+                    'bash',
+                    os.path.join(
+                        os.path.dirname(__file__),
+                        'install_pcre.sh')
+                    ]
+                args.append(tmpdir)
 
-            subprocess.call(args, stdout=logfile)
+                subprocess.check_call(args, stdout=logfile,
+                                      stderr=subprocess.STDOUT)
+                logfile.close()
 
-            #get python paths
-            args = [
-                'bash',
-                os.path.join(
-                    os.path.dirname(__file__),
-                    'get_py_paths.sh')
-                ]
-            args.append(tmpdir)
-            if MAJ == 3:
-                args.append('py3')
+                # Get paths to Python installs
+                logfile = open("python_paths.log", 'w')
+                args = [
+                    'bash',
+                    os.path.join(
+                        os.path.dirname(__file__),
+                        'get_py_paths.sh')
+                    ]
+                args.append(tmpdir)
+                if MAJ == 3:
+                    args.append('py3')
 
-            subprocess.call(args, stdout=logfile)
+                subprocess.check_call(args, stdout=logfile,
+                                      stderr=subprocess.STDOUT)
+                logfile.close()
 
-            #install swig
-            args = [
-                'bash',
-                os.path.join(
-                    os.path.dirname(__file__),
-                    'install_swig.sh')
-                ]
-            args.append(tmpdir)
+                # Install SWIG
+                logfile = open("swig_install.log", 'w')
+                args = [
+                    'bash',
+                    os.path.join(
+                        os.path.dirname(__file__),
+                        'install_swig.sh')
+                    ]
+                args.append(tmpdir)
 
-            subprocess.call(args, stdout=logfile)
+                subprocess.check_call(args, stdout=logfile,
+                                      stderr=subprocess.STDOUT)
+                logfile.close()
 
-            #install cctools
-            args = [
-                'bash',
-                os.path.join(
-                    os.path.dirname(__file__),
-                    'install_cctools.sh')
-                ]
-            args.append(tmpdir)
-            if '--user' in sys.argv:
-                args.append('--user')
+                # Install CCTools
+                logfile = open("cctools_install.log", 'w')
+                args = [
+                    'bash',
+                    os.path.join(
+                        os.path.dirname(__file__),
+                        'install_cctools.sh')
+                    ]
+                args.append(tmpdir)
 
-            subprocess.call(args, stdout=logfile)
+                if MAJ == 3:
+                    args.append('py3')
 
-            shutil.rmtree(tmpdir)
+                if '--user' in sys.argv:
+                    args.append('--user')
+
+                subprocess.check_call(args, stdout=logfile,
+                                      stderr=subprocess.STDOUT)
+                logfile.close()
+
+                shutil.rmtree(tmpdir)
+            except subprocess.CalledProcessError:
+                shutil.rmtree(tmpdir)
+                raise InstallError(logfile)
 
         try:
             cfg.read_dict(DEFAULT_CONFIG)

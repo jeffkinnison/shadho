@@ -15,20 +15,32 @@ cd $base
 git clone -b hyperopt_worker https://github.com/nkremerh/cctools
 
 # Get paths
-perlpath="$(head -1 ${base}/paths.txt | tail -1)"
-py2path="$(head -2 ${base}/paths.txt | tail -1)"
+perlpath="$base/perl"  # "$(head -1 ${base}/paths.txt | tail -1)"
+#py2path="$(head -2 ${base}/paths.txt | tail -1)"
+#py2version="$(python2 -c 'import sys; print("{}.{}".format(*sys.version_info[:2]))')"
+#py3path="$(head -3 ${base}/paths.txt | tail -1)"
+#py3version="$(python3 -c 'import sys; print("{}.{}".format(*sys.version_info[:2]))')"
+swigpath="$base/swig"  # "$(head -4 ${base}/paths.txt | tail -1)"
+
+py2path="$(dirname "$(dirname "$(command -v python2)")")"
 py2version="$(python2 -c 'import sys; print("{}.{}".format(*sys.version_info[:2]))')"
-py3path="$(head -3 ${base}/paths.txt | tail -1)"
-py3version="$(python3 -c 'import sys; print("{}.{}".format(*sys.version_info[:2]))')"
-swigpath="$(head -4 ${base}/paths.txt | tail -1)"
+
+py3path=""
+
+for opt in "$@"; do
+    if [ "$opt" == "py3" ]; then
+        py3path="$(dirname "$(dirname "$(command -v python3)")")"
+        py3version="$(python3 -c 'import sys; print("{}.{}".format(*sys.version_info[:2]))')"
+    fi
+done
 
 # Configure, make, and install
 cd cctools
 
 prefix="$HOME/.shadho"
 
-export LD_LIBRARY_PATH="${base}/lib:$LD_LIBRARY_PATH"
-export LIBRARY_PATH="${base}/lib:$LIBRARY_PATH"
+export LD_LIBRARY_PATH="${base}/pcre/lib:$LD_LIBRARY_PATH"
+export LIBRARY_PATH="${base}/pcre/lib:$LIBRARY_PATH"
 
 if [ ! -z "$py3path" ]; then
     ./configure \
@@ -37,16 +49,32 @@ if [ ! -z "$py3path" ]; then
         --with-python3-path=$py3path \
         --with-perl-path=$perlpath \
         --with-swig-path=$swigpath
+
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+
+
 else
     ./configure \
         --prefix=$prefix \
         --with-python-path=$py2path \
         --with-perl-path=$perlpath \
         --with-swig-path=$swigpath
+
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+
 fi
 
-make -j 8
-make install -j 8
+
+make -j 8 && make install -j 8
+
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
 
 # Move the Work Queue install into site-packages so that it can be used without
 # additional configuration

@@ -42,13 +42,19 @@ prefix="$HOME/.shadho"
 export LD_LIBRARY_PATH="${base}/pcre/lib:$LD_LIBRARY_PATH"
 export LIBRARY_PATH="${base}/pcre/lib:$LIBRARY_PATH"
 
+# pyh="$(dirname $(locate Python.h))"
+# export CFLAGS="$pyh:$CFLAGS"
+
 if [ ! -z "$py3path" ]; then
     ./configure \
         --prefix=$prefix \
         --with-python-path=$py2path \
         --with-python3-path=$py3path \
         --with-perl-path=$perlpath \
-        --with-swig-path=$swigpath
+        --with-swig-path=$swigpath \
+        --without-system-prune \
+        --without-system-umbrella \
+        --without-system-weaver
 
     if [ $? -ne 0 ]; then
         exit 1

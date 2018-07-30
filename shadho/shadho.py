@@ -30,13 +30,12 @@ class Shadho(object):
 
     Parameters
     ----------
+    cmd : str or function
+        The command to run on remote workers or function to run locally.
     spec : dict
         The specification defining search spaces.
     files : list of str or WQFile
         The files to send to remote workers for task execution.
-    ccs : list of `shadho.hardware.ComputeClass`, optional
-        The types of hardware to expect during optimization. If not supplied,
-        tasks are run on the first available worker.
     use_complexity : bool, optional
         If True, use the complexity heuristic to adjust search proportions.
     use_priority : bool, optional
@@ -53,26 +52,29 @@ class Shadho(object):
     ----------
     config : `shadho.config.ShadhoConfig`
         Global configurations for shadho.
-    backend : `shadho.backend.basedb.BaseBackend`
-        The data storage backend.
+    backend : `pyrameter.ModelGroup`
+        The data view/storage backend. This backend keeps track of all
     manager : `shadho.managers.workqueue.WQManager`
         The distributed task manager to use.
-    trees : list
-        The ids of every tree in the search forest.
     ccs : list of `shadho.hardware.ComputeClass`
         The types of hardware to expect during optimization. If not supplied,
         tasks are run on the first available worker.
-    assignments : dict
-        Record of trees assigned to compute classes.
     timeout : int
         Number of seconds to search for.
+    max_tasks : int
+        Maximum number of tasks to enqueue at a time.
     max_resubmissions: int
         Maximum number of times to resubmit a particular parameterization for
         processing if task failure occurs. Default is not to resubmit.
 
+    Notes
+    -----
+    To enable configuration, ``backend`` and ``manager`` are created when
+    `Shadho.run` is called.
+
     """
 
-    def __init__(self, cmd, spec, ccs=None, files=None, use_complexity=True,
+    def __init__(self, cmd, spec, files=None, use_complexity=True,
                  use_priority=True, timeout=600, max_tasks=100,
                  await_pending=False, max_resubmissions=0):
         self.config = ShadhoConfig()

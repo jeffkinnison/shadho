@@ -28,6 +28,28 @@ class ShadhoInstallNotfoundError(Exception):
 
 
 class ShadhoConfig(object):
+    """Configurations for running SHADHO.
+
+    Configurations consist of the defaults defined in this class, those values
+    read from the .shahdorc file, and those set by the user at runtime.
+
+    Parameters
+    ----------
+    use_defaults : bool, optional
+        If true, only use the default configuration. Default: False.
+
+    Attributes
+    ----------
+    config : dict
+        Dictionary of configuration values.
+
+    Notes
+    -----
+    All config values can be addressed by key index (dictionary style) or by
+    dot operator (object-oriented style).
+
+    """
+
     DEFAULTS = {
         'global': {
             'wrapper': 'shadho_worker.py',
@@ -117,6 +139,17 @@ class ShadhoConfig(object):
             return self.__dict__[attr]
 
     def __get_home(self):
+        """Get the absolute path to the user's home directory.
+
+        Returns
+        -------
+        home : str
+            Absolute path to the user's home directory.
+
+        Notes
+        -----
+        This method attempts to be OS-agnostic.
+        """
         try:
             home = os.path.expanduser(
                     os.environ['HOME'] if 'HOME' in os.environ
@@ -128,6 +161,13 @@ class ShadhoConfig(object):
         return home
 
     def save_config(self, path):
+        """Write the current config to file.
+
+        Parameters
+        ----------
+        path : str
+            Path to the output config file.
+        """
         try:
             config = configparser.ConfigParser()
             config.read_dict(self.config)

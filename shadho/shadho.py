@@ -1,6 +1,10 @@
+"""Main driver for the SHADHO framework.
+
+Classes
+-------
+Shadho
+    Driver class for local and distributed hyperparameter optimization.
 """
-"""
-from .backend import create_backend
 from .config import ShadhoConfig
 from .hardware import ComputeClass
 from .managers import create_manager
@@ -13,6 +17,7 @@ import tempfile
 import time
 
 import numpy as np
+import pyrameter
 import scipy.stats
 
 
@@ -25,13 +30,12 @@ class Shadho(object):
 
     Parameters
     ----------
+    cmd : str or function
+        The command to run on remote workers or function to run locally.
     spec : dict
         The specification defining search spaces.
     files : list of str or WQFile
         The files to send to remote workers for task execution.
-    ccs : list of `shadho.hardware.ComputeClass`, optional
-        The types of hardware to expect during optimization. If not supplied,
-        tasks are run on the first available worker.
     use_complexity : bool, optional
         If True, use the complexity heuristic to adjust search proportions.
     use_priority : bool, optional
@@ -48,26 +52,29 @@ class Shadho(object):
     ----------
     config : `shadho.config.ShadhoConfig`
         Global configurations for shadho.
-    backend : `shadho.backend.basedb.BaseBackend`
-        The data storage backend.
+    backend : `pyrameter.ModelGroup`
+        The data view/storage backend. This backend keeps track of all
     manager : `shadho.managers.workqueue.WQManager`
         The distributed task manager to use.
-    trees : list
-        The ids of every tree in the search forest.
     ccs : list of `shadho.hardware.ComputeClass`
         The types of hardware to expect during optimization. If not supplied,
         tasks are run on the first available worker.
-    assignments : dict
-        Record of trees assigned to compute classes.
     timeout : int
         Number of seconds to search for.
+    max_tasks : int
+        Maximum number of tasks to enqueue at a time.
     max_resubmissions: int
         Maximum number of times to resubmit a particular parameterization for
         processing if task failure occurs. Default is not to resubmit.
 
+    Notes
+    -----
+    To enable configuration, ``backend`` and ``manager`` are created when
+    `Shadho.run` is called.
+
     """
 
-    def __init__(self, cmd, spec, ccs=None, files=None, use_complexity=True,
+    def __init__(self, cmd, spec, files=None, use_complexity=True,
                  use_priority=True, timeout=600, max_tasks=100,
                  await_pending=False, max_resubmissions=0):
         self.config = ShadhoConfig()
@@ -95,8 +102,8 @@ class Shadho(object):
         self.__tmpdir = tempfile.mkdtemp(prefix='shadho_', suffix='_output')
 
         self.add_input_file(os.path.join(
-            self.config['global']['shadho_dir'],
-            self.config['global']['wrapper']))
+            self.config.shadho_dir,
+            self.config.wrapper))
 
         self.config.save_config(self.__tmpdir)
         self.add_input_file(os.path.join(self.__tmpdir, '.shadhorc'))
@@ -170,29 +177,32 @@ class Shadho(object):
 
     def run(self):
         """Search hyperparameter values on remote workers.
+
+        Generate and evaluate hyperparameters using the selected task manager
+        and search strategy. Hyperparameters will be evaluated until timeout,
+        and the optimal set will be printed to screen.
+
+        Notes
+        -----
+        If `self.await_pending` is True, Shadho will continue to evaluate
+        hyperparameters in the queue without generating new hyperparameter
+        values. This will continue until the queue is empty and all tasks have
+        returned.
         """
         if not hasattr(self, 'manager'):
             self.manager = create_manager(
-                manager_type=self.config['global']['manager'],
+                manager_type=self.config.manager,
                 config=self.config,
                 tmpdir=self.__tmpdir)
 
         if not hasattr(self, 'backend'):
-            self.backend = create_backend(
-                backend_type=self.config['global']['backend'],
-                config=self.config)
+            self.backend = pyrameter.build(self.spec)
 
         if len(self.ccs) == 0:
             cc = ComputeClass('all', None, None, self.max_tasks)
             self.ccs[cc.id] = cc
 
-        self.trees = self.backend.make_forest(
-            self.spec,
-            use_complexity=self.use_complexity,
-            use_priority=self.use_priority)
-
         self.assign_to_ccs()
-        self.register_probabilities()
 
         start = time.time()
         elapsed = 0
@@ -202,39 +212,42 @@ class Shadho(object):
                 if not stop:
                     result = self.manager.run_task()
                     if result is not None:
-                        if len(result) == 4:
-                            #print('Received result with loss {}'.format(result[2]))
+                        if len(result) == 3:
                             self.success(*result)
                         else:
                             self.failure(*result)
-                    if len(self.backend.db['results']) % 50 == 0:
-                        self.backend.checkpoint()
+                    if self.backend.result_count % 50 == 0:
+                        self.backend.save()
                     elapsed = time.time() - start
                 else:
                     break
-            
+
             if self.await_pending:
                 while not self.manager.empty():
                     result = self.manager.run_task()
                     if result is not None:
                         if len(result) == 4:
-                            #print('Received result with loss {}'.format(result[2]))
                             self.success(*result)
                         else:
                             self.failure(*result)
-        
+
         except KeyboardInterrupt:
             if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
                 os.rmdir(self.__tmpdir)
 
-        self.backend.checkpoint()
-        opt = self.backend.get_optimal(mode='global')
-        print("Optimal loss: {}".format(opt[0]))
+        self.backend.save()
+        opt = self.backend.optimal(mode='best')
+        key = list(opt.keys())[0]
+        print("Optimal result: {}".format(opt[key]['loss']))
         print("With parameters: {}".format(opt[1]))
         print("And additional results: {}".format(opt[2]))
 
     def generate(self):
         """Generate hyperparameter values to test.
+
+        Hyperparameter values are generated from the search space specification
+        supplied at instantiation using the requested generation method (i.e.,
+        random search, TPE, Gaussian process Bayesian optimization, etc.).
 
         Returns
         -------
@@ -245,13 +258,11 @@ class Shadho(object):
         for ccid in self.ccs:
             cc = self.ccs[ccid]
             n = cc.max_tasks - cc.current_tasks
-            assignments = self.assignments[ccid]
             for i in range(n):
-                idx = np.random.choice(len(assignments), p=cc.probs)
-                #rid, param = self.backend.generate(assignments[idx])
-                rid, param = cc.generate(assignments[idx])            #generate through CC
+                mid, rid, param = cc.generate()
+
                 if param is not None:
-                    tag = '.'.join([rid, ccid])
+                    tag = '.'.join([rid, mid, ccid])
                     self.manager.add_task(
                         self.cmd,
                         tag,
@@ -279,13 +290,13 @@ class Shadho(object):
         for p in params:
             tag = '.'.join([p[0], p[1]])
             buff = WQBuffer(str(json.dumps(p[2])),
-                            self.config['global']['param_file'],
+                            self.config._global.param_file,
                             cache=False)
             outfile = WQFile(os.path.join(
                                 self.__tmpdir,
                                 '.'.join([tag,
-                                          self.config['global']['output']])),
-                             remotepath=self.config['global']['output'],
+                                          self.config._global.output])),
+                             remotepath=self.config._global.output,
                              ftype='output',
                              cache=False)
             files = [f for f in self.files]
@@ -297,25 +308,37 @@ class Shadho(object):
 
     def assign_to_ccs(self):
         """Assign trees to compute classes.
-           Assign trees/models to the modelgroups of the compute classes they
-           are assigned to.
+
+        Each independent model in the search (model being one of a disjoint set
+        of search domains) is assigned to at least two compute classes based on
+        its rank relative to other models. In this way, only a subset of models
+        are evaluated on each set of hardware.
+
+        Notes
+        -----
+        This method accounts for differing counts of models and compute
+        classes, adjusting for a greater number of models, a greater number of
+        compute classes, or equal counts of models and compute classes.
+
+        See Also
+        --------
+        `shadho.ComputeClass`
+        `pyrameter.ModelGroup`
         """
-        self.backend.update_rank()
-
         if len(self.ccs) == 1:
-            self.assignments[list(self.ccs.keys())[0]] = self.trees
-            return
-
+            key = list(self.ccs.keys())[0]
+            self.ccs[key].model_group = self.backend
         else:
-            trees = self.backend.order_trees()
-            if trees != self.trees or len(self.assignments) == 0:
+            model_ids = [mid for mid in self.backend.model_ids]
+            self.backend.sort_models()
+            if model_ids != self.backend.model_ids or len(self.ccs) == 0:
+                model_ids = self.backend.model_ids
                 for cc in self.ccs:
-                    self.assignments[cc] = []
-                    cc.model_group = ModelGroup()
+                    cc.clear()
 
                 ccids = list(self.ccs.keys())
-                larger = self.trees if len(self.trees) >= len(ccids) else ccids
-                smaller = self.trees if len(self.trees) < len(ccids) else ccids
+                larger = model_ids if len(self.trees) >= len(ccids) else ccids
+                smaller = model_ids if len(self.trees) < len(ccids) else ccids
 
                 x = float(len(larger)) / float(len(smaller))
                 y = x - 1
@@ -328,57 +351,55 @@ class Shadho(object):
                         y += x
 
                     if smaller[j] in self.assignments:
-                        self.assignments[smaller[j]].append(larger[i])
-                        self.ccs[smaller[j]].model_group.add_model(larger[i])
+                        self.ccs[smaller[j]].add_model(larger[i])
                         if i <= n:
-                            self.assignments[smaller[j + 1]].append(larger[i])
-                            self.ccs[smaller[j + 1]].model_group.add_model(larger[i])
+                            self.ccs[smaller[j + 1]].add_model(larger[i])
                         else:
-                            self.assignments[smaller[j - 1]].append(larger[i])
-                            self.ccs[smaller[j - 1]].model_group.add_model(larger[i])
+                            self.ccs[smaller[j - 1]].add_model(larger[i])
                     else:
-                        self.assignments[larger[i]].append(smaller[j])
-                        self.ccs[larger[i]].model_group.add_model(smaller[j])
+                        self.ccs[larger[i]].add_model(smaller[j])
                         if i <= n:
-                            self.assignments[larger[i]].append(smaller[j + 1])
-                            self.ccs[larger[i]].model_group.add_model(smaller[j + 1])
+                            self.ccs[larger[i]].add_model(smaller[j + 1])
                         else:
-                            self.assignments[larger[i]].append(smaller[j - 1])
-                            self.ccs[larger[i]].model_group.add_model(smaller[j - 1])
+                            self.ccs[larger[i]].add_model(smaller[j - 1])
 
-    def register_probabilities(self):
-        if self.use_complexity and self.use_priority:
-            for ccid in self.assignments:
-                cc = self.ccs[ccid]
-                probs = np.arange(len(self.assignments[ccid]), 0, -1, dtype=np.float32)
-                cc.probs = probs / np.sum(probs)
-        else:
-            for ccid in self.assignments:
-                self.ccs[ccid].probs = np.ones(len(self.assignments[ccid])) / len(self.assignments[ccid])
-            
-    
-    def success(self, rid, ccid, loss, results):
+    def success(self, tag, loss, results):
         """Handle successful task completion.
 
         Parameters
         ----------
-        task : `work_queue.Task`
-            The task to process.
+        tag : str
+            The task tag, encoding the result id, model id, and compute class
+            id as ``<result_id>.<model_id>.<cc_id>``.
+        loss : float
+            The loss value associated with this result.
+        results : dict
+            Additional metrics to be included with this result.
+
+        Notes
+        -----
+        This method will trigger a model/compute class reassignment in the
+        event that storing the result caused the model's priority to be
+        updated.
         """
-        results['cc'] = (self.ccs[ccid].resource, self.ccs[ccid].value)
-        update = self.backend.register_result(rid, loss, results=results)
-        if update:
+        result_id, model_id, ccid = tag.split('.')
+        self.ccs[ccid].register_result(model_id, result_id, loss, results)
+
+        if self.backend.result_count % 10 == 0:
             self.assign_to_ccs()
         self.ccs[ccid].current_tasks -= 1
 
-
-    def failure(self, rid, ccid, resub):
+    def failure(self, tag, resub):
         """Handle task failure.
 
         Parameters
         ----------
         task : `work_queue.Task`
             The failed task to process.
+
+        Notes
+        -----
+
         """
         submissions, params = self.backend.register_result(rid, None)
         if resub and submissions < self.max_resubmissions:
@@ -392,4 +413,3 @@ class Shadho(object):
                                   value=cc.value)
         else:
             self.ccs[ccid].current_tasks -= 1
-

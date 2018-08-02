@@ -1,5 +1,6 @@
 __pycache__
 .cache
+.pytest_cache
 cctools
 .DS_Store
 *.pyx
@@ -9,3 +10,4 @@ generated
 _build
 *.debug
 *.log
+results.json

@@ -8,7 +8,11 @@ before_install:
   - pip install --upgrade pip
   - pip install --only-binary=numpy,scipy numpy scipy
   - pip install --upgrade pytest
+  - git clone https://github.com/jeffkinnison/pyrameter
+  - pip install ./pyrameter
   - if [ "${TRAVIS_PYTHON_VERSION}" != "2.7" ]; then
+    apt-get install python
+    apt-get install python-dev
     version="$(python -c 'import sys; print("{}.{}.{}".format(*sys.version_info[:3]))')";
     libpy="$(find /opt -name "libpython${TRAVIS_PYTHON_VERSION}m.so")";
     py3path="$(dirname "$(dirname $(command -v python3))")";
@@ -25,4 +29,4 @@ before_install:
     chmod 755 "${py3path}/bin/python3-config";
     fi
 install: pip install .
-script: python -m pytest
+script: pytest tests

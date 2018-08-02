@@ -28,6 +28,28 @@ class ShadhoInstallNotfoundError(Exception):
 
 
 class ShadhoConfig(object):
+    """Configurations for running SHADHO.
+
+    Configurations consist of the defaults defined in this class, those values
+    read from the .shahdorc file, and those set by the user at runtime.
+
+    Parameters
+    ----------
+    use_defaults : bool, optional
+        If true, only use the default configuration. Default: False.
+
+    Attributes
+    ----------
+    config : dict
+        Dictionary of configuration values.
+
+    Notes
+    -----
+    All config values can be addressed by key index (dictionary style) or by
+    dot operator (object-oriented style).
+
+    """
+
     DEFAULTS = {
         'global': {
             'wrapper': 'shadho_worker.py',
@@ -55,6 +77,7 @@ class ShadhoConfig(object):
     }
 
     def __init__(self, use_defaults=False):
+
         # Copy the defaults
         if 'shadho_dir' not in ShadhoConfig.DEFAULTS:
             shadho_dir = os.path.join(self.__get_home(), '.shadho')
@@ -100,10 +123,33 @@ class ShadhoConfig(object):
         if not os.path.isdir(self.config['shadho_dir']):
             raise ShadhoInstallNotfoundError(self.config['shadho_dir'])
 
-    def __getitem__(self, key):
-        return self.config[key]
+        # Instantiate config group objects
+        self.shadho = ConfigGroup(self.config['global'])
+        self.workqueue = ConfigGroup(self.config['workqueue'])
+        self.backend = ConfigGroup(self.config['backend'])
+
+    def __getattr__(self, attr):
+        if attr not in self.__dict__:
+            if attr in self.__dict__['shadho']:
+                return getattr(self.__dict__['shadho'], attr)
+            else:
+                msg = '{} has no attribute {}'
+                raise AttributeError(msg.format(self.__class__.__name__, attr))
+        else:
+            return self.__dict__[attr]
 
     def __get_home(self):
+        """Get the absolute path to the user's home directory.
+
+        Returns
+        -------
+        home : str
+            Absolute path to the user's home directory.
+
+        Notes
+        -----
+        This method attempts to be OS-agnostic.
+        """
         try:
             home = os.path.expanduser(
                     os.environ['HOME'] if 'HOME' in os.environ
@@ -115,6 +161,13 @@ class ShadhoConfig(object):
         return home
 
     def save_config(self, path):
+        """Write the current config to file.
+
+        Parameters
+        ----------
+        path : str
+            Path to the output config file.
+        """
         try:
             config = configparser.ConfigParser()
             config.read_dict(self.config)
@@ -123,8 +176,52 @@ class ShadhoConfig(object):
             for section in self.config:
                 config.add_section(str(section))
                 for entry in self.config[section]:
-                    config.set(str(section),
-                               str(entry),
-                               str(self.config[section][entry]))
+                    if type(self.config[section]) is dict:
+                        config.set(str(section),
+                                   str(entry),
+                                   str(self.config[section][entry]))
         with open(os.path.join(path, '.shadhorc'), 'w') as f:
             config.write(f)
+
+
+class ConfigGroup(object):
+    """Container class for hierarchical configuration.
+
+    Parameters
+    ----------
+    data : dict
+        Key/value pairs for configuration values.
+
+    Notes
+    -----
+    Configuration values should be accglobalessed using the ``.`` operator.
+
+    """
+
+    def __init__(self, data=None, **kws):
+        if data is None:
+            data = {}
+        data.update(kws)
+        self.data = data
+
+    def __getattr__(self, attr):
+        if attr != 'data':
+            if attr in self.__dict__['data']:
+                return self.__dict__['data'][attr]
+            else:
+                msg = '{} has no attribute {}'
+                raise AttributeError(msg.format(self.__class__.__name__, attr))
+        else:
+            return self__dict__['data']
+
+    def __setattr__(self, attr, val):
+        if attr != 'data':
+            self.__dict__['data'][attr] = val
+        else:
+            self.__dict__[attr] = val
+
+    def __contains__(self, key):
+        return key in self.data
+
+    def __str__(self):
+        return str(self.data)

@@ -1,14 +1,26 @@
 #!/usr/bin/env bash
 
-# Set paths to the Python and swig executables
+# Get BASE
+base="$1"
 
-base="$(mktemp -d)"
-
+# Get USER
 user=""
 
 if [ "$1" == "--user" ]; then
     user="0"
 fi
+
+# Get the CCTools source
+cd $base
+git clone -b hyperopt_worker https://github.com/nkremerh/cctools
+
+# Get paths
+perlpath="$base/perl"  # "$(head -1 ${base}/paths.txt | tail -1)"
+#py2path="$(head -2 ${base}/paths.txt | tail -1)"
+#py2version="$(python2 -c 'import sys; print("{}.{}".format(*sys.version_info[:2]))')"
+#py3path="$(head -3 ${base}/paths.txt | tail -1)"
+#py3version="$(python3 -c 'import sys; print("{}.{}".format(*sys.version_info[:2]))')"
+swigpath="$base/swig"  # "$(head -4 ${base}/paths.txt | tail -1)"
 
 py2path="$(dirname "$(dirname "$(command -v python2)")")"
 py2version="$(python2 -c 'import sys; print("{}.{}".format(*sys.version_info[:2]))')"
@@ -22,47 +34,16 @@ for opt in "$@"; do
     fi
 done
 
-cd $base
-wget http://www.cpan.org/src/5.0/perl-5.26.0.tar.gz
-tar xzf perl-5.26.0.tar.gz
-cd perl-5.26.0
-./Configure -des -Dprefix=/tmp/shadho -Duseshrplib
-make -j8 && make install -j8
-perlpath="/tmp/shadho"
-
-cd $base
-wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.40.tar.gz
-tar xzf pcre-8.40.tar.gz
-cd pcre-8.40
-./configure --prefix=/tmp/shadho
-make -j8 && make install -j8
-
-
-cd $base
-wget http://prdownloads.sourceforge.net/swig/swig-3.0.12.tar.gz
-tar xzf swig-3.0.12.tar.gz
-cd swig-3.0.12
-PATH="${py3path}/bin:$PATH" LDFLAGS="-L${py3path}/lib" CFLAGS="-I${py3path}/include" ./configure \
-    --prefix=/tmp/shadho \
-    --with-pcre-prefix=/tmp/shadho \
-    --with-perl5=/tmp/shadho/bin/perl \
-    --with-python="${py2path}/bin/python2" \
-    --with-python="${py3path}/bin/python3.5m"
-
-make -j8 && make install -j8
-swigpath="/tmp/shadho"
-
-# Get the CCTools source
-cd $base
-git clone -b hyperopt_worker https://github.com/nkremerh/cctools
-
 # Configure, make, and install
 cd cctools
 
 prefix="$HOME/.shadho"
 
-export LD_LIBRARY_PATH="/tmp/shadho/lib:$LD_LIBRARY_PATH"
-export LIBRARY_PATH="/tmp/shadho/lib:$LIBRARY_PATH"
+export LD_LIBRARY_PATH="${base}/pcre/lib:$LD_LIBRARY_PATH"
+export LIBRARY_PATH="${base}/pcre/lib:$LIBRARY_PATH"
+
+# pyh="$(dirname $(locate Python.h))"
+# export CFLAGS="$pyh:$CFLAGS"
 
 if [ ! -z "$py3path" ]; then
     ./configure \
@@ -70,17 +51,37 @@ if [ ! -z "$py3path" ]; then
         --with-python-path=$py2path \
         --with-python3-path=$py3path \
         --with-perl-path=$perlpath \
-        --with-swig-path=$swigpath
+        --with-swig-path=$swigpath \
+        --without-system-prune \
+        --without-system-resource_monitor \
+        --without-system-umbrella \
+        --without-system-weaver
+
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+
+
 else
     ./configure \
         --prefix=$prefix \
         --with-python-path=$py2path \
         --with-perl-path=$perlpath \
         --with-swig-path=$swigpath
+
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+
 fi
 
-make -j 8
-make install -j 8
+
+make -j 8 && make install -j 8
+
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
 
 # Move the Work Queue install into site-packages so that it can be used without
 # additional configuration
@@ -96,7 +97,7 @@ if [ ! -z "$py2path" ]; then
     fi
 
     cp "${cclib}/work_queue.py" "${cclib}/_work_queue.so" \
-        "$py2path/lib/python${py2version}/site-packages"
+        "${py2path}/lib/python${py2version}/site-packages"
 fi
 
 if [ ! -z "$py3path" ]; then
@@ -111,8 +112,5 @@ if [ ! -z "$py3path" ]; then
     fi
 
     cp "${cclib}/work_queue.py" "${cclib}/_work_queue.so" \
-        "$py3path/lib/python${py3version}/site-packages"
+        "${py3path}/lib/python${py3version}/site-packages"
 fi
-
-# Clean up
-rm -r $base

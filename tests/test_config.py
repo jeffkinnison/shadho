@@ -72,6 +72,7 @@ class TestShadhoConfig(object):
             os.environ['USERPROFILE'] = userprofile
 
     def test_save_config(self, tmpdir):
+        tmpdir = str(tmpdir)
         cfg = ShadhoConfig()
         cfg.save_config(tmpdir)
 

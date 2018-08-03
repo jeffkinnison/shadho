@@ -1,7 +1,26 @@
 from shadho.scaling import linear, ln, log_10, log_2
 
-from pyrameter import ContinuousDomain, DiscreteDomain
+from pyrameter import Scope, ContinuousDomain, DiscreteDomain
 import scipy.stats
+
+
+def scope(*args, **kws):
+    """Scope for joining multiple search domains.
+
+    Parameters
+    ----------
+    <key> : `pyrameter.Domain`
+        A search domain with a user-supplied name.
+
+    Other Parameters
+    ----------------
+    exclusive : bool
+        If True, members of this scope will be considered mutually exclusive
+        and generated separately.
+    optional : bool
+        If True, members of this scope will be generated with 50%% probability
+    """
+    return Scope(*args, **kws)
 
 
 # Uniform distribution

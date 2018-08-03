@@ -224,8 +224,10 @@ setup(
         'numpy>=1.12.0',
         'scikit-learn>=0.18.1'
     ],
-    extras_require={
-        'test': ['nose', 'coverage']
-    },
+    scripts=[
+        'bin/shadho_wq_worker',
+        'bin/shadho_wq_factory'
+    ],
+    tests_require=['pytest'],
     cmdclass={'install': InstallCCToolsCommand}
 )

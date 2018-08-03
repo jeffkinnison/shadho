@@ -239,8 +239,8 @@ class Shadho(object):
         opt = self.backend.optimal(mode='best')
         key = list(opt.keys())[0]
         print("Optimal result: {}".format(opt[key]['loss']))
-        print("With parameters: {}".format(opt[1]))
-        print("And additional results: {}".format(opt[2]))
+        print("With parameters: {}".format(opt[key]['values']))
+        print("And additional results: {}".format(opt[key]['results']))
 
     def generate(self):
         """Generate hyperparameter values to test.
@@ -401,9 +401,10 @@ class Shadho(object):
         -----
 
         """
-        submissions, params = self.backend.register_result(rid, None)
+        result_id, model_id, ccid = tag.split('.')
+        submissions, params = \
+            self.backend.register_result(model_id, result_id, None, {})
         if resub and submissions < self.max_resubmissions:
-            tag = '.'.join([rid, ccid])
             cc = self.ccs[ccid]
             self.manager.add_task(self.cmd,
                                   tag,

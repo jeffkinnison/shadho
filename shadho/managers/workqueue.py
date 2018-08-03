@@ -192,8 +192,8 @@ class WQManager(work_queue.WorkQueue):
 
         resub = (int(task.return_status) == 137)
 
-        rid, ccid = str(task.tag).split('.')
-        return (rid, ccid, resub)
+        #rid, ccid = str(task.tag).split('.')
+        return (task.tag, resub)
 
 
 class WQFile(object):

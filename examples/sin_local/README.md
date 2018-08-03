@@ -12,7 +12,7 @@ function, defines the search space, and sets up/configures the Shadho driver.
 import math
 
 # Import the driver and random search from SHADHO
-from shadho import Shadho, rand
+from shadho import Shadho, spaces
 
 
 # Define the function to optimize, which returns a single floating-point value
@@ -25,7 +25,7 @@ def sin(params):
 if __name__ == '__main__':
     # Set up the search space, in this case a uniform distribution over the
     # domain [0, pi]
-    space = {'x': rand.uniform(0, math.pi)}
+    space = {'x': spaces.uniform(0, math.pi)}
 
     # Pass the `sin` function, the search space, and a timeout into the SHADHO
     # driver and configure SHAHDO to run locally.

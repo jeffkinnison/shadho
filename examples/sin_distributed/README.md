@@ -6,18 +6,19 @@ that then runs the script with the objective function.
 
 ## Setup: Driver
 
-Running SHADHO locally happens in a single script that defines the objective
-function, defines the search space, and sets up/configures the SHADHO driver.
+Running SHADHO distributed requires setting up the driver and the objective
+function in different scripts. SHADHO automatically sends input files to
+workers and caches them between evaluations.
 
 ```python
 import math
 
-from shadho import Shadho, rand
+from shadho import Shadho, spaces
 
 
 if __name__ == '__main__':
     # Set up the search space for sin(x)
-    space = {'x': rand.uniform(0, math.pi)}
+    space = {'x': spaces.uniform(0, math.pi)}
 
     # Create a SHADHO driver. Unlike the local example, distributed SHADHO
     # requires a shell command to run on the worker.

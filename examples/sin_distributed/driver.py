@@ -1,12 +1,12 @@
 """This script shows an example of setting up a distributed Shadho search."""
 import math
 
-from shadho import Shadho, rand
+from shadho import Shadho, spaces
 
 
 if __name__ == '__main__':
     # Set up the search space for sin(x)
-    space = {'x': rand.uniform(0, math.pi)}
+    space = {'x': spaces.uniform(0, math.pi)}
 
     # Create a SHADHO driver. Unlike the local example, distributed SHADHO
     # requires a shell command to run on the worker.

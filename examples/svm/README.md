@@ -179,7 +179,7 @@ def main(params):
     # worker.
     s = OneVsRestClassifier(
         BaggingClassifier(
-            svm,
+            svc,
             n_estimators=10,
             max_samples=0.1,
             n_jobs=-1))

@@ -199,7 +199,6 @@ setup(
     author='Jeff Kinnison',
     author_email='jkinniso@nd.edu',
     packages=['shadho',
-              'shadho.helpers',
               'shadho.managers'],
     classifiers=[
         'Development Status :: 3 - Alpha',

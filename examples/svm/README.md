@@ -56,7 +56,7 @@ if __name__ == '__main__':
             'kernel': 'poly',  # add the kernel name for convenience
             'C': C,
             'gamma': gamma,
-            'coef0': coef0
+            'coef0': coef0,
             'degree': spaces.randint(2, 15)
         },
     }

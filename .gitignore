@@ -11,3 +11,5 @@ _build
 *.debug
 *.log
 results.json
+build/
+dist/

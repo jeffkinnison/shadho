@@ -6,7 +6,7 @@ base="$1"
 # Get USER
 user=""
 
-if [ "$1" == "--user" ]; then
+if [ "$3" == "--user" ]; then
     user="0"
 fi
 
@@ -86,25 +86,27 @@ fi
 # Move the Work Queue install into site-packages so that it can be used without
 # additional configuration
 if [ ! -z "$py2path" ]; then
+    cclib="${prefix}/lib/python${py2version}/site-packages"
     if [ -z "$user" ]; then
-        cclib="${prefix}/lib/python${py2version}/site-packages"
+        sitepath="${py2path}/lib/python${py2version}/site-packages"
     else
-        cclib="$(python2 -c 'import site; print(site.USER_SITE)')"
+        sitepath="$(python2 -c 'import site; print(site.USER_SITE)')"
     fi
 
     if [ ! -d "$cclib" ]; then
-        mkdir -p "$cclib"
+        mkdir -p "$sitepath"
     fi
 
     cp "${cclib}/work_queue.py" "${cclib}/_work_queue.so" \
-        "${py2path}/lib/python${py2version}/site-packages"
+        "$sitepath"
 fi
 
 if [ ! -z "$py3path" ]; then
+    cclib="${prefix}/lib/python${py3version}/site-packages"
     if [ -z "$user" ]; then
-        cclib="${prefix}/lib/python${py3version}/site-packages"
+        sitepath="${py3path}/lib/python${py3version}/site-packages"
     else
-        cclib="$(python3 -c 'import site; print(site.USER_SITE)')"
+        sitepath="$(python3 -c 'import site; print(site.USER_SITE)')"
     fi
 
     if [ ! -d "$cclib" ]; then
@@ -112,5 +114,5 @@ if [ ! -z "$py3path" ]; then
     fi
 
     cp "${cclib}/work_queue.py" "${cclib}/_work_queue.so" \
-        "${py3path}/lib/python${py3version}/site-packages"
+        "$sitepath"
 fi

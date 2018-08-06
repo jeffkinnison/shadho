@@ -37,18 +37,22 @@ if __name__ == '__main__':
     space = {
         'exclusive': True,
         'linear': {
+            'kernel': 'linear',  # add the kernel name for convenience
             'C': C
         },
         'rbf': {
+            'kernel': 'rbf',  # add the kernel name for convenience
             'C': C,
             'gamma': gamma
         },
         'sigmoid': {
+            'kernel': 'sigmoid',  # add the kernel name for convenience
             'C': C,
             'gamma': gamma,
             'coef0': coef0
         },
         'poly': {
+            'kernel': 'poly',  # add the kernel name for convenience
             'C': C,
             'gamma': gamma,
             'coef0': coef0
@@ -63,6 +67,7 @@ if __name__ == '__main__':
     # Add the task files to the optimizer
     opt.add_input_file('svm_task.sh')
     opt.add_input_file('svm.py')
+    opt.add_input_file('mnist.npz')
 
     # We can divide the work over different compute classes, or sets of workers
     # with commmon hardware resources, if such resources are available. SHADHO
@@ -152,7 +157,7 @@ def main(params):
     """
     # Extract the kernel name and parameters. This is just a short expression
     # to get the only dictionary entry, which should have our hyperparameters.
-    kernel = params[list(params.keys())[0]]
+    kernel_params = list(params.values())[0]
 
     # Load the training and test sets.
     (X_train, y_train), (X_test, y_test) = load_data()
@@ -160,11 +165,20 @@ def main(params):
     X_train = X_train.astype(np.float32) / 255.0
     X_test = X_test.astype(np.float32) / 255.0
 
+    # Set up the SVM with its parameterized kernel. The long form of instantiation
+    # is done here to show what `kernel_params` looks like internally.
+    # This can be shortened to `svc = SVC(**kernel_params)`
+    svc = SVC(kernel=kernel_params['kernel'],
+              C=kernel_params['C'],
+              gamma=kernel_params['gamma'] if 'gamma' in kernel_params else None,
+              coef0=kernel_params['coef0'] if 'coef0' in kernel_params else None,
+              degree=kernel_params['degree'] if 'degree' in kernel_params else None)
+
     # Set up parallel training across as many cores as are available on the
     # worker.
     s = OneVsRestClassifier(
         BaggingClassifier(
-            SVC(**kernel),
+            svm,
             n_estimators=10,
             max_samples=0.1,
             n_jobs=-1))

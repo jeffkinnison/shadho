@@ -18,18 +18,22 @@ if __name__ == '__main__':
     space = {
         'exclusive': True,
         'linear': {
+            'kernel': 'linear',  # add the kernel name for convenience
             'C': C
         },
         'rbf': {
+            'kernel': 'rbf',  # add the kernel name for convenience
             'C': C,
             'gamma': gamma
         },
         'sigmoid': {
+            'kernel': 'sigmoid',  # add the kernel name for convenience
             'C': C,
             'gamma': gamma,
             'coef0': coef0
         },
         'poly': {
+            'kernel': 'poly',  # add the kernel name for convenience
             'C': C,
             'gamma': gamma,
             'coef0': coef0
@@ -44,6 +48,7 @@ if __name__ == '__main__':
     # Add the task files to the optimizer
     opt.add_input_file('svm_task.sh')
     opt.add_input_file('svm.py')
+    opt.add_input_file('mnist.npz')
 
     # We can divide the work over different compute classes, or sets of workers
     # with commmon hardware resources, if such resources are available. SHADHO

@@ -16,6 +16,7 @@ function, defines the search space, and sets up/configures the SHADHO driver.
 In this example, the root search space uses the `'exclusive'` tag to
 distinguish between kernels and their associated search spaces.
 
+### driver.py
 ```python
 """This example sets up a search over Support Vector Machine kernel
    hyperparameters.
@@ -93,7 +94,7 @@ worker after adding them as input files.
 The objective function must be defined in its own file, which will be sent to
 the distributed worker.
 
-
+### svm.py
 ```python
 """This script trains an SVM on MNIST using supplied hyperparameters."""
 
@@ -226,6 +227,10 @@ if __name__ == '__main__':
 
 ## Setup: Worker Script
 
+The worker script allows you to set up your environment (e.g., load modules,
+activate virtual environments, etc.) before running your objective function.
+
+### svm_task.sh
 ```bash
 #!/usr/bin/env bash
 

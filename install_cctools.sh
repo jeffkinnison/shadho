@@ -6,9 +6,9 @@ base="$1"
 # Get USER
 user=""
 
-if [ "$3" == "--user" ]; then
-    user="0"
-fi
+#if [ "$3" == "--user" ]; then
+#    user="0"
+#fi
 
 # Get the CCTools source
 cd $base
@@ -31,6 +31,8 @@ for opt in "$@"; do
     if [ "$opt" == "py3" ]; then
         py3path="$(dirname "$(dirname "$(command -v python3)")")"
         py3version="$(python3 -c 'import sys; print("{}.{}".format(*sys.version_info[:2]))')"
+    elif [ "$opt" == "--user" ]; then
+        user="0"
     fi
 done
 

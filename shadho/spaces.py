@@ -1,3 +1,39 @@
+"""Hyperparameter search space domain definitions.
+
+Functions
+---------
+scope
+    Create a scope to join multiple search domains.
+uniform
+    Create a continuous uniform distribution.
+ln_uniform
+    Create a natural-log-scaled continuous uniform distribution.
+log10_uniform
+    Create a log-10-scaled continuous uniform distribution.
+log2_uniform
+    Create a log-2-scaled continuous uniform distribution.
+normal
+    Create a normal distribution.
+ln_normal
+    Create a natural-log-scaled normal distribution.
+log10_normal
+    Create a log-10-scaled normal distribution.
+log2_normal
+    Create a log-2-scaled normal distribution.
+randint
+    Create a discrete integer domain.
+log10_randint
+    Create a log-10-scaled discrete integer domain.
+log2_randint
+    Create a log-2-scaled discrete integer domain.
+choice
+    Create a domain over a set of arbitrary categorical values.
+
+See Also
+--------
+shadho.scaling
+pyrameter.domain
+"""
 from shadho.scaling import linear, ln, log_10, log_2
 
 from pyrameter import Scope, ContinuousDomain, DiscreteDomain

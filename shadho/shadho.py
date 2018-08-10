@@ -44,6 +44,9 @@ class Shadho(object):
         Number of seconds to search for.
     max_tasks : int, optional
         Number of tasks to queue at a time.
+    await_pending : bool, optional
+        If True, wait for all running tasks to complete after `timeout`.
+        Default: False
     max_resubmissions: int, optional
         Maximum number of times to resubmit a particular parameterization for
         processing if task failure occurs. Default is not to resubmit.
@@ -59,18 +62,24 @@ class Shadho(object):
     ccs : list of `shadho.hardware.ComputeClass`
         The types of hardware to expect during optimization. If not supplied,
         tasks are run on the first available worker.
+    use_complexity : bool
+        If True, use the complexity heuristic to adjust search proportions.
+    use_priority : bool
+        If True, use the priority heuristic to adjust search proportions.
     timeout : int
         Number of seconds to search for.
     max_tasks : int
         Maximum number of tasks to enqueue at a time.
+    await_pending : bool
+        If True, wait for all running tasks to complete after `timeout`.
     max_resubmissions: int
         Maximum number of times to resubmit a particular parameterization for
         processing if task failure occurs. Default is not to resubmit.
 
     Notes
     -----
-    To enable configuration, ``backend`` and ``manager`` are created when
-    `Shadho.run` is called.
+    To enable configuration after intialization, ``backend`` and ``manager``
+    are created when `Shadho.run` is called.
 
     """
 
@@ -189,39 +198,50 @@ class Shadho(object):
         values. This will continue until the queue is empty and all tasks have
         returned.
         """
+        # Set up the task manager as defined in `shadho.managers`
         if not hasattr(self, 'manager'):
             self.manager = create_manager(
                 manager_type=self.config.manager,
                 config=self.config,
                 tmpdir=self.__tmpdir)
 
+        # Set up the backend hyperparameter generation and database
         if not hasattr(self, 'backend'):
             self.backend = pyrameter.build(self.spec)
 
+        # If no ComputeClass was created, create a dummy class.
         if len(self.ccs) == 0:
             cc = ComputeClass('all', None, None, self.max_tasks)
             self.ccs[cc.id] = cc
 
+        # Set up intial model/compute class assignments.
         self.assign_to_ccs()
 
         start = time.time()
         elapsed = 0
         try:
+            # Run the search until timeout or until all tasks complete
             while elapsed < self.timeout and (elapsed == 0 or not self.manager.empty()):
+                # Generate hyperparameters and a flag to continue or stop
                 stop = self.generate()
                 if not stop:
+                    # Run another task and await results
                     result = self.manager.run_task()
                     if result is not None:
+                        # If a task returned post-process as a success or fail
                         if len(result) == 3:
-                            self.success(*result)
+                            self.success(*result)  # Store and move on
                         else:
-                            self.failure(*result)
+                            self.failure(*result)  # Resubmit if asked
+                    # Checkpoint the results to file or DB at some frequency
                     if self.backend.result_count % 50 == 0:
                         self.backend.save()
+                    # Update the time for timeout check
                     elapsed = time.time() - start
                 else:
                     break
 
+            # If requested, continue the loop until all tasks return
             if self.await_pending:
                 while not self.manager.empty():
                     result = self.manager.run_task()
@@ -231,10 +251,12 @@ class Shadho(object):
                         else:
                             self.failure(*result)
 
+        # On keyboard interrupt, save any results and clean up
         except KeyboardInterrupt:
             if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
                 os.rmdir(self.__tmpdir)
 
+        # Save the results and print the optimal set of parameters to  screen
         self.backend.save()
         opt = self.backend.optimal(mode='best')
         key = list(opt.keys())[0]
@@ -248,21 +270,35 @@ class Shadho(object):
         Hyperparameter values are generated from the search space specification
         supplied at instantiation using the requested generation method (i.e.,
         random search, TPE, Gaussian process Bayesian optimization, etc.).
-
+    
         Returns
         -------
-        params : list of tuple
-            A list of triples (result_id, compute_class_id, parameter_values).
+        stop : bool
+            If True, no values were generated and the search should stop. This
+            facilitates grid-search-like behavior, for example stopping on
+            completion of an exhaustive search.
+        
+        Notes
+        -----
+        This method will automatically add a new task to the queue after
+        generating hyperparameter values.
         """
         stop = True
-        for ccid in self.ccs:
-            cc = self.ccs[ccid]
+        
+        # Generate hyperparameters for every compute class with space in queue
+        for cc_id in self.ccs:
+            cc = self.ccs[cc_id]
             n = cc.max_tasks - cc.current_tasks
+            
+            # Generate enough hyperparameters to fill the queue
             for i in range(n):
-                mid, rid, param = cc.generate()
-
+                # Get bookkeeping ids and hyperparameter values
+                model_id, result_id, param = cc.generate()
+                
+                # Create a new distributed task if values were generated
                 if param is not None:
-                    tag = '.'.join([rid, mid, ccid])
+                    # Encode info to map to db in the task tag
+                    tag = '.'.join([result_id, model_id, cc_id])
                     self.manager.add_task(
                         self.cmd,
                         tag,
@@ -270,41 +306,8 @@ class Shadho(object):
                         files=self.files,
                         resource=cc.resource,
                         value=cc.value)
-                    stop = False
-            cc.current_tasks = cc.max_tasks
-
-    def make_tasks(self, params):
-        """Create tasks to test hyperparameter values.
-
-        Parameters
-        ----------
-        params : list of dict
-            The hyperparameter values ot test.
-
-        Returns
-        -------
-        tasks : list of `work_queue.Task`
-            Tasks to submit to the distributed manager.
-        """
-        tasks = []
-        for p in params:
-            tag = '.'.join([p[0], p[1]])
-            buff = WQBuffer(str(json.dumps(p[2])),
-                            self.config._global.param_file,
-                            cache=False)
-            outfile = WQFile(os.path.join(
-                                self.__tmpdir,
-                                '.'.join([tag,
-                                          self.config._global.output])),
-                             remotepath=self.config._global.output,
-                             ftype='output',
-                             cache=False)
-            files = [f for f in self.files]
-            files.append(outfile)
-            files.append(buff)
-            task = self.manager.make_task(self.cmd, tag, files)
-            tasks.append(task)
-        return tasks
+                    stop = False  # Ensure that the search continues
+            cc.current_tasks = cc.max_tasks  # Update to show full queue
 
     def assign_to_ccs(self):
         """Assign trees to compute classes.
@@ -325,43 +328,59 @@ class Shadho(object):
         `shadho.ComputeClass`
         `pyrameter.ModelGroup`
         """
+        # If only one CC exists, do nothing; otherwise, update assignments
         if len(self.ccs) == 1:
             key = list(self.ccs.keys())[0]
             self.ccs[key].model_group = self.backend
         else:
-            model_ids = [mid for mid in self.backend.model_ids]
+            # Sort models in the search by complexity, priority, or both and
+            # get the updated order.
             self.backend.sort_models()
-            if model_ids != self.backend.model_ids or len(self.ccs) == 0:
-                model_ids = self.backend.model_ids
-                for cc in self.ccs:
-                    cc.clear()
+            model_ids = [mid for mid in self.backend.model_ids]
+           
+            # Clear the current assignments
+            for cc in self.ccs:
+                cc.clear()
 
-                ccids = list(self.ccs.keys())
-                larger = model_ids if len(self.trees) >= len(ccids) else ccids
-                smaller = model_ids if len(self.trees) < len(ccids) else ccids
+            # Determine if the number of compute classes or the number of
+            # model ids is larger
+            ccids = list(self.ccs.keys())
+            larger = model_ids if len(self.model_ids) >= len(ccids) else ccids
+            smaller = model_ids if larger == model_ids else ccids
 
-                x = float(len(larger)) / float(len(smaller))
-                y = x - 1
-                j = 0
-                n = len(larger) / 2
+            # Assign models to CCs such that each model is assigned to at
+            # least two CCs.
+            
+            # Steps between `smaller` index increment
+            x = float(len(larger)) / float(len(smaller))
+            y = x - 1  # Current step index (offset by 1 for 0-indexing)
+            j = 0  # Current index of `smaller`
+            n = len(larger) / 2  # Halfway point for second assignment
 
-                for i in range(len(larger)):
-                    if i > np.ceil(y):
-                        j += 1
-                        y += x
+            for i in range(len(larger)):
+                # If at a step point for `smaller` increment the index
+                if i > np.ceil(y):
+                    j += 1
+                    y += x
 
-                    if smaller[j] in self.assignments:
-                        self.ccs[smaller[j]].add_model(larger[i])
-                        if i <= n:
-                            self.ccs[smaller[j + 1]].add_model(larger[i])
-                        else:
-                            self.ccs[smaller[j - 1]].add_model(larger[i])
+                # Add the model to the current CC. If i <= n, add the model to
+                # the next CC as well; if i > n, add to the previous CC.
+                if smaller[j] in self.ccs:
+                    self.ccs[smaller[j]].add_model(self.backend[larger[i]])
+                    if i <= n:
+                        self.ccs[smaller[j + 1]].add_model(
+                            self.backend[larger[i]])
                     else:
-                        self.ccs[larger[i]].add_model(smaller[j])
-                        if i <= n:
-                            self.ccs[larger[i]].add_model(smaller[j + 1])
-                        else:
-                            self.ccs[larger[i]].add_model(smaller[j - 1])
+                        self.ccs[smaller[j - 1]].add_model(
+                            self.backend[larger[i]])
+                else:
+                    self.ccs[larger[i]].add_model(self.backend[smaller[j]])
+                    if i <= n:
+                        self.ccs[larger[i]].add_model(
+                            self.backend[smaller[j + 1]])
+                    else:
+                        self.ccs[larger[i]].add_model(
+                            self.backend[smaller[j - 1]])
 
     def success(self, tag, loss, results):
         """Handle successful task completion.
@@ -382,11 +401,17 @@ class Shadho(object):
         event that storing the result caused the model's priority to be
         updated.
         """
+        # Get bookkeeping information from the task tag
         result_id, model_id, ccid = tag.split('.')
+
+        # Update the DB with the result
         self.ccs[ccid].register_result(model_id, result_id, loss, results)
 
+        # Reassign models to CCs at some frequency
         if self.backend.result_count % 10 == 0:
             self.assign_to_ccs()
+
+        # Update the number of enqueued items
         self.ccs[ccid].current_tasks -= 1
 
     def failure(self, tag, resub):
@@ -399,11 +424,18 @@ class Shadho(object):
 
         Notes
         -----
-
+        This method will resubmit failed tasks on request to account for
+        potential worker dropout, etc.
         """
+        # Get bookkeeping information from the task tag
         result_id, model_id, ccid = tag.split('.')
+
+        # Determine whether or not to resubmit
         submissions, params = \
             self.backend.register_result(model_id, result_id, None, {})
+
+        # Resubmit the task if it should be, otherwise update the number of
+        # enqueued items.
         if resub and submissions < self.max_resubmissions:
             cc = self.ccs[ccid]
             self.manager.add_task(self.cmd,

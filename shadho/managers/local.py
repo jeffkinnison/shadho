@@ -1,4 +1,11 @@
-"""
+"""Task management for local, serial hyperparameter optimization.
+
+Classes
+-------
+LocalManager
+    Task manager for running tasks on the local machine.
+LocalTask
+    Wrapper for running a task locally.
 """
 from collections import deque
 import json
@@ -33,6 +40,13 @@ class LocalManager(object):
         self.tasks_submitted = 0
 
     def empty(self):
+        """Determine if the task queue is empty.
+
+        Returns
+        -------
+        empty : bool
+            True if the queue contains no tasks, False otherwise.
+        """
         return len(self.tasks) == 0
 
     def add_task(self, cmd, tag, params, files=None, resource=None,
@@ -41,9 +55,8 @@ class LocalManager(object):
 
         Parameters
         ----------
-        cmd : str
-            The command to run on the remote worker, e.g. ``echo hello`` or
-            ``python script.py``.
+        cmd : callable
+            The objective function.
         tag : str
             The tag to give this task.
         params : dict
@@ -55,7 +68,10 @@ class LocalManager(object):
         value : optional
             Placeholder to match other managers.
         """
+        # Create the LocalTask instance
         task = LocalTask(cmd, tag, params)
+
+        # Enqueue the new task
         self.tasks.append(task)
         self.tasks_submitted += 1
 
@@ -76,18 +92,26 @@ class LocalManager(object):
         results : dict
             Only returned on success. Other results returned by the task.
         """
+        # Attempt to get the next task
         try:
             task = self.tasks.popleft()
         except IndexError:
             task = None
+
+        # If there is a task, try to run it
         if task is not None:
             result = None
+            
+            # Set up the task tag for return
             ret = [task.tag]
-            #print(ret)
+
+            # Try to run the task, and attempt to catch and report any errors
             try:
                 result = task.run()
-                #print(result)
+                
+                # Package the result to return
                 if result is not None:
+                    # Handle the case of multiple values and single value being returned
                     if isinstance(result, dict):
                         ret.append(result[self.opt_value])
                         ret.append(result)
@@ -126,6 +150,8 @@ class LocalTask(object):
 
     Attributes
     ----------
+    id : str
+        Internal task id.
     cmd : function or callable object
         The command to run.
     tag : str

@@ -1,4 +1,12 @@
-"""
+"""Work Queue wrapper for hardware-aware distributed task management.
+
+Classes
+-------
+WQManager
+    Work Queue master with additional task packaging logic.
+WQFile
+WQBuffer
+    Work-Queue-conformant representations of files and buffers for task I/O.
 """
 import json
 import os
@@ -12,6 +20,16 @@ class WQManager(work_queue.WorkQueue):
 
     Parameters
     ----------
+    param_file : str
+        The name of the hyperparameter value file sent to the worker.
+    out_file : str
+        The name of the expected output file returned from the worker.
+    results_file : str
+        The name of the expected results file returned from the worker.
+    opt_value : str
+        The name of the value to optimize on in `results_file`.
+    tmpdir : str
+        Temporary directory used by SHADHO.
     name : str, optional
         The name of this Work Queue master, 'shadho' by default.
     port : int, optional
@@ -26,6 +44,9 @@ class WQManager(work_queue.WorkQueue):
         Where to write Work Queue logs. ./wq_shadho.log by default.
     debugfile : str, optional
             Where to write Work Queue debug logs. ./wq_shadho.debug by default.
+
+    Attributes
+    ----------
 
     """
 
@@ -76,9 +97,13 @@ class WQManager(work_queue.WorkQueue):
         `shadho.managers.workqueue.WQBuffer`
         `work_queue.Task`
         """
+        # Set up the task to run the specified command with its tag as the
+        # trailing argument.
         task = work_queue.Task(' '.join([cmd, tag]))
         task.specify_tag(tag)
 
+        # Set up the input and output file structure of the task. This
+        # structure is preserved on the worker.
         if files is None:
             files = []
 
@@ -87,12 +112,14 @@ class WQManager(work_queue.WorkQueue):
                 f = WQFile(f[0], remotepath=f[1], ftype=f[2], cache=f[3])
             f.add_to_task(task)
 
+        # Set up the output file
         out = WQFile(os.path.join(self.tmpdir,
                                   '.'.join([tag, self.out_file])),
                      remotepath=self.out_file,
                      ftype='output',
                      cache=False)
 
+        # Send the hyperparameters as a JSON string
         buff = WQBuffer(str(json.dumps(params)),
                         self.param_file,
                         cache=False)
@@ -100,6 +127,7 @@ class WQManager(work_queue.WorkQueue):
         out.add_to_task(task)
         buff.add_to_task(task)
 
+        # Add information about the expected hardware resource
         if resource is not None:
             if resource == 'cores':
                 task.specify_cores(value)
@@ -108,13 +136,29 @@ class WQManager(work_queue.WorkQueue):
             else:
                 task.specify_resource(resource, value)
 
+        # Submit the task
         self.submit(task)
         self.tasks_submitted = self.stats.tasks_submitted
 
     def run_task(self):
+        """Await the return of a running task.
+
+        Returns
+        -------
+        tag : str
+            The task tag.
+        loss : float
+            The loss value. Only returned on success.
+        results : dict
+            Additional results returned by the objective function.
+            Only returned on success.
+        """
         task = None
         while task is None:
+            # Wait for a task to return for 10s
             task = self.wait(timeout=10)
+
+            # Handle task success or failure (no return if `task` is None)
             if task is not None:
                 if self.task_succeeded(task):
                     return self.success(task)
@@ -132,6 +176,11 @@ class WQManager(work_queue.WorkQueue):
         Returns
         -------
         True if the task succeeded, False otherwise.
+
+        Notes
+        -----
+        The task succeeded if it was not None and Work Queue reported a
+        successful return.
         """
         return task is not None and \
             task.result == work_queue.WORK_QUEUE_RESULT_SUCCESS

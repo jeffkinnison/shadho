@@ -11,8 +11,9 @@ log_2
 Notes
 -----
 The functions in this module attempt to preserve the input type when possible.
-The user will expect to see an integer when an integer is input, or a string
-when a string is input.
+The user will expect to see an integer when an integer is input, a float when
+a float is input, or a string when a string is input. The only function where
+integer preservation is not possible is `ln`.
 """
 import numbers
 import warnings

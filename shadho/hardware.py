@@ -1,4 +1,9 @@
-"""
+"""Facilities for grouping distributed hardware and search spaces.
+
+Classes
+-------
+ComputeClass
+    Group hardware by a common property.
 """
 import uuid
 import sys
@@ -119,7 +124,5 @@ class ComputeClass(object):
         if not isinstance(results, dict):
             results = {'results': results}
         results['compute_class'] = (self.resource, self.value)
-        return self.model_group.register_result(model_id,
-                                                result_id,
-                                                loss,
+        return self.model_group.register_result(model_id, result_id, loss,
                                                 results)

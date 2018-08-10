@@ -1,5 +1,12 @@
 """Configuration settings for `shadho`.
 
+Classes
+-------
+ShadhoConfig
+    Configurations for running SHADHO.
+ConfigGroup
+    Object-oriented interface for hierarchical config settings.
+
 Notes
 -----
 `shadho` can be configured using the `.shadhorc` file, by passing arguments to

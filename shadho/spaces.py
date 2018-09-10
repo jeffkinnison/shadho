@@ -1,4 +1,4 @@
-from shadho.scaling import linear, ln, log_10, log_2
+from .scaling import linear, ln, log_10, log_2
 
 from pyrameter import Scope, ContinuousDomain, DiscreteDomain
 import scipy.stats

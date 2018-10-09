@@ -196,7 +196,9 @@ class Shadho(object):
                 tmpdir=self.__tmpdir)
 
         if not hasattr(self, 'backend'):
-            self.backend = pyrameter.build(self.spec)
+            self.backend = pyrameter.build(self.spec,
+                                           complexity_sort=self.use_complexity,
+                                           priority_sort=self.use_priority)
 
         if len(self.ccs) == 0:
             cc = ComputeClass('all', None, None, self.max_tasks)

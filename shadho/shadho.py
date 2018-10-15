@@ -207,7 +207,9 @@ class Shadho(object):
 
         # Set up the backend hyperparameter generation and database
         if not hasattr(self, 'backend'):
-            self.backend = pyrameter.build(self.spec)
+            self.backend = pyrameter.build(self.spec,
+                                           complexity_sort=self.use_complexity,
+                                           priority_sort=self.use_priority)
 
         # If no ComputeClass was created, create a dummy class.
         if len(self.ccs) == 0:

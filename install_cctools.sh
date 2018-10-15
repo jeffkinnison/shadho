@@ -54,7 +54,6 @@ if [ ! -z "$py3path" ]; then
         --with-python3-path=$py3path \
         --with-perl-path=$perlpath \
         --with-swig-path=$swigpath \
-        --without-system-prune \
         --without-system-resource_monitor \
         --without-system-umbrella \
         --without-system-weaver

@@ -96,7 +96,8 @@ def main(params):
     predictions = s.predict(X_test)
     test_time = time.time()
     encoder = LabelBinarizer()
-    loss_labels = encoder.fit_transform(predictions)
+    encoder.fit(np.unique(y_test))
+    loss_labels = encoder.transform(predictions)
 
     # Compute performance metrics on the test set to return to SHADHO
     loss = log_loss(y_test, loss_labels, labels=encoder.classes_)

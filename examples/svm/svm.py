@@ -73,9 +73,9 @@ def main(params):
     # This can be shortened to `svc = SVC(**kernel_params)`
     svc = SVC(kernel=kernel_params['kernel'],
               C=kernel_params['C'],
-              gamma=kernel_params['gamma'] if 'gamma' in kernel_params else None,
-              coef0=kernel_params['coef0'] if 'coef0' in kernel_params else None,
-              degree=kernel_params['degree'] if 'degree' in kernel_params else None)
+              gamma=kernel_params['gamma'] if 'gamma' in kernel_params else 'auto',
+              coef0=kernel_params['coef0'] if 'coef0' in kernel_params else 0,
+              degree=kernel_params['degree'] if 'degree' in kernel_params else 3)
 
     # Set up parallel training across as many cores as are available on the
     # worker.
@@ -114,7 +114,7 @@ def main(params):
         'accuracy': acc,
         'precision': p,
         'recall': r,
-        'params': svm,
+        'params': params,
         'train_time': train_time,
         'test_time': test_time
     }

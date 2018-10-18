@@ -272,31 +272,31 @@ class Shadho(object):
         Hyperparameter values are generated from the search space specification
         supplied at instantiation using the requested generation method (i.e.,
         random search, TPE, Gaussian process Bayesian optimization, etc.).
-    
+
         Returns
         -------
         stop : bool
             If True, no values were generated and the search should stop. This
             facilitates grid-search-like behavior, for example stopping on
             completion of an exhaustive search.
-        
+
         Notes
         -----
         This method will automatically add a new task to the queue after
         generating hyperparameter values.
         """
         stop = True
-        
+
         # Generate hyperparameters for every compute class with space in queue
         for cc_id in self.ccs:
             cc = self.ccs[cc_id]
             n = cc.max_tasks - cc.current_tasks
-            
+
             # Generate enough hyperparameters to fill the queue
             for i in range(n):
                 # Get bookkeeping ids and hyperparameter values
                 model_id, result_id, param = cc.generate()
-                
+
                 # Create a new distributed task if values were generated
                 if param is not None:
                     # Encode info to map to db in the task tag
@@ -339,7 +339,7 @@ class Shadho(object):
             # get the updated order.
             self.backend.sort_models()
             model_ids = [mid for mid in self.backend.model_ids]
-           
+
             # Clear the current assignments
             for cc in self.ccs:
                 cc.clear()
@@ -352,7 +352,7 @@ class Shadho(object):
 
             # Assign models to CCs such that each model is assigned to at
             # least two CCs.
-            
+
             # Steps between `smaller` index increment
             x = float(len(larger)) / float(len(smaller))
             y = x - 1  # Current step index (offset by 1 for 0-indexing)
@@ -407,7 +407,7 @@ class Shadho(object):
         result_id, model_id, ccid = tag.split('.')
 
         # Update the DB with the result
-        self.ccs[ccid].register_result(model_id, result_id, loss, results)
+        self.backend.register_result(model_id, result_id, loss, results)
 
         # Reassign models to CCs at some frequency
         if self.backend.result_count % 10 == 0:

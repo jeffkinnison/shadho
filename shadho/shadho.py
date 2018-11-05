@@ -83,7 +83,7 @@ class Shadho(object):
 
     """
 
-    def __init__(self, cmd, spec, files=None, use_complexity=True,
+    def __init__(self, cmd, spec, backend=None, files=None, use_complexity=True,
                  use_priority=True, timeout=600, max_tasks=100,
                  await_pending=False, max_resubmissions=0):
         self.config = ShadhoConfig()
@@ -116,6 +116,7 @@ class Shadho(object):
 
         self.config.save_config(self.__tmpdir)
         self.add_input_file(os.path.join(self.__tmpdir, '.shadhorc'))
+        self.backend = self.backend
 
     def __del__(self):
         if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
@@ -208,6 +209,7 @@ class Shadho(object):
         # Set up the backend hyperparameter generation and database
         if not hasattr(self, 'backend'):
             self.backend = pyrameter.build(self.spec,
+                                           db=self.backend,
                                            complexity_sort=self.use_complexity,
                                            priority_sort=self.use_priority)
 

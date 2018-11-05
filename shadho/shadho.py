@@ -116,7 +116,7 @@ class Shadho(object):
 
         self.config.save_config(self.__tmpdir)
         self.add_input_file(os.path.join(self.__tmpdir, '.shadhorc'))
-        self.backend = self.backend
+        self.backend = backend
 
     def __del__(self):
         if hasattr(self, '__tmpdir') and self.__tmpdir is not None:

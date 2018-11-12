@@ -207,7 +207,7 @@ class Shadho(object):
                 tmpdir=self.__tmpdir)
 
         # Set up the backend hyperparameter generation and database
-        if not hasattr(self, 'backend'):
+        if not isinstance(self.backend, ComputeClass):
             self.backend = pyrameter.build(self.spec,
                                            db=self.backend,
                                            complexity_sort=self.use_complexity,

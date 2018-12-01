@@ -408,6 +408,11 @@ class Shadho(object):
         """
         # Get bookkeeping information from the task tag
         result_id, model_id, ccid = tag.split('.')
+        results['compute_class'] = {
+            'id': ccid,
+            'name': self.ccs[ccid].name,
+            'value': self.ccs[ccid].value
+        }
 
         # Update the DB with the result
         self.backend.register_result(model_id, result_id, loss, results)

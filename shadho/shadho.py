@@ -83,12 +83,13 @@ class Shadho(object):
 
     """
 
-    def __init__(self, cmd, spec, backend=None, files=None, use_complexity=True,
+    def __init__(self, cmd, spec, method='random', backend=None, files=None, use_complexity=True,
                  use_priority=True, timeout=600, max_tasks=100,
                  await_pending=False, max_resubmissions=0):
         self.config = ShadhoConfig()
         self.cmd = cmd
         self.spec = spec
+        self.method = method
         self.use_complexity = use_complexity
         self.use_priority = use_priority
         self.timeout = timeout if timeout is not None and timeout >= 0 \
@@ -209,6 +210,7 @@ class Shadho(object):
         # Set up the backend hyperparameter generation and database
         if not isinstance(self.backend, ComputeClass):
             self.backend = pyrameter.build(self.spec,
+                                           method=self.method,
                                            db=self.backend,
                                            complexity_sort=self.use_complexity,
                                            priority_sort=self.use_priority)

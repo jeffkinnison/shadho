@@ -19,23 +19,33 @@ import shadho.config as config
 def load_work_queue_module(config):
     """Load the work_queue Python wrapper into the namespace.
 
+    This function dynamically loads the `work_queue` wrapper from a location
+    defined in Shadho.config. The `work_queue` wrapper should only be imported
+    once per invocation of SHADHO, and this allows flexibility to where
+    `work_queue` is installed.
+
     Returns
     -------
     workqueue : module
         The loaded module.
     """
+    # Python 3.5+ dynamic importing
     if sys.version_info.major == 3 and sys.version_info.minor >= 5:
         import importlib.util
         spec = importlib.util.spec_from_file_location('work_queue', config.wq_path)
         workqueue = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(workqueue)
+
+    # Python 3.0-3.4 dynamic importing
     elif sys.version_info.major == 3 and sys.version_info.minor < 5:
         from importlib.machinery import SourceFileLoader
         workqueue = SourceFileLoader(
             'work_queue', config.wq_path).load_module()
+    # Python 2.x dynamic imports
     else:
         import imp
         workqueue = imp.load_source('work_queue', config.wq_path)
+
     return workqueue
 
 
@@ -80,9 +90,9 @@ class WQManager(WORKQUEUE.WorkQueue):
     def __init__(self, param_file, out_file, results_file, opt_value, tmpdir,
                  name='shadho', port=9123, exclusive=True, shutdown=True,
                  logfile='shadho_wq.log', debugfile='shadho_wq.debug'):
-        work_queue.cctools_debug_flags_set("all")
-        work_queue.cctools_debug_config_file(debugfile)
-        work_queue.cctools_debug_config_file_size(0)
+        WORKQUEUE.cctools_debug_flags_set("all")
+        WORKQUEUE.cctools_debug_config_file(debugfile)
+        WORKQUEUE.cctools_debug_config_file_size(0)
 
         super(WQManager, self).__init__(name=name,
                                         port=port,
@@ -303,13 +313,13 @@ class WQFile(object):
     """
 
     TYPES = {
-        'input': work_queue.WORK_QUEUE_INPUT,
-        'output': work_queue.WORK_QUEUE_OUTPUT,
+        'input': WORKQUEUE.WORK_QUEUE_INPUT,
+        'output': WORKQUEUE.WORK_QUEUE_OUTPUT,
     }
 
     CACHE = {
-        True: work_queue.WORK_QUEUE_CACHE,
-        False: work_queue.WORK_QUEUE_NOCACHE
+        True: WORKQUEUE.WORK_QUEUE_CACHE,
+        False: WORKQUEUE.WORK_QUEUE_NOCACHE
     }
 
     def __init__(self, localpath, remotepath=None, ftype='input', cache=True):

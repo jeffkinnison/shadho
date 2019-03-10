@@ -10,12 +10,39 @@ WQBuffer
 """
 import json
 import os
+import sys
 import tarfile
 
-import work_queue
+import shadho.config as config
 
 
-class WQManager(work_queue.WorkQueue):
+def load_work_queue_module(config):
+    """Load the work_queue Python wrapper into the namespace.
+
+    Returns
+    -------
+    workqueue : module
+        The loaded module.
+    """
+    if sys.version_info.major == 3 and sys.version_info.minor >= 5:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('work_queue', config.wq_path)
+        workqueue = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(workqueue)
+    elif sys.version_info.major == 3 and sys.version_info.minor < 5:
+        from importlib.machinery import SourceFileLoader
+        workqueue = SourceFileLoader(
+            'work_queue', config.wq_path).load_module()
+    else:
+        import imp
+        workqueue = imp.load_source('work_queue', config.wq_path)
+    return workqueue
+
+
+WORKQUEUE = load_work_queue_module(config)
+
+
+class WQManager(WORKQUEUE.WorkQueue):
     """Work Queue master with utilities to generate conformant tasks.
 
     Parameters
@@ -99,7 +126,7 @@ class WQManager(work_queue.WorkQueue):
         """
         # Set up the task to run the specified command with its tag as the
         # trailing argument.
-        task = work_queue.Task(' '.join([cmd, tag]))
+        task = WORKQUEUE.Task(' '.join([cmd, tag]))
         task.specify_tag(tag)
 
         # Set up the input and output file structure of the task. This
@@ -183,7 +210,7 @@ class WQManager(work_queue.WorkQueue):
         successful return.
         """
         return task is not None and \
-            task.result == work_queue.WORK_QUEUE_RESULT_SUCCESS
+            task.result == WORKQUEUE.WORK_QUEUE_RESULT_SUCCESS
 
     def success(self, task):
         """Handle Work Queue task success.

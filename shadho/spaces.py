@@ -318,7 +318,7 @@ def log2_randint(lo, hi, step=1):
     -------
     domain : `pyrameter.DiscreteDomain`
     """
-    return DiscreteDomain([log2(i) for i in range(lo, hi, step)])
+    return DiscreteDomain([log_2(i) for i in range(lo, hi, step)])
 
 
 # Choice

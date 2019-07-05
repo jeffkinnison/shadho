@@ -83,12 +83,13 @@ class Shadho(object):
 
     """
 
-    def __init__(self, cmd, spec, backend=None, files=None, use_complexity=True,
+    def __init__(self, cmd, spec, method='random', backend=None, files=None, use_complexity=True,
                  use_priority=True, timeout=600, max_tasks=100,
                  await_pending=False, max_resubmissions=0):
         self.config = ShadhoConfig()
         self.cmd = cmd
         self.spec = spec
+        self.method = method
         self.use_complexity = use_complexity
         self.use_priority = use_priority
         self.timeout = timeout if timeout is not None and timeout >= 0 \
@@ -207,8 +208,9 @@ class Shadho(object):
                 tmpdir=self.__tmpdir)
 
         # Set up the backend hyperparameter generation and database
-        if not hasattr(self, 'backend'):
+        if not isinstance(self.backend, ComputeClass):
             self.backend = pyrameter.build(self.spec,
+                                           method=self.method,
                                            db=self.backend,
                                            complexity_sort=self.use_complexity,
                                            priority_sort=self.use_priority)
@@ -408,6 +410,11 @@ class Shadho(object):
         """
         # Get bookkeeping information from the task tag
         result_id, model_id, ccid = tag.split('.')
+        results['compute_class'] = {
+            'id': ccid,
+            'name': self.ccs[ccid].name,
+            'value': self.ccs[ccid].value
+        }
 
         # Update the DB with the result
         self.backend.register_result(model_id, result_id, loss, results)

@@ -14,7 +14,10 @@ import subprocess
 import sys
 import tempfile
 
-MAJ = sys.version_info[0]
+MAJ = str(sys.version_info[0])
+MIN = str(sys.version_info[1])
+PREFIX = sys.base_exec_prefix
+EXECUTABLE = sys.executable
 SHADHO_DIR = os.path.join(os.environ['HOME'], '.shadho')
 DEFAULT_CONFIG = {
     'global': {
@@ -67,6 +70,9 @@ class InstallCCToolsCommand(install):
         """
         print('Installing CCTools suite')
         global MAJ
+        global MIN
+        global PREFIX
+        global EXECUTABLE
         global SHADHO_DIR
         global DEFAULT_CONFIG
         # CCTools distinguishes between Python 2/3 SWIG bindings, and the
@@ -86,86 +92,88 @@ class InstallCCToolsCommand(install):
             tmpdir = tempfile.mkdtemp(prefix='shadho_install_')
 
             try:
-                # Install Perl
-                logfile = open("perl_install.log", 'w')
-                args = [
-                    'bash',
-                    os.path.join(
-                        os.path.dirname(__file__),
-                        'install_perl.sh')
-                    ]
-                args.append(tmpdir)
-
-                subprocess.check_call(args, stdout=logfile,
-                                      stderr=subprocess.STDOUT)
-                logfile.close()
-
-                logfile = open("pcre_install.log", 'w')
-
-                # Install PCRE
-                args = [
-                    'bash',
-                    os.path.join(
-                        os.path.dirname(__file__),
-                        'install_pcre.sh')
-                    ]
-                args.append(tmpdir)
-
-                subprocess.check_call(args, stdout=logfile,
-                                      stderr=subprocess.STDOUT)
-                logfile.close()
-
-                # Get paths to Python installs
-                logfile = open("python_paths.log", 'w')
-                args = [
-                    'bash',
-                    os.path.join(
-                        os.path.dirname(__file__),
-                        'get_py_paths.sh')
-                    ]
-                args.append(tmpdir)
-                if MAJ == 3:
-                    args.append('py3')
-
-                subprocess.check_call(args, stdout=logfile,
-                                      stderr=subprocess.STDOUT)
-                logfile.close()
-
-                # Install SWIG
-                logfile = open("swig_install.log", 'w')
-                args = [
-                    'bash',
-                    os.path.join(
-                        os.path.dirname(__file__),
-                        'install_swig.sh')
-                    ]
-                args.append(tmpdir)
-
-                subprocess.check_call(args, stdout=logfile,
-                                      stderr=subprocess.STDOUT)
-                logfile.close()
-
-                # Install CCTools
-                logfile = open("cctools_install.log", 'w')
-                args = [
-                    'bash',
-                    os.path.join(
-                        os.path.dirname(__file__),
-                        'install_cctools.sh')
-                    ]
-                args.append(tmpdir)
-
-                if MAJ == 3:
-                    args.append('py3')
-
-                if '--user' in sys.argv:
-                    args.append('--user')
-
-                subprocess.check_call(args, stdout=logfile,
-                                      stderr=subprocess.STDOUT)
-                logfile.close()
-
-                shutil.rmtree(tmpdir)
+                subprocess.check_call(['bash', 'smart_install.sh', tmpdir,
+                                       MAJ, MIN, PREFIX, EXECUTABLE])
+            #     # Install Perl
+            #     logfile = open("perl_install.log", 'w')
+            #     args = [
+            #         'bash',
+            #         os.path.join(
+            #             os.path.dirname(__file__),
+            #             'install_perl.sh')
+            #         ]
+            #     args.append(tmpdir)
+            #
+            #     subprocess.check_call(args, stdout=logfile,
+            #                           stderr=subprocess.STDOUT)
+            #     logfile.close()
+            #
+            #     logfile = open("pcre_install.log", 'w')
+            #
+            #     # Install PCRE
+            #     args = [
+            #         'bash',
+            #         os.path.join(
+            #             os.path.dirname(__file__),
+            #             'install_pcre.sh')
+            #         ]
+            #     args.append(tmpdir)
+            #
+            #     subprocess.check_call(args, stdout=logfile,
+            #                           stderr=subprocess.STDOUT)
+            #     logfile.close()
+            #
+            #     # Get paths to Python installs
+            #     logfile = open("python_paths.log", 'w')
+            #     args = [
+            #         'bash',
+            #         os.path.join(
+            #             os.path.dirname(__file__),
+            #             'get_py_paths.sh')
+            #         ]
+            #     args.append(tmpdir)
+            #     if MAJ == 3:
+            #         args.append('py3')
+            #
+            #     subprocess.check_call(args, stdout=logfile,
+            #                           stderr=subprocess.STDOUT)
+            #     logfile.close()
+            #
+            #     # Install SWIG
+            #     logfile = open("swig_install.log", 'w')
+            #     args = [
+            #         'bash',
+            #         os.path.join(
+            #             os.path.dirname(__file__),
+            #             'install_swig.sh')
+            #         ]
+            #     args.append(tmpdir)
+            #
+            #     subprocess.check_call(args, stdout=logfile,
+            #                           stderr=subprocess.STDOUT)
+            #     logfile.close()
+            #
+            #     # Install CCTools
+            #     logfile = open("cctools_install.log", 'w')
+            #     args = [
+            #         'bash',
+            #         os.path.join(
+            #             os.path.dirname(__file__),
+            #             'install_cctools.sh')
+            #         ]
+            #     args.append(tmpdir)
+            #
+            #     if MAJ == 3:
+            #         args.append('py3')
+            #
+            #     if '--user' in sys.argv:
+            #         args.append('--user')
+            #
+            #     subprocess.check_call(args, stdout=logfile,
+            #                           stderr=subprocess.STDOUT)
+            #     logfile.close()
+            #
+            #     shutil.rmtree(tmpdir)
             except subprocess.CalledProcessError:
                 shutil.rmtree(tmpdir)
                 raise InstallError(logfile)

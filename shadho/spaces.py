@@ -36,7 +36,7 @@ pyrameter.domain
 """
 from shadho.scaling import linear, ln, log_10, log_2
 
-from pyrameter import Scope, ContinuousDomain, DiscreteDomain
+from pyrameter.domains import *
 import scipy.stats
 
 
@@ -318,7 +318,7 @@ def log2_randint(lo, hi, step=1):
     -------
     domain : `pyrameter.DiscreteDomain`
     """
-    return DiscreteDomain([log2(i) for i in range(lo, hi, step)])
+    return DiscreteDomain([log_2(i) for i in range(lo, hi, step)])
 
 
 # Choice
@@ -339,3 +339,19 @@ def choice(choices):
     domain : `pyrameter.DiscreteDomain`
     """
     return DiscreteDomain(choices)
+
+
+# Exhaustive (a.k.a. Grid Search)
+def exhaustive(choices):
+    """Exhaustive search over a set of categorical values.
+
+    Parameters
+    ----------
+    choices : list
+        List of values to choose from.
+
+    Returns
+    -------
+    domain : pyrameter.ExhaustieDomain
+    """
+    return ExhaustiveDomain(choices)

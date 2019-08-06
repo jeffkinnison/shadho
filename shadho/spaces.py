@@ -37,26 +37,34 @@ pyrameter.domain
 from shadho.scaling import linear, ln, log_10, log_2
 
 from pyrameter.domains import *
+from pyrameter.specification import Specification
 import scipy.stats
 
 
-def scope(*args, **kws):
-    """Scope for joining multiple search domains.
+def scope(exclusive=False, optional=False, **kwargs):
+    """Create a scope for hierarchical domain definitions.
+
+    Hyperparameter search spaces can be set up as trees, with related
+    hyperparameters grouped in subtrees. Scopes enable this type of
+    organization.
 
     Parameters
     ----------
-    <key> : `pyrameter.Domain`
-        A search domain with a user-supplied name.
+    exclusive : bool, optional
+        If True, only generate a single hyperparameter (or sub-scope) from this
+        scope at a time. Default ``False``.
+    optional : bool, optional
+        If True, either generate a set of hyperparameters from this scope or
+        ignore the scope entirely. Default ``False``.
+    domains
+        Key/value pairs of domain names and domains in this scope.
 
-    Other Parameters
-    ----------------
-    exclusive : bool
-        If True, members of this scope will be considered mutually exclusive
-        and generated separately.
-    optional : bool
-        If True, members of this scope will be generated with 50%% probability
+    Returns
+    -------
+    scope : `pyrameter.specification.Specification`
+        The scope with all sub-domains.
     """
-    return Scope(*args, **kws)
+    return Specification(**kwargs)
 
 
 # Uniform distribution

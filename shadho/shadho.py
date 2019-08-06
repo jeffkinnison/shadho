@@ -44,7 +44,7 @@ class Shadho(object):
         If True, use the priority heuristic to adjust search proportions.
     timeout : int, optional
         Number of seconds to search for.
-    max_tasks : int, optional
+    max_queued_tasks : int, optional
         Number of tasks to queue at a time.
     await_pending : bool, optional
         If True, wait for all running tasks to complete after `timeout`.
@@ -70,10 +70,15 @@ class Shadho(object):
         If True, use the priority heuristic to adjust search proportions.
     timeout : int
         Number of seconds to search for.
-    max_tasks : int
+    max_queued_tasks : int
         Maximum number of tasks to enqueue at a time.
     await_pending : bool
         If True, wait for all running tasks to complete after `timeout`.
+    max_evals : int
+        The maximum number of evaluations for a grid point in grid search. Only
+        used when the hyperparameter search has no infinite (continuous)
+        domains. If ``None``, search until ``timeout``; otherwise, stop early
+        once every grid point has been evaluated ``max_evals`` times.
     max_resubmissions: int
         Maximum number of times to resubmit a particular parameterization for
         processing if task failure occurs. Default is not to resubmit.
@@ -87,8 +92,8 @@ class Shadho(object):
 
     def __init__(self, exp_key, cmd, spec, method='random', backend=None,
                  files=None, use_complexity=True, use_uncertainty=True,
-                 timeout=600, max_tasks=100, await_pending=False,
-                 max_resubmissions=0):
+                 timeout=600, max_queued_tasks=100, await_pending=False,
+                 max_evals=None, max_resubmissions=0):
         self.exp_key = exp_key
         self.config = ShadhoConfig()
         self.cmd = cmd
@@ -98,8 +103,9 @@ class Shadho(object):
         self.use_uncertainty = use_uncertainty
         self.timeout = timeout if timeout is not None and timeout >= 0 \
                        else float('inf')
-        self.max_tasks = 2 * max_tasks
+        self.max_queued_tasks = max_queued_tasks
         self.max_resubmissions = max_resubmissions
+        self.max_evals = max_evals
         self.await_pending = await_pending
 
         self.ccs = OrderedDict()
@@ -171,7 +177,7 @@ class Shadho(object):
         """
         self.files.append((localpath, remotepath, 'output', cache))
 
-    def add_compute_class(self, name, resource, value, max_tasks=100):
+    def add_compute_class(self, name, resource, value, max_queued_tasks=100):
         """Add a compute class representing a set of consistent recources.
 
         Parameters
@@ -183,11 +189,11 @@ class Shadho(object):
         value
             The value of the resource that should be matched, e.g. "TITAN X
             (Pascal)", 8, etc.
-        max_tasks : int, optional
+        max_queued_tasks : int, optional
             The maximum number of tasks to queue for this compute class,
             default 100.
         """
-        cc = ComputeClass(name, resource, value, 2 * max_tasks, None)
+        cc = ComputeClass(name, resource, value, 2 * max_queued_tasks, None)
         self.ccs[cc.id] = cc
 
     def run(self):
@@ -214,11 +220,12 @@ class Shadho(object):
         # Set up the backend hyperparameter generation and database
         if not isinstance(self.backend, FMin):
             self.backend = FMin(self.exp_key, self.spec, self.method,
-                                self.backend)
+                                self.backend, max_evals=self.max_evals)
 
         # If no ComputeClass was created, create a dummy class.
         if len(self.ccs) == 0:
-            cc = ComputeClass('all', None, None, self.max_tasks, self.backend)
+            cc = ComputeClass('all', None, None, self.max_queued_tasks,
+                              self.backend)
             self.ccs[cc.id] = cc
         else:
             for cc in self.ccs.values():
@@ -229,9 +236,10 @@ class Shadho(object):
 
         start = time.time()
         elapsed = 0
+        exhausted = False
         try:
             # Run the search until timeout or until all tasks complete
-            while elapsed < self.timeout and (elapsed == 0 or not self.manager.empty()):
+            while elapsed < self.timeout and not exhausted and (elapsed == 0 or not self.manager.empty()):
                 # Generate hyperparameters and a flag to continue or stop
                 stop = self.generate()
                 if not stop:
@@ -248,6 +256,7 @@ class Shadho(object):
                         self.backend.save()
                     # Update the time for timeout check
                     elapsed = time.time() - start
+                    exhausted = all([ss.done for ss in self.backend.searchspaces])
                 else:
                     break
 
@@ -297,7 +306,7 @@ class Shadho(object):
         # Generate hyperparameters for every compute class with space in queue
         for cc_id in self.ccs:
             cc = self.ccs[cc_id]
-            n = cc.max_tasks - cc.current_tasks
+            n = cc.max_queued_tasks - cc.current_tasks
 
             # Generate enough hyperparameters to fill the queue
             for i in range(n):
@@ -318,7 +327,7 @@ class Shadho(object):
                         resource=cc.resource,
                         value=cc.value)
                     stop = False  # Ensure that the search continues
-            cc.current_tasks = cc.max_tasks  # Update to show full queue
+            cc.current_tasks = cc.max_queued_tasks  # Update to show full queue
 
     def assign_to_ccs(self):
         """Assign trees to compute classes.

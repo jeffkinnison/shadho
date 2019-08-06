@@ -8,8 +8,7 @@ ComputeClass
 import uuid
 import sys
 
-from pyrameter.modelgroup import ModelGroup
-from pyrameter.models.model import Model
+from pyrameter.optimizer import FMin
 
 
 class ComputeClass(object):
@@ -61,20 +60,19 @@ class ComputeClass(object):
     --------
     `pyrameter.ModelGroup`
     """
-    def __init__(self, name, resource, value, max_tasks):
+    def __init__(self, name, resource, value, max_tasks, optimizer):
         self.id = str(uuid.uuid4())
         self.name = name
         self.resource = resource
         self.value = value
         self.max_tasks = max_tasks
         self.current_tasks = 0
-
-        self.model_group = ModelGroup()
+        self.optimizer = optimizer
 
     def __hash__(self):
         return hash((self.id, self.name, self.resource, self.value))
 
-    def generate(self, model_id=None):
+    def generate(self, ssid=None):
         """Generate a set of hyperparameters from a model in this group.
 
         Hyperparameters are generated from a single model assigned to this
@@ -83,36 +81,42 @@ class ComputeClass(object):
 
         Parameters
         ----------
-        model_id : str, optional
+        ssid : optional
             If a valid id is supplied, generate hyperparameters values from the
-            requested model. Otherwise, probabilistically select a model and
-            generte hyperparameter values.
+            requested search space. Otherwise, probabilistically select a
+            search space and generate hyperparameter values.
         """
-        return self.model_group.generate(model_id)
+        return self.optimizer.generate(ssid=ssid)
 
-    def add_model(self, model):
-        """Add a model to this compute class.
+    def add_searchspace(self, searchspace):
+        """Add a search space to this compute class.
 
         Parameters
         ----------
-        model : `pyrameter.Model`
+        searchspace : `pyrameter.searchspace.SearchSpace`
         """
-        self.model_group.add_model(model)
+        self.optimizer.searchspaces.append(searchspace)
 
-    def remove_model(self, model_id):
-        """Remove a model from this compute class.
+    def remove_searchspace(self, ssid):
+        """Remove a search space from this compute class.
 
         Parameters
         ----------
         model_id : str
         """
-        self.model_group.remove_model(model_id)
+        idx = None
+        for i, ss in enumerate(self.optimizer.searchspaces):
+            if ss.id == ssid:
+                idx = i
+                break
+        if idx is not None:
+            self.optimizer.searchspaces.pop(idx)
 
     def clear(self):
         """Remove all models from this compute class."""
-        self.model_group.clear()
+        self.optimizer.searchspaces = []
 
-    def register_result(self, model_id, result_id, loss, results):
+    def register_result(self, ssid, objective, result=None, errmsg=None):
         """Add a result to a model in this compute class.
 
         Parameters
@@ -121,8 +125,7 @@ class ComputeClass(object):
             The id of the model to store the result in.
 
         """
-        if not isinstance(results, dict):
-            results = {'results': results}
-        results['compute_class'] = (self.resource, self.value)
-        return self.model_group.register_result(model_id, result_id, loss,
-                                                results)
+        trial = self.optimizer.trials[ssid]
+        trial.objective = objective
+        trial.result = result
+        trial.errmsg = errmsg

@@ -60,8 +60,7 @@ class WQManager(WORKQUEUE.WorkQueue):
 
         super(WQManager, self).__init__(name=name,
                                         port=port,
-                                        shutdown=shutdown,
-                                        catalog=False)
+                                        shutdown=shutdown)
 
         self.specify_log(logfile)
 

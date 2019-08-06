@@ -33,7 +33,6 @@ DEFAULT_CONFIG = {
         'port': 9123,
         'name': 'shadho_master',
         'shutdown': True,
-        'catalog': False,
         'logfile': 'shadho_master.log',
         'debugfile': 'shadho_master.debug',
         'password': False

@@ -32,7 +32,6 @@ DEFAULT_CONFIG = {
     'workqueue': {
         'port': 9123,
         'name': 'shadho_master',
-        'exclusive': True,
         'shutdown': True,
         'catalog': False,
         'logfile': 'shadho_master.log',

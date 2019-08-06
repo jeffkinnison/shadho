@@ -13,7 +13,6 @@ def create_manager(manager_type='local', config=None, tmpdir=None):
             tmpdir,
             name=config.workqueue.name,
             port=config.workqueue.port,
-            exclusive=config.workqueue.exclusive,
             shutdown=config.workqueue.shutdown,
             logfile=config.workqueue.logfile,
             debugfile=config.workqueue.debugfile

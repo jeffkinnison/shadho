@@ -13,43 +13,7 @@ import os
 import sys
 import tarfile
 
-import shadho.config as config
-
-
-def load_work_queue_module(config):
-    """Load the work_queue Python wrapper into the namespace.
-
-    This function dynamically loads the `work_queue` wrapper from a location
-    defined in Shadho.config. The `work_queue` wrapper should only be imported
-    once per invocation of SHADHO, and this allows flexibility to where
-    `work_queue` is installed.
-
-    Returns
-    -------
-    workqueue : module
-        The loaded module.
-    """
-    # Python 3.5+ dynamic importing
-    if sys.version_info.major == 3 and sys.version_info.minor >= 5:
-        import importlib.util
-        spec = importlib.util.spec_from_file_location('work_queue', config.wq_path)
-        workqueue = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(workqueue)
-
-    # Python 3.0-3.4 dynamic importing
-    elif sys.version_info.major == 3 and sys.version_info.minor < 5:
-        from importlib.machinery import SourceFileLoader
-        workqueue = SourceFileLoader(
-            'work_queue', config.wq_path).load_module()
-    # Python 2.x dynamic imports
-    else:
-        import imp
-        workqueue = imp.load_source('work_queue', config.wq_path)
-
-    return workqueue
-
-
-WORKQUEUE = load_work_queue_module(config)
+import work_queue as WORKQUEUE
 
 
 class WQManager(WORKQUEUE.WorkQueue):

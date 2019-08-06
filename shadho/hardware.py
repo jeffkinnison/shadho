@@ -34,7 +34,7 @@ class ComputeClass(object):
         The name of the resource common to this group.
     value
         The value of the resource common to this group.
-    max_tasks : int
+    max_queued_tasks : int
         The maximum number of tasks to queue. Recommended to be 1.5-2x the
         number of expected nodes with this resource.
 
@@ -48,7 +48,7 @@ class ComputeClass(object):
         The name of the resource common to this group.
     value
         The value of the resource common to this group.
-    max_tasks : int
+    max_queued_tasks : int
         The maximum number of tasks to queue. Recommended to be 1.5-2x the
         number of expected nodes with this resource.
     current_tasks : int
@@ -60,12 +60,12 @@ class ComputeClass(object):
     --------
     `pyrameter.ModelGroup`
     """
-    def __init__(self, name, resource, value, max_tasks, optimizer):
+    def __init__(self, name, resource, value, max_queued_tasks, optimizer):
         self.id = str(uuid.uuid4())
         self.name = name
         self.resource = resource
         self.value = value
-        self.max_tasks = max_tasks
+        self.max_queued_tasks = max_queued_tasks
         self.current_tasks = 0
         self.optimizer = optimizer
 

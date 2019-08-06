@@ -52,7 +52,7 @@ class WQManager(WORKQUEUE.WorkQueue):
     """
 
     def __init__(self, param_file, out_file, results_file, opt_value, tmpdir,
-                 name='shadho', port=9123, exclusive=True, shutdown=True,
+                 name='shadho', port=9123, shutdown=True,
                  logfile='shadho_wq.log', debugfile='shadho_wq.debug'):
         WORKQUEUE.cctools_debug_flags_set("all")
         WORKQUEUE.cctools_debug_config_file(debugfile)
@@ -60,7 +60,6 @@ class WQManager(WORKQUEUE.WorkQueue):
 
         super(WQManager, self).__init__(name=name,
                                         port=port,
-                                        exclusive=exclusive,
                                         shutdown=shutdown,
                                         catalog=False)
 

@@ -51,13 +51,28 @@ class InstallError(Exception):
     def __init__(self, logfile):
         fname = logfile.name
         logfile.close()
-        logfile = open(fname, 'r')
+        self.logfile = open(fname, 'r')
         super(InstallError, self).__init__(logfile.read())
 
 
 class InstallCCToolsCommand(install):
     """Helper to install CCTools."""
     description = "Install CCTools and set up SHADHO working directory"
+
+    user_options = install.user_options + [
+        ('shadho-base=', None,
+            'Path to SHADHO support files (default: $HOME/.shadho)')
+    ]
+
+    def finalize_options(self):
+        super(InstallCCToolsCommand, self).finalize_options()
+        global SHADHO_DIR
+        if self.shadho_base is None:
+            self.shadho_base = SHADHO_DIR
+
+    def initialize_options(self):
+        super(InstallCCToolsCommand, self).initialize_options()
+        self.shadho_base = None
 
     def run(self):
         """Install WorkQueue from the CCTools suite to site-packages.
@@ -75,9 +90,12 @@ class InstallCCToolsCommand(install):
         global EXECUTABLE
         global SHADHO_DIR
         global DEFAULT_CONFIG
+
+        super(InstallCCToolsCommand, self).run()
+
         # CCTools distinguishes between Python 2/3 SWIG bindings, and the
-        # Python 3 bindings require extra effort. Install based on the user's
-        # version
+        # Python 3 bindings require extra dependencies. Install based on the
+        # user's version
         if not os.path.isdir(SHADHO_DIR):
             os.mkdir(SHADHO_DIR)
 
@@ -94,101 +112,34 @@ class InstallCCToolsCommand(install):
             try:
                 subprocess.check_call(['bash', 'smart_install.sh', tmpdir,
                                        MAJ, MIN, PREFIX, EXECUTABLE])
-            #     # Install Perl
-            #     logfile = open("perl_install.log", 'w')
-            #     args = [
-            #         'bash',
-            #         os.path.join(
-            #             os.path.dirname(__file__),
-            #             'install_perl.sh')
-            #         ]
-            #     args.append(tmpdir)
-            #
-            #     subprocess.check_call(args, stdout=logfile,
-            #                           stderr=subprocess.STDOUT)
-            #     logfile.close()
-            #
-            #     logfile = open("pcre_install.log", 'w')
-            #
-            #     # Install PCRE
-            #     args = [
-            #         'bash',
-            #         os.path.join(
-            #             os.path.dirname(__file__),
-            #             'install_pcre.sh')
-            #         ]
-            #     args.append(tmpdir)
-            #
-            #     subprocess.check_call(args, stdout=logfile,
-            #                           stderr=subprocess.STDOUT)
-            #     logfile.close()
-            #
-            #     # Get paths to Python installs
-            #     logfile = open("python_paths.log", 'w')
-            #     args = [
-            #         'bash',
-            #         os.path.join(
-            #             os.path.dirname(__file__),
-            #             'get_py_paths.sh')
-            #         ]
-            #     args.append(tmpdir)
-            #     if MAJ == 3:
-            #         args.append('py3')
-            #
-            #     subprocess.check_call(args, stdout=logfile,
-            #                           stderr=subprocess.STDOUT)
-            #     logfile.close()
-            #
-            #     # Install SWIG
-            #     logfile = open("swig_install.log", 'w')
-            #     args = [
-            #         'bash',
-            #         os.path.join(
-            #             os.path.dirname(__file__),
-            #             'install_swig.sh')
-            #         ]
-            #     args.append(tmpdir)
-            #
-            #     subprocess.check_call(args, stdout=logfile,
-            #                           stderr=subprocess.STDOUT)
-            #     logfile.close()
-            #
-            #     # Install CCTools
-            #     logfile = open("cctools_install.log", 'w')
-            #     args = [
-            #         'bash',
-            #         os.path.join(
-            #             os.path.dirname(__file__),
-            #             'install_cctools.sh')
-            #         ]
-            #     args.append(tmpdir)
-            #
-            #     if MAJ == 3:
-            #         args.append('py3')
-            #
-            #     if '--user' in sys.argv:
-            #         args.append('--user')
-            #
-            #     subprocess.check_call(args, stdout=logfile,
-            #                           stderr=subprocess.STDOUT)
-            #     logfile.close()
-            #
-            #     shutil.rmtree(tmpdir)
+                src = os.path.join(self.shadho_base, 'lib',
+                                   'python{}.{}'.format(MAJ, MIN),
+                                   'site-packages')
+                dest = self.install_lib
+                shutil.copy(os.path.join(src, 'work_queue.py'), dest)
+                shutil.copy(os.path.join(src, '_work_queue.so'), dest)
             except subprocess.CalledProcessError:
                 shutil.rmtree(tmpdir)
-                raise InstallError(logfile)
+                raise InstallError(self.logfile)
 
         try:
             cfg.read_dict(DEFAULT_CONFIG)
         except AttributeError:
-            for key, val in DEFAULT_CONFIG.iteritems():
+            for key, val in DEFAULT_CONFIG.items():
                 cfg.add_section(key)
-                for k, v in val.iteritems():
+                for k, v in val.items():
                     cfg.set(key, k, v)
+
 
         print('Installing shadho_worker')
         shutil.copy(os.path.join('.', 'scripts', 'shadho_worker.py'),
                     SHADHO_DIR)
+
+        # src = os.path.join(self.shadho_base, 'lib', f'python{MAJ}.{MIN}',
+        #                    'site-packages')
+        # dest = self.install_lib
+        # shutil.copy(os.path.join(src, 'work_queue.py'), dest)
+        # shutil.copy(os.path.join(src, '_work_queue.so'), dest)
 
         home = os.path.expanduser(os.environ['HOME'] if 'HOME' in os.environ
                                       else os.environ['USERPROFILE'])
@@ -197,7 +148,6 @@ class InstallCCToolsCommand(install):
             with open(os.path.join(home, '.shadhorc'), 'w') as f:
                 cfg.write(f)
 
-        install.run(self)
 
 setup(
     name='shadho',
@@ -227,8 +177,8 @@ setup(
     ],
     keywords='machine_learning hyperparameters distributed_computing',
     install_requires=[
-        'scipy>=0.18.1',
         'numpy>=1.12.0',
+        'scipy>=0.18.1',
         'scikit-learn>=0.18.1'
     ],
     scripts=[

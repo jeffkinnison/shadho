@@ -260,6 +260,8 @@ class Shadho(object):
                 else:
                     break
 
+            self.backend.save()
+
             # If requested, continue the loop until all tasks return
             if self.await_pending:
                 while not self.manager.empty():
@@ -269,6 +271,7 @@ class Shadho(object):
                             self.success(*result)
                         else:
                             self.failure(*result)
+                self.backend.save()
 
         # On keyboard interrupt, save any results and clean up
         except KeyboardInterrupt:

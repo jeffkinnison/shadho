@@ -10,7 +10,7 @@ if __name__ == '__main__':
 
     # Create a SHADHO driver. Unlike the local example, distributed SHADHO
     # requires a shell command to run on the worker.
-    opt = Shadho('bash ./sin_task.sh', space, timeout=60)
+    opt = Shadho('sin_distributed_example', 'bash ./sin_task.sh', space, timeout=60)
 
     # Add the files necessary to run the task
     opt.add_input_file('sin_task.sh')

@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     # Pass the `sin` function, the search space, and a timeout into the SHADHO
     # driver and configure SHAHDO to run locally.
-    opt = Shadho(sin, space, timeout=30)
+    opt = Shadho('sin_local_example', sin, space, timeout=30)
     opt.config.manager = 'local'
 
     # Run SHADHO, and the optimal `x` value will be printed after 30s.

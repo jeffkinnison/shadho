@@ -93,7 +93,7 @@ class Shadho(object):
     def __init__(self, exp_key, cmd, spec, method='random', backend=None,
                  files=None, use_complexity=True, use_uncertainty=True,
                  timeout=600, max_queued_tasks=100, await_pending=False,
-                 max_evals=None, max_resubmissions=0):
+                 max_evals=None, max_resubmissions=0, save_frequency=10):
         self.exp_key = exp_key
         self.config = ShadhoConfig()
         self.cmd = cmd
@@ -107,6 +107,7 @@ class Shadho(object):
         self.max_resubmissions = max_resubmissions
         self.max_evals = max_evals
         self.await_pending = await_pending
+        self.save_frequency = save_frequency
 
         self.ccs = OrderedDict()
 
@@ -252,7 +253,7 @@ class Shadho(object):
                         else:
                             self.failure(*result)  # Resubmit if asked
                     # Checkpoint the results to file or DB at some frequency
-                    if self.backend.trial_count % 50 == 0:
+                    if self.backend.trial_count % self.save_frequency == 0:
                         self.backend.save()
                     # Update the time for timeout check
                     elapsed = time.time() - start

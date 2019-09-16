@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
-# Take in some infor about the install
+# Take in some info about the install
 base="$1"                          # directory holding the installed deps
 install_python_major_version="$2"  # which python major version to target
 install_python_minor_version="$3"  # which python minor version to target
 install_python_prefix="$4"         # path to current python install
 install_python_executable="$5"     # path to current python executable
 shadho_dir="$6"                    # path to the SHADHO config/install dir
+
+# Set some variables for later
+cctools_version="cctools-7.0.16-source"
 
 # For reasons known only to Cthulhu himself, SWIG requires a Python 2 install
 # to generate Python 3 bindings. To this day, scholars (read: the SHADHO devs)
@@ -130,17 +133,17 @@ make -j8 && make install -j
 
 # Attempt to wget CCTools, fall back to curl if things go south
 cd $base
-wget http://ccl.cse.nd.edu/software/files/cctools-7.0.9-source.tar.gz
+wget "http://ccl.cse.nd.edu/software/files/${cctools_version}.tar.gz"
 if [ "$?" -ne "0" ]; then
-    curl -o cctools-7.0.9-source.tar.gz http://ccl.cse.nd.edu/software/files/cctools-7.0.9-source.tar.gz
+    curl -o "${cctools_version}.tar.gz" "http://ccl.cse.nd.edu/software/files/${cctools_version}.tar.gz"
 fi
 
-if [ ! -f "cctools-7.0.9-source.tar.gz" ]; then
+if [ ! -f "${cctools_version}.tar.gz" ]; then
     exit 1
 fi
 
-tar xf cctools-7.0.9-source.tar.gz
-cd cctools-7.0.9-source
+tar xf "${cctools_version}.tar.gz"
+cd "${cctools_version}"
 
 if [ "$install_python_major_version" -eq "3" ]; then
     python2_prefix="$(python2 -c 'import sys; print(sys.prefix)')"

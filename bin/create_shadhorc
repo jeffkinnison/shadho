@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""Create a default .shadhorc file."""
+import argparse
+import configparser
+import pathlib
+import os
+
+
+def parse_args(args=None):
+    homedir = str(pathlib.Path().home())
+
+    p = argparse.ArgumentParser(description="Create a default .shadhorc file.")
+
+    p.add_argument('--prefix', type=str, default=homedir,
+                   help='install directory of the .shadhorc file')
+    p.add_argument('--shadho-dir', type=str,
+                   default=os.path.join(homedir, '.shadho'),
+                   help='path to SHADHO install directory (.shadho)')
+
+    return p.parse_args(args)
+
+
+def write_shadhorc(prefix, shadho_dir):
+    """Create the .shadhorc config file.
+
+    Parameters
+    ----------
+    prefix : str
+        Path to install SHADHO config and Work Queue to.
+    shadho_dir : str
+        Path to the .shadho install directory.
+    """
+    # Set up the default config values
+    default_config = {
+        'global': {
+            'wrapper': 'shadho_worker.py',
+            'output': 'out.tar.gz',
+            'result_file': 'performance.json',
+            'optimize': 'loss',
+            'param_file': 'hyperparameters.json',
+            'backend': 'json',
+            'manager': 'workqueue'
+        },
+        'workqueue': {
+            'port': 9123,
+            'name': 'shadho_master',
+            'shutdown': True,
+            'logfile': 'shadho_master.log',
+            'debugfile': 'shadho_master.debug',
+            'password': False
+        },
+        'backend': {
+            'type': 'sql',
+            'url': 'sqlite:///:memory:'
+        }
+    }
+
+    default_config['global']['shadho_dir'] = shadho_dir
+
+    # Load the default config into a ConfigParser. The try block is for
+    # Python3+, the except block is for Python 2.7.
+    try:
+        config = configparser.ConfigParser()
+        config.read_dict(default_config)
+    except AttributeError:
+        config = configparser.RawConfigParser()
+        for section in default_config:
+            config.add_section(str(section))
+            for entry in default_config[section]:
+                if type(default_config[section]) is dict:
+                    config.set(str(section),
+                               str(entry),
+                               str(default_config[section][entry]))
+
+    # Make sure the path to the .shadhorc file exists.
+    if os.path.basename(prefix) != '.shadhorc':
+        os.path.makedirs(prefix, exist_ok=True)
+        prefix = os.path.join(prefix, '.shadhorc')
+    else:
+        os.path.makedirs(os.path.dirname(prefix), exist_ok=True)
+
+    # Write the .shadhorc.
+    with open(prefix, 'w') as f:
+        config.write(f)
+
+
+def main():
+    args = parse_args()
+    main(args.prefix, args.shadho_dir)
+
+
+if __name__ == '__main__':
+    main()

@@ -60,6 +60,7 @@ class ShadhoConfig(object):
     DEFAULTS = {
         'global': {
             'wrapper': 'shadho_worker.py',
+            'utils': 'shadho_utils.py',
             'output': 'out.tar.gz',
             'result_file': 'performance.json',
             'optimize': 'loss',
@@ -84,9 +85,9 @@ class ShadhoConfig(object):
     def __init__(self, use_defaults=False):
 
         # Copy the defaults
-        if 'shadho_dir' not in ShadhoConfig.DEFAULTS:
+        if 'shadho_dir' not in ShadhoConfig.DEFAULTS['global']:
             shadho_dir = os.path.join(self.__get_home(), '.shadho')
-            ShadhoConfig.DEFAULTS['shadho_dir'] = shadho_dir
+            ShadhoConfig.DEFAULTS['global']['shadho_dir'] = shadho_dir
 
         self.config = copy.deepcopy(ShadhoConfig.DEFAULTS)
 
@@ -125,8 +126,8 @@ class ShadhoConfig(object):
 
                     self.config[section][option] = val
 
-        if not os.path.isdir(self.config['shadho_dir']):
-            raise ShadhoInstallNotfoundError(self.config['shadho_dir'])
+        if not os.path.isdir(self.config['global']['shadho_dir']):
+            raise ShadhoInstallNotfoundError(self.config['global']['shadho_dir'])
 
         # Instantiate config group objects
         self.shadho = ConfigGroup(self.config['global'])

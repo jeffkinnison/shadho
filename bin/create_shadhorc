@@ -34,6 +34,7 @@ def write_shadhorc(prefix, shadho_dir):
     default_config = {
         'global': {
             'wrapper': 'shadho_worker.py',
+            'utils': 'shadho_utils.py',
             'output': 'out.tar.gz',
             'result_file': 'performance.json',
             'optimize': 'loss',

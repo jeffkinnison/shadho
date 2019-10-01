@@ -87,8 +87,12 @@ def linear(x, coeff=1.0, degree=1.0):
     return a string, etc.
     """
     try:
-        t = type(x)
-        x = t(coeff * np.power(x, degree))
+        if not isinstance(x, np.ndarray):
+            t = type(x)
+            x = t(coeff * np.power(x, degree))
+        else:
+            dtype = x.dtype
+            x = (coeff * np.power(x, degree)).astype(dtype)
     except TypeError:
         x = x
 
@@ -154,12 +158,16 @@ def log_10(x):
     case the return value will always be floating-point.
     """
     try:
-        if not isinstance(x, numbers.Number):
-            raise TypeError
-        t = type(x)
-        x = np.power(10.0, x)
-        if t(x) == x:
-            x = t(x)
+        if isinstance(x, numbers.Number):
+            t = type(x)
+            x = np.power(10.0, x)
+            if t(x) == x:
+                x = t(x)
+        elif isinstance(x, np.ndarray):
+            dtype = x.dtype
+            x = np.power(10.0, x).astype(dtype)
+        else:
+            raise TypeError('{} is not a numeric type, cannot take log'.format(x))
     except TypeError:
         x = x
 
@@ -192,12 +200,16 @@ def log_2(x):
     case the return value will always be floating-point.
     """
     try:
-        if not isinstance(x, numbers.Number):
-            raise TypeError
-        t = type(x)
-        x = np.exp2(x)
-        if t(x) == x:
-            x = t(x)
+        if isinstance(x, numbers.Number):
+            t = type(x)
+            x = np.exp2(x)
+            if t(x) == x:
+                x = t(x)
+        elif isinstance(x, np.ndarray):
+            dtype = x.dtype
+            x = np.exp2(x).astype(x.dtype)
+        else:
+            raise TypeError('{}  is not a numeric type, cannot take log'.format(x))
     except TypeError:
         x = x
 

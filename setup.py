@@ -130,7 +130,7 @@ class InstallCCToolsCommand(install):
 
 
         print('Installing shadho_worker')
-        shutil.copy(os.path.join('.', 'scripts', 'shadho_worker.py'),
+        shutil.copy(os.path.join('.', 'shadho', 'shadho_worker.py'),
                     SHADHO_DIR)
 
         # src = os.path.join(self.shadho_base, 'lib', f'python{MAJ}.{MIN}',
@@ -149,40 +149,47 @@ class InstallCCToolsCommand(install):
 
 setup(
     name='shadho',
-    version='0.1a1',
+    version='0.1',
     description='Hyperparameter optimizer with distributed hardware at heart',
     url='https://github.com/jeffkinnison/shadho',
     author='Jeff Kinnison',
     author_email='jkinniso@nd.edu',
+    python_requires='>=3.5',
     packages=['shadho',
-              'shadho.managers'],
+              'shadho.managers',],
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
-        'Intended Audience :: Users',
-        'License :: MIT',
-        'Topic :: Machine Learning :: Hyperparameter Optimization',
-        'Topic :: Distributed Systems :: Task Allocation',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
+        'License :: OSI Approved :: MIT License',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Operating System :: POSIX',
         'Operating System :: Unix',
-        'Operating System :: MacOS',
     ],
     keywords='machine_learning hyperparameters distributed_computing',
     install_requires=[
-        'numpy>=1.12.0',
-        'scipy>=0.18.1',
-        'scikit-learn>=0.18.1'
+        'numpy',
+        'scipy',
+        'scikit-learn',
+        'pyrameter'
     ],
     scripts=[
         'bin/shadho_wq_worker',
-        'bin/shadho_wq_factory'
+        'bin/shadho_wq_factory',
+        'bin/shadho_install_workqueue',
+        'bin/shadho_post_install',
+        'bin/create_shadhorc',
     ],
+    # entry_points={
+    #     'console_scripts': [
+    #         'create_shadhorc = installers.create_shadhorc.__main__:main',
+    #         'install_workqueue = installers.install_workqueue.__main__:main',
+    #     ]
+    # },
     tests_require=['pytest'],
-    cmdclass={'install': InstallCCToolsCommand}
+    # cmdclass={'install': InstallCCToolsCommand}
 )

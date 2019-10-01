@@ -93,7 +93,8 @@ class Shadho(object):
     def __init__(self, exp_key, cmd, spec, method='random', backend=None,
                  files=None, use_complexity=True, use_uncertainty=True,
                  timeout=600, max_queued_tasks=100, await_pending=False,
-                 max_evals=None, max_resubmissions=0, save_frequency=10):
+                 max_evals=None, max_resubmissions=0, save_frequency=10,
+                 hyperparameters_per_task=1):
         self.exp_key = exp_key
         self.config = ShadhoConfig()
         self.cmd = cmd
@@ -108,6 +109,10 @@ class Shadho(object):
         self.max_evals = max_evals
         self.await_pending = await_pending
         self.save_frequency = save_frequency
+        self.hyperparameters_per_task = hyperparameters_per_task \
+            if isinstance(hyperparameters_per_task, int) \
+            and hyperparameters_per_task > 0 \
+            else 1
 
         self.ccs = OrderedDict()
 
@@ -125,6 +130,10 @@ class Shadho(object):
         self.add_input_file(os.path.join(
             self.config.shadho_dir,
             self.config.wrapper))
+        self.add_input_file(os.path.join(
+            self.config.shadho_dir,
+            self.config.utils
+        ))
 
         self.config.save_config(self.__tmpdir)
         self.add_input_file(os.path.join(self.__tmpdir, '.shadhorc'))
@@ -315,22 +324,41 @@ class Shadho(object):
             # Generate enough hyperparameters to fill the queue
             for i in range(n):
                 # Get bookkeeping ids and hyperparameter values
-                trial = cc.generate()
+                if self.hyperparameters_per_task == 1:
+                    trial = cc.generate()
+                    if trial is not None:
+                        # Encode info to map to db in the task tag
+                        tag = '.'.join([str(trial.id),
+                                        str(trial.searchspace().id),
+                                        cc_id])
+                        self.manager.add_task(
+                            self.cmd,
+                            tag,
+                            trial.parameter_dict,
+                            files=self.files,
+                            resource=cc.resource,
+                            value=cc.value)
+
+                elif self.hyperparameters_per_task > 1:
+                    trial = [cc.generate() for _ in range(self.hyperparameters_per_task)]
+
+                    if not any([t is None for t in trial]):
+                        # Encode info to map to db in the task tag
+                        tag = '.'.join(['@'.join([str(t.id) for t in trial]),
+                                        str(trial[0].searchspace().id),
+                                        cc_id])
+                        parameters = [t.parameter_dict for t in trial]
+                        self.manager.add_task(
+                            self.cmd,
+                            tag,
+                            parameters,
+                            files=self.files,
+                            resource=cc.resource,
+                            value=cc.value)
+
 
                 # Create a new distributed task if values were generated
-                if trial is not None:
-                    # Encode info to map to db in the task tag
-                    tag = '.'.join([str(trial.id),
-                                    str(trial.searchspace().id),
-                                    cc_id])
-                    self.manager.add_task(
-                        self.cmd,
-                        tag,
-                        trial.parameter_dict,
-                        files=self.files,
-                        resource=cc.resource,
-                        value=cc.value)
-                    stop = False  # Ensure that the search continues
+                stop = False  # Ensure that the search continues
             cc.current_tasks = cc.max_queued_tasks  # Update to show full queue
 
     def assign_to_ccs(self):
@@ -431,11 +459,23 @@ class Shadho(object):
         """
         # Get bookkeeping information from the task tag
         trial_id, ss_id, ccid = tag.split('.')
-        results['compute_class'] = {
-            'id': ccid,
-            'name': self.ccs[ccid].name,
-            'value': self.ccs[ccid].value
-        }
+
+        if not isinstance(results, list):
+            results['compute_class'] = {
+                'id': ccid,
+                'name': self.ccs[ccid].name,
+                'value': self.ccs[ccid].value
+            }
+        else:
+            trial_id = trial_id.split('@')
+            ccdata = {
+                'id': ccid,
+                'name': self.ccs[ccid].name,
+                'value': self.ccs[ccid].value
+            }
+            for r in results:
+                r['compute_class'] = ccdata
+
 
         # Update the DB with the result
         self.backend.register_result(ss_id, trial_id, loss, results)
@@ -464,6 +504,8 @@ class Shadho(object):
         """
         # Get bookkeeping information from the task tag
         trial_id, ss_id, ccid = tag.split('.')
+
+        trials = trial_id.split('@')
 
         # Determine whether or not to resubmit
         submissions, params = \

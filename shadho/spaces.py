@@ -68,7 +68,7 @@ def scope(exclusive=False, optional=False, **kwargs):
 
 
 # Uniform distribution
-def uniform(lo, hi):
+def uniform(lo, hi, **kwargs):
     """Continuous uniform distribution.
 
     The distribution is defined in range [``lo``, ``hi``].
@@ -85,10 +85,10 @@ def uniform(lo, hi):
     domain : `pyrameter.ContinuousDomain`
     """
     return ContinuousDomain(scipy.stats.uniform, loc=lo, scale=hi,
-                            callback=linear)
+                            callback=linear, **kwargs)
 
 
-def ln_uniform(lo, hi):
+def ln_uniform(lo, hi, **kwargs):
     """Natural log-scaled continuous uniform distribution.
 
     The distribution is defined in range [``lo``, ``hi``]. Sampled values ``x``
@@ -105,10 +105,11 @@ def ln_uniform(lo, hi):
     -------
     domain : `pyrameter.ContinuousDomain`
     """
-    return ContinuousDomain(scipy.stats.uniform, loc=lo, scale=hi, callback=ln)
+    return ContinuousDomain(scipy.stats.uniform, loc=lo, scale=hi, callback=ln,
+                            **kwargs)
 
 
-def log10_uniform(lo, hi):
+def log10_uniform(lo, hi, **kwargs):
     """Log 10-scaled continuous uniform distribution.
 
     The distribution is defined in range [``lo``, ``hi``]. Sampled values ``x``
@@ -126,10 +127,10 @@ def log10_uniform(lo, hi):
     domain : `pyrameter.ContinuousDomain`
     """
     return ContinuousDomain(scipy.stats.uniform, loc=lo, scale=hi,
-                            callback=log_10)
+                            callback=log_10, **kwargs)
 
 
-def log2_uniform(lo, hi):
+def log2_uniform(lo, hi, **kwargs):
     """Log 2-scaled continuous uniform distribution.
 
     The distribution is defined in range [``lo``, ``hi``]. Sampled values ``x``
@@ -147,11 +148,11 @@ def log2_uniform(lo, hi):
     domain : `pyrameter.ContinuousDomain`
     """
     return ContinuousDomain(scipy.stats.uniform, loc=lo, scale=hi,
-                            callback=log_2)
+                            callback=log_2, **kwargs)
 
 
 # Normal distribution
-def normal(mu, sigma):
+def normal(mu, sigma, **kwargs):
     """Continuous normal distribution.
 
     Gaussian distribution parameterized with expected value ``mu`` and standard
@@ -169,10 +170,10 @@ def normal(mu, sigma):
     domain : `pyrameter.ContinuousDomain`
     """
     return ContinuousDomain(scipy.stats.norm, loc=lo, scale=hi,
-                            callback=linear)
+                            callback=linear, **kwargs)
 
 
-def ln_normal(mu, sigma):
+def ln_normal(mu, sigma, **kwargs):
     """Natural log-scaled continuous normal distribution.
 
     Gaussian distribution parameterized with expected value ``mu`` and standard
@@ -190,10 +191,11 @@ def ln_normal(mu, sigma):
     -------
     domain : `pyrameter.ContinuousDomain`
     """
-    return ContinuousDomain(scipy.stats.norm, loc=lo, scale=hi, callback=ln)
+    return ContinuousDomain(scipy.stats.norm, loc=lo, scale=hi, callback=ln,
+                            **kwargs)
 
 
-def log10_normal(mu, sigma):
+def log10_normal(mu, sigma, **kwargs):
     """Log 10-scaled continuous normal distribution.
 
     Gaussian distribution parameterized with expected value ``mu`` and standard
@@ -212,10 +214,10 @@ def log10_normal(mu, sigma):
     domain : `pyrameter.ContinuousDomain`
     """
     return ContinuousDomain(scipy.stats.norm, loc=lo, scale=hi,
-                            callback=log_10)
+                            callback=log_10, **kwargs)
 
 
-def log2_normal(mu, sigma):
+def log2_normal(mu, sigma, **kwargs):
     """Log 2-scaled continuous normal distribution.
 
     Gaussian distribution parameterized with expected value ``mu`` and standard
@@ -234,7 +236,7 @@ def log2_normal(mu, sigma):
     domain : `pyrameter.ContinuousDomain`
     """
     return ContinuousDomain(scipy.stats.norm, loc=lo, scale=hi,
-                            callback=log_2)
+                            callback=log_2, **kwargs)
 
 
 # Randint distributions

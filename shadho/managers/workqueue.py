@@ -15,6 +15,8 @@ import tarfile
 
 import work_queue as WORKQUEUE
 
+from shadho.utils import ShadhoEncoder, ShadhoDecoder
+
 
 class WQManager(WORKQUEUE.WorkQueue):
     """Work Queue master with utilities to generate conformant tasks.
@@ -119,7 +121,7 @@ class WQManager(WORKQUEUE.WorkQueue):
                      cache=False)
 
         # Send the hyperparameters as a JSON string
-        buff = WQBuffer(str(json.dumps(params)),
+        buff = WQBuffer(str(json.dumps(params, cls=ShadhoEncoder)),
                         self.param_file,
                         cache=False)
 
@@ -212,11 +214,19 @@ class WQManager(WORKQUEUE.WorkQueue):
         except IOError:
             print("Error opening task {} result".format(rid))
 
-        result = json.loads(resultstr.decode('utf-8'))
-        loss = result[self.opt_value]
-        result['submit_time'] = task.submit_time
-        result['start_time'] = task.execute_cmd_start
-        result['finish_time'] = task.finish_time
+        result = json.loads(resultstr.decode('utf-8'), cls=ShadhoDecoder)
+        if isinstance(result, list):
+            loss = []
+            for r in result:
+                loss.append(r[self.opt_value])
+                r['submit_time'] = task.submit_time
+                r['start_time'] = task.execute_cmd_start
+                r['finish_time'] = task.finish_time
+        else:
+            loss = result[self.opt_value]
+            result['submit_time'] = task.submit_time
+            result['start_time'] = task.execute_cmd_start
+            result['finish_time'] = task.finish_time
         return (task.tag, loss, result)
 
     def failure(self, task):

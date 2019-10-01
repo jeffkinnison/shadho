@@ -101,25 +101,42 @@ class LocalManager(object):
         # If there is a task, try to run it
         if task is not None:
             result = None
-            
+
             # Set up the task tag for return
             ret = [task.tag]
 
             # Try to run the task, and attempt to catch and report any errors
             try:
                 result = task.run()
-                
+
                 # Package the result to return
                 if result is not None:
                     # Handle the case of multiple values and single value being returned
-                    if isinstance(result, dict):
-                        ret.append(result[self.opt_value])
-                        ret.append(result)
-                    elif isinstance(result, float):
-                        ret.append(result)
-                        ret.append({self.opt_value: result})
+                    if not isinstance(result, list):
+                        if isinstance(result, dict):
+                            ret.append(result[self.opt_value])
+                            ret.append(result)
+                        elif isinstance(result, float):
+                            ret.append(result)
+                            ret.append({self.opt_value: result})
+                        else:
+                            raise ValueError
                     else:
-                        raise ValueError
+                        optima = []
+                        results = []
+
+                        for r in result:
+                            if isinstance(r, dict):
+                                optima.append(r[self.opt_value])
+                                results.append(r)
+                            elif isinstance(r, float):
+                                optima.append(r)
+                                results.append({self.opt_value: r})
+                            else:
+                                raise ValueError
+
+                        ret.append(optima)
+                        ret.append(results)
             except TaskFailureError as e:
                 print("Error: Task failed due to the following error:")
                 print(str(e))
@@ -175,6 +192,7 @@ class LocalTask(object):
             dictionary containing the loss and (possibly) other results.
         """
         try:
-            return self.cmd(self.params)
+            result = self.cmd(self.params)
         except Exception as e:
             raise TaskFailureError(str(e))
+        return result

@@ -1,31 +1,43 @@
 #!/usr/bin/env bash
 
-# Take in some infor about the install
-base="$1"                          # directory holding the installed deps
-install_python_major_version="$2"  # which python major version to target
-install_python_minor_version="$3"  # which python minor version to target
-install_python_prefix="$4"         # path to current python install
-install_python_executable="$5"     # path to current python executable
-shadho_dir="$6"                    # path to the SHADHO config/install dir
+# base is a temporary directory for the install
+# shadho_dir is where relevant SHADHO files are installed
+if [ "$#" -ge "2" ]; then
+    base="$1"
+    shadho_dir="$2"
+elif [ "$#" -eq "1" ]; then
+    base="$(mktemp shadho_install.XXXXXXXXXX)"
+    shadho_dir="$1"
+else
+    base="$(mktemp shadho_install.XXXXXXXXXX)"
+    shadho_dir="$HOME/.shadho"
+fi
+
 
 # For reasons known only to Cthulhu himself, SWIG requires a Python 2 install
 # to generate Python 3 bindings. To this day, scholars (read: the SHADHO devs)
 # are driven mad by this requirement. Anyway, find Python 2 or install it if it
 # isn't around.
 cd $base
-if [ "$install_python_major_version" -eq "3"]; then
-    python2_version="$(python2 --version)"
-    if [ "$?" -eq "0" ] || [ ! -z "$python2_version" ]; then
-        maj="$(echo $python2_version | sed -rn 's/^.+([[:digit:]])+.([[:digit:]])+.+$/\1/p')"
-        min="$(echo $python2_version | sed -rn 's/^.+([[:digit:]])+.([[:digit:]])+.+$/\2/p')"
-    else
-        maj="0"
-        min="0"
-    fi
+
+install_python_major_version="$(python3 -c 'import sys; print(sys.version_info.major)')"
+install_python_minor_version="$(python3 -c 'import sys; print(sys.version_info.minor)')"
+install_python_prefix="$(python3 -c 'import sys; print(sys.base_prefix)')"
+install_python_executable="$(python3 -c 'import sys; print(sys.executable)')"
+
+python2_version="$(python2 --version)"
+if [ "$?" -eq "0" ] || [ ! -z "$python2_version" ]; then
+    maj="$(python2 -c 'import sys; print(sys.version_info.major)')"
+    min="$(python2 -c 'import sys; print(sys.version_info.minor)')"
+else
+    maj="0"
+    min="0"
 fi
 
-if [ "$maj" -eq "2" ] && [ "$min" -eq "7"]; then
-    python2_prefix="$(python2 -c 'import sys; print(sys.bsae_exec_prefix)')"
+echo "$maj $min"
+
+if [ "$maj" -eq "2" ] && [ "$min" -ge "6" ]; then
+    python2_prefix="$(python2 -c 'import sys; print(sys.base_exec_prefix)')"
     python2_exec="$(python2 -c 'import sys; print(sys.executable)')"
 else
     wget https://www.python.org/ftp/python/2.7.16/Python-2.7.16.tgz
@@ -37,7 +49,7 @@ else
     python2_exec="$python2_prefix/bin/python2"
 fi
 
-# Perl must be v5.26+ to compile the correct version of SWIG. Note that 6+ is
+# Perl must be v5.X to compile the correct version of SWIG. Note that 6+ is
 # untested.
 cd $base
 perl_version="$(perl -e 'print $^V' | cut -c 2-)"
@@ -50,7 +62,7 @@ else
 fi
 
 # If a sufficient Perl version is not found, temporarily install 5.26
-if [ "$maj" -ge "5" ] && [ "$min" -ge "26" ]; then
+if [ "$maj" -ge "5" ]; then
     perl_prefix="$(dirname $(dirname $(perl -e 'print $^X')))"
 else
     cd $base
@@ -77,8 +89,8 @@ else
     min="0"
 fi
 
-# If the installed version is insufficient, temporarily instal 8.40
-if [ "$maj" -ge "8" ] && [ "$min" -ge "40" ]; then
+# If the installed version is insufficient, temporarily install 8.40
+if [ "$maj" -ge "8" ]; then
     pcre_prefix="$(pcre-config --prefix)"
 else
     cd $base
@@ -93,7 +105,7 @@ fi
 
 cd $base
 swig_version="$(swig -version | grep SWIG | cut -d \  -f 3)"
-if [ "$?" -eq "0" ] || [ ! -z "$pcre_version" ]; then
+if [ "$?" -eq "0" ] || [ ! -z "$swig_version" ]; then
     maj="$(echo $swig_version | sed -rn 's/^([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)$/\1/p')"
     min="$(echo $swig_version | sed -rn 's/^([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)$/\2/p')"
 else
@@ -108,21 +120,13 @@ else
     tar xzf swig-3.0.12.tar.gz
     cd swig-3.0.12
 
-    if [ "$install_python_major_version" -eq "3" ]; then
-        python2_exec="$(python2 -c 'import sys; print(sys.executable)')"
-        ./configure \
-            --prefix="$base/swig" \
-            --with-pcre-prefix="$pcre_prefix" \
-            --with-perl5="$perl_exec" \
-            --with-python="$python2_exec" \
-            --with-python3="$install_python_executable"
-    else
-        ./configure \
-            --prefix="$base/swig" \
-            --with-pcre-prefix="$pcre_prefix" \
-            --with-perl5="$perl_exec" \
-            --with-python="$install_python_executable"
-    fi
+    python2_exec="$(python2 -c 'import sys; print(sys.executable)')"
+    ./configure \
+        --prefix="$base/swig" \
+        --with-pcre-prefix="$pcre_prefix" \
+        --with-perl5="$perl_exec" \
+        --with-python="$python2_exec" \
+        --with-python3="$install_python_executable"
 fi
 
 make -j8 && make install -j
@@ -136,38 +140,25 @@ if [ "$?" -ne "0" ]; then
 fi
 
 if [ ! -f "cctools-7.0.9-source.tar.gz" ]; then
+    echo "Cannot download CCTools. Please install wget or curl."
     exit 1
 fi
 
 tar xf cctools-7.0.9-source.tar.gz
 cd cctools-7.0.9-source
 
-if [ "$install_python_major_version" -eq "3" ]; then
-    python2_prefix="$(python2 -c 'import sys; print(sys.prefix)')"
-    ./configure \
-        --prefix="$HOME/.shadho" \
-        --with-swig-path="$swig_prefix" \
-        --with-perl-path="$perl_prefix" \
-        --with-python-path="$python2_prefix" \
-        --with-python3-path="$install_python_prefix" \
-        --without-system-sand \
-        --without-system-allpairs \
-        --without-system-wavefront \
-        --without-system-chirp \
-        --without-system-parrot \
-        --without-system-umbrella
-else
-    ./configure \
-        --prefix="$HOME/.shadho" \
-        --with-swig-path="$swig_prefix" \
-        --with-perl-path="$perl_prefix" \
-        --with-python-path="$install_python_prefix" \
-        --without-system-sand \
-        --without-system-allpairs \
-        --without-system-wavefront \
-        --without-system-chirp \
-        --without-system-parrot \
-        --without-system-umbrella
-fi
+python2_prefix="$(python2 -c 'import sys; print(sys.prefix)')"
+./configure \
+    --prefix="$shadho_dir" \
+    --with-swig-path="$swig_prefix" \
+    --with-perl-path="$perl_prefix" \
+    --with-python-path="$python2_prefix" \
+    --with-python3-path="$install_python_prefix" \
+    --without-system-sand \
+    --without-system-allpairs \
+    --without-system-wavefront \
+    --without-system-chirp \
+    --without-system-parrot \
+    --without-system-umbrella
 
 make -j8 && make install -j

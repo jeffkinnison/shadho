@@ -90,7 +90,7 @@ class Shadho(object):
 
     """
 
-    def __init__(self, exp_key, cmd, spec, method='random', backend=None,
+    def __init__(self, exp_key, cmd, spec, method='random', backend='results.json',
                  files=None, use_complexity=True, use_uncertainty=True,
                  timeout=600, max_queued_tasks=100, await_pending=False,
                  max_evals=None, max_resubmissions=0, save_frequency=10,

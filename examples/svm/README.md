@@ -253,7 +253,7 @@ $ python driver.py
 Then on your worker machine (can be another terminal window), run
 
 ```
-$ shadho_wq_worker -M shadho_svm_ex
+$ python -m shadho.workers.wq_worker -M shadho_svm_ex
 ```
 
 The worker will now receive hyperparameters from the SHADHO driver for 60s and

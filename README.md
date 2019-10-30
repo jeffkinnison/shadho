@@ -13,7 +13,7 @@ compiling Work Queue behind the scenes and my take a few minutes.
 
 ```
 $ pip install shadho
-$ python -m shadho.installers.install_workqueue
+$ python -m shadho.installers.workqueue
 ```
 
 ## Installing on a Shared System
@@ -23,7 +23,7 @@ another user installs with
 
 ```
 $ pip install shadho
-$ create_shadhorc --shadho-dir <path to shared install>
+$ python -m shadho.installers.workqueue --prefix <path to shared install>
 ```
 
 # Dependencies

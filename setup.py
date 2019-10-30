@@ -5,7 +5,7 @@ from setuptools.command.install import install
 
 setup(
     name='shadho',
-    version='0.2.dev1',
+    version='0.2',
     description='Hyperparameter optimizer with distributed hardware at heart',
     url='https://github.com/jeffkinnison/shadho',
     author='Jeff Kinnison',

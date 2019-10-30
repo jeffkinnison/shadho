@@ -13,8 +13,5 @@ shadho.configuration
 """
 
 from .shadho import Shadho
-from .configuration import ShadhoConfig
 
-config = ShadhoConfig()
-
-__all__ = ['Shadho', 'config', 'managers', 'spaces']
+__all__ = ['Shadho', 'managers', 'spaces']

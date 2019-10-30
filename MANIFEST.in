@@ -1,2 +1,2 @@
-recursive-include installers *.sh
+recursive-include shadho/installers *.sh
 global-exclude *.py[cod]

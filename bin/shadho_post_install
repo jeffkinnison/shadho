@@ -52,12 +52,11 @@ def install_workqueue(prefix, user=False):
     try:
         if os.path.basename(prefix) != '.shadho':
             prefix = os.path.join(prefix, '.shadho')
-
+        tempdir = tempfile.mkdtemp(prefix='shadho_install.')
         if not os.path.isdir(prefix):
             os.makedirs(prefix, exist_ok=True)
             print('Building and installing Work Queue to {}.'.format(prefix))
 
-            tempdir = tempfile.mkdtemp(prefix='shadho_install.')
             subprocess.check_output(
                 ['shadho_install_workqueue', tempdir, prefix],
                 stderr=subprocess.STDOUT)

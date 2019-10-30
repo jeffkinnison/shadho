@@ -127,13 +127,13 @@ class Shadho(object):
 
         self.__tmpdir = tempfile.mkdtemp(prefix='shadho_', suffix='_output')
 
-        self.add_input_file(os.path.join(
-            self.config.shadho_dir,
-            self.config.wrapper))
-        self.add_input_file(os.path.join(
-            self.config.shadho_dir,
-            self.config.utils
-        ))
+        self.add_input_file(
+            os.path.join(os.path.dirname(__file__), 'worker.py'),
+            remotepath=self.config.wrapper)
+
+        self.add_input_file(
+            os.path.join(os.path.dirname(__file__), 'utils.py'),
+            remotepath=self.config.utils)
 
         self.config.save_config(self.__tmpdir)
         self.add_input_file(os.path.join(self.__tmpdir, '.shadhorc'))
@@ -290,10 +290,13 @@ class Shadho(object):
 
         # Save the results and print the optimal set of parameters to  screen
         self.backend.save()
-        opt = self.backend.optimum()
-        print("Optimal result: {}".format(opt.objective))
-        print("With parameters: {}".format(opt.parameter_dict))
-        print("And additional results: {}".format(opt.results))
+        try:
+            opt = self.backend.optimum()
+            print("Optimal result: {}".format(opt.objective))
+            print("With parameters: {}".format(opt.parameter_dict))
+            print("And additional results: {}".format(opt.results))
+        except IndexError:
+            print("No results returned. Did any trials finish?")
 
     def generate(self):
         """Generate hyperparameter values to test.

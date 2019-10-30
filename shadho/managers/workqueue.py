@@ -60,6 +60,9 @@ class WQManager(WORKQUEUE.WorkQueue):
         WORKQUEUE.cctools_debug_config_file(debugfile)
         WORKQUEUE.cctools_debug_config_file_size(0)
 
+        if os.environ['USER'] not in name:
+            name += '-{}'.format(os.environ['USER'])
+
         super(WQManager, self).__init__(name=name,
                                         port=port,
                                         shutdown=shutdown)

@@ -1,108 +1,175 @@
 Examples
 ========
 
-Local Search
-------------
+The following examples will walk through basic SHADHO usage, both local and
+distributed. The code and instruction for each example can be found in the
+`GitHub repo`_.
 
-::
+.. _GitHub repo: https://github.com/jeffkinnison/shadho
 
- """This script uses shadho to minimize the sin function over domain [0, 2*pi]
- """
+Running SHADHO Locally
+----------------------
 
-  # Imports from shadho:
-  #   - Shadho is the main driver class
-  #   - rand contains helper functions to define search spaces
-  from shadho import Shadho, rand
+While SHADHO was designed for distributed optimization, it's more helpful to
+prototype the search locally, with instant feedback.
 
-  import math
+Setup
+^^^^^
 
-  
-  # The objective function is defined here.
-  # It accepts one input, a dictionary containing the supplied parameter values,
-  # and returns the floating point value sin(x). 
-  def obj(params):
-      # Note that x is stored in the params dictionary.
-      # shadho does not unpack or flatten parameter values. 
-      return math.sin(params['x'])
-  
-  # The objective function must return either a single floating point value, or
-  # else a dictionary with 'loss' as a key with a floating point value at a minimum.
-  
-  # Here, we define the search space: a uniform distribution over [0, 2*pi]
-  space = {
-      'x': rand.uniform(0.0, 2.0 * math.pi)
-  }
-  
-  
-  if __name__ == '__main__':
-      # The shadho driver is created here, then configured
-      # test hyperparameters on the local machine.
-      opt = Shadho(obj, space, timeout=60)
-      opt.config['global']['manager'] = 'local'
-      opt.run()
-  
-  # After shadho is finished, it prints out the optimal loss and hyperparameters.
-  # A database (shadho.json) containing the records of all is also saved to the 
-  # working directory.   
-  
+Running SHADHO locally happens in a single script that defines the objective
+function, defines the search space, and sets up/configures the Shadho driver
+object.
+
+.. code-block:: python
+    :name: sin_local_driver.py
+
+    import math
+
+    # Import the driver and random search from SHADHO
+    from shadho import Shadho, spaces
+
+
+    # Define the function to optimize, which returns a single floating-point
+    # value to optimize on. Hyperparameters are passed in as a dictionary with
+    # the same structure as `space` below.
+    def sin(params):
+        return math.sin(params['x'])
+
+
+    if __name__ == '__main__':
+        # Set up the search space, in this case a uniform distribution over the
+        # domain [0, pi]
+        space = {'x': spaces.uniform(0, math.pi)}
+
+        # Pass the `sin` function, the search space, and a timeout into the
+        # SHADHO driver and configure SHADHO to run locally.
+        opt = Shadho('sin_local_example', sin, space, timeout=30)
+        opt.config.manager = 'local'
+
+        # Run SHADHO, and the optimal `x` value will be printed after 30s.
+        opt.run()
+
+
+Running the Example
+^^^^^^^^^^^^^^^^^^^
+
+From the terminal, run::
+
+    python sin_local_driver.py
+
+The value of ``x`` that minimizes ``sin(x)`` from among all evaluated ``x``
+values will be printed to screen after 30s. An output file, results.json will
+also appear. This file contains a database of all evaluated hyperparameters.
+
+
+
 
 Distributed Search
 ------------------
 
-sin.py
+In most cases, it is useful to incorporate multiple distributed workers into a
+search to speed up the process. Searching over neural networks in particular
+essentially requires using distributed search due to long training times and
+the need for GPUs and other specialized hardware.
 
-::
+SHADHO is designed for distributed hyperparameter optimization out of the box.
+This involves running a shell script on the worker that sets up the environment
+that then runs the script with the objective function. This example will cover
+a basic distributed search.
 
-  # shadho sends a small module along with every worker that can wrap the
-  # objective function. Start by importing this module.
-  import shadho_worker
-  
-  # shadho_run_task automatically loads hyperparameter values and saves
-  # the resulting output in a format that shadho knows to look for. All
-  # you have to do is write a function that takes the parameters as
-  # an argument.
-  
-  import math
-  
-  # The objective function is defined here (same code as in ex1)
-  def opt(params):
-      return math.sin(params['x'])
-  
-  if __name__ == '__main__':
-      # To run the worker, just pass the objective function to shadho_worker.run 
-      shadho_worker.run(opt)
+Setup: Objective
+^^^^^^^^^^^^^^^^
 
-wq_sin.py
+Unlike local search, the objective function must be defined in its own script
+and run by a SHADHO worker. The sin function can be set up as
 
-::
+.. code-block:: python
+    :name: sin.py
 
-  """This script runs the hyperparameter search on remote workers.
-  """
-  
-  # These are imported, same as before
-  from shadho import Shadho, rand
-  
-  import math
-  
-  
-  # The space is also defined exactly the same.
-  space = {
-      'x': rand.uniform(0.0, 2.0 * math.pi)
-  }
-  
-  
-  if __name__ == '__main__':
-      # This time, instead of configuring shadho to run locally,
-      # we direct it to the input files that run the optimization task.
-  
-      # Instead of the objective function, shadho is given a command that gets
-      # run on the remote worker.
-      opt = Shadho('bash run_sin.sh', space, timeout=60)
-      
-      # Two input files are also added: the first is run directly by the worker
-      # and can be used to set up your runtime environment (module load, anyone?)
-      # The second is the script we're trying to optimize.
-      opt.add_input_file('run_sin.sh')
-      opt.add_input_file('sin.py')
-      opt.run()
+    import math
 
+    # shadho_worker is a python module sent to the worker automatically along
+    # with your code that takes care of loading the hyperparmeters and
+    # packaging the results in a way that SHADHO understands.
+    import shadho_worker
+
+
+    # Somewhere in this file, you have to define a function to optimize. This will
+    # be run by shadho_worker.
+    # This function will return a single floating-point value to optimize on.
+    def sin(params):
+        return math.sin(params['x'])
+
+
+    if __name__ == '__main__':
+        # All you have to do next is pass your objective function (in this
+        # case, sin) to shadho_worker.run, and it will take care of the rest.
+        shadho_worker.run(sin)
+
+SHADHO provides a Python worker script to every Work Queue worker that wraps
+the objective function and standardizes input and output for SHADHO.
+
+
+Setup: Worker Script
+^^^^^^^^^^^^^^^^^^^^
+
+Typically, when working with distributed systems, there is some preamble or
+environment setup that has to happen to run a program. Setting up a SHADHO
+search is no different--just provide a shell script that does the setup then
+executes the objective function script.
+
+.. code-block:: bash
+    :name: sin_task.sh
+
+    #!/usr/bin/env bash
+
+    # Use this file to set up the environment on the worker, e.g. load modules,
+    # edit PATH/other environment variables, activate a python virtual env, etc.
+
+    # Then run the script with the objective function.
+    python sin.py
+
+
+Setup: Driver File
+^^^^^^^^^^^^^^^^^^
+
+Running SHADHO distributed requires setting up the driver and the objective
+function in different scripts. SHADHO automatically sends input files to
+workers and caches them between evaluations.
+
+In this driver file, we define the search space (``x`` in domain ``[0, pi]``),
+add the files to run the objective function, and give SHADHO a command to run
+on each worker.
+
+
+.. code-block:: python
+    :name: sin_distributed_driver.py
+
+    import math
+
+    from shadho import Shadho, spaces
+
+
+    if __name__ == '__main__':
+        # Set up the search space for sin(x)
+        space = {'x': spaces.uniform(0, math.pi)}
+
+        # Create a SHADHO driver. Unlike the local example, distributed SHADHO
+        # requires a shell command to run on the worker.
+        opt = Shadho('sin_distributed_example', 'bash ./sin_task.sh', space, timeout=60)
+
+        # Add the files necessary to run the task
+        opt.add_input_file('sin_task.sh')
+        opt.add_input_file('sin.py')
+
+        # Optionally, provide a name for the Work Queue master that tracks the
+        # distributed workers.
+        opt.config.workqueue.name = 'shadho_sin_ex'
+
+        # Run the search, and the optimal observed value will be output after 60s.
+        opt.run()
+
+The command ``bash sin_task.sh`` passed into the driver is run on the Work Queue
+worker, and set up the environment. The objective function is defined in a
+separate file. The scripts ``sin_task.sh`` and ``sin.py`` are sent to each
+worker after adding them as input files.

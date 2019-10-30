@@ -1,10 +1,7 @@
-from .local import LocalManager
-from .workqueue import WQManager
-
-
 def create_manager(manager_type='local', config=None, tmpdir=None):
     print(config.config)
     if manager_type == 'workqueue':
+        from .workqueue import WQManager
         return WQManager(
             config.param_file,
             config.output,
@@ -18,4 +15,5 @@ def create_manager(manager_type='local', config=None, tmpdir=None):
             debugfile=config.workqueue.debugfile
         )
     else:
+        from .local import LocalManager
         return LocalManager(config.optimize)

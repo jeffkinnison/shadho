@@ -8,13 +8,22 @@ machine/deep learning applications.
 
 # Installation
 
-**Note:** Installation may look like it hangs, but this is just a behind-the-scenes
-build process.
+**Note:** The post-install step may look like it hangs, but it is just
+compiling Work Queue behind the scenes and my take a few minutes.
 
 ```
-$ git clone https://github.com/jeffkinnison/shadho
-$ cd shadho
-$ pip install .
+$ pip install shadho
+$ python -m shadho.installers.install_workqueue
+```
+
+## Installing on a Shared System
+
+The owner of the shared installation should follow the steps above. Then,
+another user installs with
+
+```
+$ pip install shadho
+$ create_shadhorc --shadho-dir <path to shared install>
 ```
 
 # Dependencies

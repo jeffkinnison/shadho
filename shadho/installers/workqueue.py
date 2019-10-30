@@ -60,7 +60,7 @@ def install_workqueue(prefix, user=False):
         installer = os.path.join(os.path.dirname(__file__),
                                  'install_workqueue.sh')
         subprocess.check_output(
-            [installer, tempdir, prefix],
+            ['sh', installer, tempdir, prefix],
             stderr=subprocess.STDOUT)
         result = prefix
 

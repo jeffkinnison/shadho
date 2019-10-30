@@ -1,0 +1,2 @@
+recursive-include installers *.sh
+global-exclude *.py[cod]

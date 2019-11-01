@@ -2,11 +2,17 @@
 from setuptools import setup
 from setuptools.command.install import install
 
+LONG_DESCRIPTION = ""
+with open(os.path.join(os.path.dirname(__file__), 'README.md'), 'r') as f:
+    LONG_DESCRIPTION = f.read()
+
 
 setup(
     name='shadho',
-    version='0.2',
+    version='0.2post1',
     description='Hyperparameter optimizer with distributed hardware at heart',
+    long_description=LONG_DESCRIPTION,
+    long_description_content_type='text/markdown',
     url='https://github.com/jeffkinnison/shadho',
     author='Jeff Kinnison',
     author_email='jkinniso@nd.edu',

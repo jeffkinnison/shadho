@@ -170,12 +170,11 @@ def install_shadho_files(prefix, sp_prefix):
     sp_prefix : str
         Path to the site-packages directory where work_queue was installed.
     """
-    import shadho
-    print('Moving additional files to {}'.format(prefix))
-    workerfile = os.path.join(os.path.dirname(shadho.__file__), 'worker.py')
-    shutil.copy(workerfile, os.path.join(prefix, 'shadho_worker.py'))
-    utilsfile = os.path.join(os.path.dirname(shadho.__file__), 'utils.py')
-    shutil.copy(utilsfile, os.path.join(prefix, 'shadho_utils.py'))
+    maj = sys.version_info.major
+    min = sys.version_info.minor
+    source = os.path.join(prefix, 'lib', f'python{maj}.{min}', 'site-packages')
+    shutil.copy(os.path.join(source, 'work_queue.py'), sp_prefix)
+    shutil.copy(os.path.join(source, '_work_queue.so'), sp_prefix)
 
 
 def main():
@@ -185,11 +184,25 @@ def main():
     if '~' in prefix:
         prefix = os.path.expanduser(prefix)
 
-    prefix, sp_prefix = install_workqueue(prefix, user=args.user)
-    write_shadhorc(args.prefix, prefix)
+    if not os.path.isfile(os.path.join(prefix, 'bin', 'work_queue_worker')):
+        prefix, sp_prefix = install_workqueue(prefix, user=args.user)
+    else:
+        maj = sys.version_info.major
+        min = sys.version_info.minor
+
+        sp_prefix = os.path.join('lib',
+                                 'python{}.{}'.format(maj, min),
+                                 'site-packages')
+        if args.user:
+            sp_prefix = os.path.join(site.USER_BASE, sp_prefix)
+        else:
+            sp_prefix = os.path.join(sys.prefix, sp_prefix)
 
     if prefix is not None:
         install_shadho_files(prefix, sp_prefix)
+
+    homedir = str(pathlib.Path().home())
+    write_shadhorc(homedir, prefix)
 
 
 if __name__ == '__main__':

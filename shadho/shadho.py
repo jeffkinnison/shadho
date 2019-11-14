@@ -277,7 +277,7 @@ class Shadho(object):
                 while not self.manager.empty():
                     result = self.manager.run_task()
                     if result is not None:
-                        if len(result) == 4:
+                        if len(result) == 3:
                             self.success(*result)
                         else:
                             self.failure(*result)

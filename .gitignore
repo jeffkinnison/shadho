@@ -16,3 +16,4 @@ results.json
 build/
 dist/
 *venv/
+*.egg-info

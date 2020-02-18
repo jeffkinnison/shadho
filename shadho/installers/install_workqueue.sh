@@ -6,10 +6,10 @@ if [ "$#" -ge "2" ]; then
     base="$1"
     shadho_dir="$2"
 elif [ "$#" -eq "1" ]; then
-    base="$(mktemp shadho_install.XXXXXXXXXX)"
+    base="$(mktemp -d shadho_install.XXXXXXXXXX)"
     shadho_dir="$1"
 else
-    base="$(mktemp shadho_install.XXXXXXXXXX)"
+    base="$(mktemp -d shadho_install.XXXXXXXXXX)"
     shadho_dir="$HOME/.shadho"
 fi
 

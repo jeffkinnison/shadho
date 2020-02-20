@@ -86,7 +86,7 @@ def install_workqueue(prefix, user=False):
         print('Error installing Work Queue.')
         print('Dumping install logs to {}'.format(logfile))
         with open(logfile, 'w') as f:
-            f.write(e.output.decode(encoding='ascii'))
+            f.write(e.output.decode())
         result = None
         dest_prefix = None
     finally:

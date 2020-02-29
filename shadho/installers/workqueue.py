@@ -118,12 +118,12 @@ def write_shadhorc(prefix, shadho_dir):
             'manager': 'workqueue'
         },
         'workqueue': {
-            'port': str(9123),
+            'port': '9123',
             'name': 'shadho_master',
-            'shutdown': str(True),
+            'shutdown': 'True',
             'logfile': 'shadho_master.log',
             'debugfile': 'shadho_master.debug',
-            'password': str(False)
+            'password': 'False'
         },
         'backend': {
             'type': 'sql',
@@ -131,7 +131,7 @@ def write_shadhorc(prefix, shadho_dir):
         }
     }
 
-    default_config['global']['shadho_dir'] = shadho_dir
+    default_config['global']['shadho_dir'] = str(shadho_dir)
 
     # Load the default config into a ConfigParser. The try block is for
     # Python3+, the except block is for Python 2.7.

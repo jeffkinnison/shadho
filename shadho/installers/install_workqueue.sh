@@ -6,13 +6,14 @@ if [ "$#" -ge "2" ]; then
     base="$1"
     shadho_dir="$2"
 elif [ "$#" -eq "1" ]; then
-    base="$(mktemp -d shadho_install.XXXXXXXXXX)"
+    base="/tmp/$(mktemp shadho_install.XXXXXXXXXX)"
+    mkdir $base
     shadho_dir="$1"
 else
-    base="$(mktemp -d shadho_install.XXXXXXXXXX)"
+    base="/tmp/$(mktemp shadho_install.XXXXXXXXXX)"
+    mkdir $base
     shadho_dir="$HOME/.shadho"
 fi
-
 
 # Set some variables for later
 cctools_version="cctools-7.0.16-source"
@@ -40,7 +41,7 @@ fi
 echo "$maj $min"
 
 if [ "$maj" -eq "2" ] && [ "$min" -ge "6" ]; then
-    python2_prefix="$(python2 -c 'import sys; print(sys.base_exec_prefix)')"
+    python2_prefix="$(python2 -c 'import sys; print(sys.exec_prefix)')"
     python2_exec="$(python2 -c 'import sys; print(sys.executable)')"
 else
     wget https://www.python.org/ftp/python/2.7.16/Python-2.7.16.tgz
@@ -52,21 +53,27 @@ else
     python2_exec="$python2_prefix/bin/python2"
 fi
 
+maj="0"
+min="0"
+
 # Perl must be v5.X to compile the correct version of SWIG. Note that 6+ is
 # untested.
 cd $base
 perl_version="$(perl -e 'print $^V' | cut -c 2-)"
 if [ "$?" -eq "0" ] || [ ! -z "$perl_version" ]; then
-    maj="$(echo $perl_version | sed -rn 's/^([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)$/\1/p')"
-    min="$(echo $perl_version | sed -rn 's/^([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)$/\2/p')"
+    maj="$(echo $perl_version | sed -En 's/^([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)$/\1/p')"
+    min="$(echo $perl_version | sed -En 's/^([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)$/\2/p')"
 else
     maj="0"
     min="0"
 fi
 
 # If a sufficient Perl version is not found, temporarily install 5.26
-if [ "$maj" -ge "5" ]; then
-    perl_prefix="$(dirname $(dirname $(perl -e 'print $^X')))"
+echo "BASE!!!!!!!!!!!! $base"
+echo "$maj $min"
+cd $base
+if [ ! -z "$maj" ] && [ "$maj" -ge "5" ]; then
+    perl_prefix="$(dirname $(dirname $(perl -e 'use Config; my $perl = $Config{perl5}; print $perl;')))"
 else
     cd $base
     wget http://www.cpan.org/src/5.0/perl-5.26.0.tar.gz
@@ -80,13 +87,16 @@ fi
 # Save out the path to the Perl executable for SWIG install later.
 perl_exec="$perl_prefix/bin/perl"
 
+maj="0"
+min="0"
 
 # PCRE must be v8.40+ to compile the correct version of SWIG.
+echo "BASE!!!!!!!!!!!! $base"
 cd $base
 pcre_version="$(pcre-config --version)"
 if [ "$?" -eq "0" ] || [ ! -z "$pcre_version" ]; then
-    maj="$(echo $pcre_version | sed -rn 's/^([[:digit:]]+)\.([[:digit:]]+)$/\1/p')"
-    min="$(echo $pcre_version | sed -rn 's/^([[:digit:]]+)\.([[:digit:]]+)$/\2/p')"
+    maj="$(echo $pcre_version | sed -En 's/^([[:digit:]]+)\.([[:digit:]]+)$/\1/p')"
+    min="$(echo $pcre_version | sed -En 's/^([[:digit:]]+)\.([[:digit:]]+)$/\2/p')"
 else
     maj="0"
     min="0"
@@ -97,20 +107,28 @@ if [ "$maj" -ge "8" ]; then
     pcre_prefix="$(pcre-config --prefix)"
 else
     cd $base
-    wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.40.tar.gz
-    tar xzf pcre-8.40.tar.gz
-    cd pcre-8.40
+    wget https://ftp.pcre.org/pub/pcre/pcre-8.44.tar.gz # ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.40.tar.gz
+    tar xzf pcre-8.44.tar.gz
+    cd pcre-8.44
     ./configure --prefix="$base/pcre"
     make -j8 && make install -j8
     pcre_prefix="$base/pcre"
 fi
 
+maj="0"
+min="0"
 
+echo "BASE!!!!!!!!!!!! $base"
 cd $base
-swig_version="$(swig -version | grep SWIG | cut -d \  -f 3)"
+swig_version="$(swig -version)"
+
+if [ "$?" -eq 0 ] && [ ! -z "$swig_version" ]; then
+    swig_version="$(echo $swig_version | grep SWIG | cut -d \  -f 3)"
+fi
+
 if [ "$?" -eq "0" ] || [ ! -z "$swig_version" ]; then
-    maj="$(echo $swig_version | sed -rn 's/^([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)$/\1/p')"
-    min="$(echo $swig_version | sed -rn 's/^([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)$/\2/p')"
+    maj="$(echo $swig_version | sed -En 's/^([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)$/\1/p')"
+    min="$(echo $swig_version | sed -En 's/^([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)$/\2/p')"
 else
     maj="0"
     min="0"
@@ -130,10 +148,12 @@ else
         --with-perl5="$perl_exec" \
         --with-python="$python2_exec" \
         --with-python3="$install_python_executable"
+    make -j8 && make install -j
+    swig_prefix=$base/swig
 fi
 
-make -j8 && make install -j
-
+maj="0"
+min="0"
 
 # Attempt to wget CCTools, fall back to curl if things go south
 cd $base
@@ -159,7 +179,6 @@ python2_prefix="$(python2 -c 'import sys; print(sys.prefix)')"
     --without-system-sand \
     --without-system-allpairs \
     --without-system-wavefront \
-    --without-system-chirp \
     --without-system-parrot \
     --without-system-umbrella
 

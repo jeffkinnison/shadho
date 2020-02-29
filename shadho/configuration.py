@@ -69,12 +69,12 @@ class ShadhoConfig(object):
             'manager': 'workqueue',
         },
         'workqueue': {
-            'port': 9123,
+            'port': str(9123),
             'name': 'shadho_master',
-            'shutdown': True,
+            'shutdown': str(True),
             'logfile': 'shadho_master.log',
             'debugfile': 'shadho_master.debug',
-            'password': False
+            'password': str(False)
         },
         'backend': {
             'type': 'sql',

@@ -64,7 +64,7 @@ class WQManager(WORKQUEUE.WorkQueue):
             name += '-{}'.format(os.environ['USER'])
 
         super(WQManager, self).__init__(name=name,
-                                        port=port,
+                                        port=int(port),
                                         shutdown=shutdown)
 
         self.specify_log(logfile)

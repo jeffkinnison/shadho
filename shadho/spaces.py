@@ -57,7 +57,7 @@ def scope(exclusive=False, optional=False, **kwargs):
         If True, either generate a set of hyperparameters from this scope or
         ignore the scope entirely. Default ``False``.
     domains
-        Key/value pairs of domain names and domains in this scope.
+        Key/value pairs of domain names and valid SHADHO domains in this scope.
 
     Returns
     -------
@@ -84,7 +84,7 @@ def uniform(lo, hi, **kwargs):
     -------
     domain : `pyrameter.ContinuousDomain`
     """
-    return ContinuousDomain(scipy.stats.uniform, loc=lo, scale=hi,
+    return ContinuousDomain(scipy.stats.uniform, loc=lo, scale=np.abs(hi - lo),
                             callback=linear, **kwargs)
 
 
@@ -105,7 +105,7 @@ def ln_uniform(lo, hi, **kwargs):
     -------
     domain : `pyrameter.ContinuousDomain`
     """
-    return ContinuousDomain(scipy.stats.uniform, loc=lo, scale=hi, callback=ln,
+    return ContinuousDomain(scipy.stats.uniform, loc=lo, scale=np.abs(hi - lo), callback=ln,
                             **kwargs)
 
 
@@ -126,7 +126,7 @@ def log10_uniform(lo, hi, **kwargs):
     -------
     domain : `pyrameter.ContinuousDomain`
     """
-    return ContinuousDomain(scipy.stats.uniform, loc=lo, scale=hi,
+    return ContinuousDomain(scipy.stats.uniform, loc=lo, scale=np.abs(hi - lo),
                             callback=log_10, **kwargs)
 
 
@@ -147,7 +147,7 @@ def log2_uniform(lo, hi, **kwargs):
     -------
     domain : `pyrameter.ContinuousDomain`
     """
-    return ContinuousDomain(scipy.stats.uniform, loc=lo, scale=hi,
+    return ContinuousDomain(scipy.stats.uniform, loc=lo, scale=np.abs(hi - lo),
                             callback=log_2, **kwargs)
 
 
@@ -362,6 +362,51 @@ def exhaustive(choices):
 
     Returns
     -------
-    domain : pyrameter.ExhaustieDomain
+    domain : pyrameter.ExhaustiveDomain
     """
     return ExhaustiveDomain(choices)
+
+
+def repeat(domain, repetitions, split=True):
+    """Repeat a given domain a number of times.
+
+    It can be helpful to repeat a domain a number of times, for example when
+    iterating over a sequence of search spaces defined over the same values.
+    If desired, the resulting domain can be split into ``repetitions``
+    separate domains of length [1, 2, ..., ``repetitions``].
+
+    Parameters
+    ----------
+    domain
+        The domain to repeat, any valid SHADHO domain.
+    repetitions : int
+        The number of times to repeat the domain.
+    split : bool
+        If True, split the domain into ``repetitions`` sequences of domains of
+        length [1, 2, ..., ``repetitions``]. If False, behaves like a single
+        sequence. Default: True.
+
+    Returns
+    -------
+    domain : pyrameter.RepeatedDomain
+    """
+    return RepeatedDomain(domain, repetitions, split=split)
+
+
+def sequential(domains):
+    """Construct a domain that behaves like a sequence when sampled.
+
+    This domain consists of a tuple of domains that are sampled independently.
+    When sampled, this will return a sequence of values in the same order as
+    the provided domain sequence.
+
+    Parameters
+    ----------
+    domains
+        A list, tuple, or other sequence of valid SHADHO domains.
+    
+    Returns
+    -------
+    domain : pyrameter.SequenceDomain
+    """
+    return SequenceDomain(domains)

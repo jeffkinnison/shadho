@@ -98,6 +98,10 @@ class Shadho(object):
         self.exp_key = exp_key
         self.config = ShadhoConfig()
         self.cmd = cmd
+        if not isinstance(cmd, str):
+            self.config.manager = 'local'
+        else:
+            self.config.workqueue.name = exp_key
         self.spec = spec
         self.method = method
         self.use_complexity = use_complexity
@@ -332,7 +336,7 @@ class Shadho(object):
                     if trial is not None:
                         # Encode info to map to db in the task tag
                         tag = '.'.join([str(trial.id),
-                                        str(trial.searchspace().id),
+                                        str(trial.searchspace.id),
                                         cc_id])
                         self.manager.add_task(
                             self.cmd,

@@ -16,6 +16,8 @@ def parse_args(args=None):
 
     p.add_argument('-M', '--master', type=str,
         help='name of the Work Queue master to connect to')
+    p.add_argument('-u', '--user', type=str, default=os.environ['USER'],
+        help='name of the user running the Work Queue master')
     p.add_argument('--timeout', type=int,
         help='amount of time worker idles before exiting')
     p.add_argument('--cores', type=int, default=1,
@@ -43,10 +45,10 @@ def shadho_wq_worker(args=None, config=None):
     if not re.search(r'(^|[\s])-M([\s]|$)', cmd_args):
         cmd_args = ' '.join([cmd_args, '-M', config.workqueue.name]).strip()
 
-    if not re.search(r'[\s]*-M[\s][\S]*' + os.environ['USER'] + r'.*[\s]*', cmd_args):
+    if not re.search(r'[\s]*-M[\s][\S]*' + args.user + r'.*[\s]*', cmd_args):
         print('Replacing')
         cmd_args = re.sub(r'(^|[\s]*)(.*-M[\s])([\S]+)([\s]*.*$)',
-                          r'\1\2\3-' + os.environ['USER'] + r'\4',
+                          r'\1\2\3-' + args.user + r'\4',
                           cmd_args)
 
     executable = os.path.join(config.shadho_dir, 'bin', 'work_queue_worker')

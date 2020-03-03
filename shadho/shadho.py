@@ -208,6 +208,7 @@ class Shadho(object):
             default 100.
         """
         cc = ComputeClass(name, resource, value, 2 * max_queued_tasks, None)
+        cc.optimizer.method = self.method
         self.ccs[cc.id] = cc
 
     def load(self):

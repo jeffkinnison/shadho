@@ -210,6 +210,18 @@ class Shadho(object):
         cc = ComputeClass(name, resource, value, 2 * max_queued_tasks, None)
         self.ccs[cc.id] = cc
 
+    def load(self):
+        if not hasattr(self, 'backend') or not isinstance(self.backend, FMin):
+            self.backend = FMin(self.exp_key, self.spec, self.method,
+                                self.backend, max_evals=self.max_evals)
+        self.backend.load()
+
+    def plot_objective(self, show=True, save=False, filename=None):
+        try:
+            self.backend.plot_objective()
+        except AttributeError:
+            print('Could not find trials! Have you run a search or loaded results?')
+
     def run(self):
         """Search hyperparameter values on remote workers.
 
@@ -294,13 +306,8 @@ class Shadho(object):
 
         # Save the results and print the optimal set of parameters to  screen
         self.backend.save()
-        try:
-            opt = self.backend.optimum()
-            print("Optimal result: {}".format(opt.objective))
-            print("With parameters: {}".format(opt.parameter_dict))
-            print("And additional results: {}".format(opt.results))
-        except IndexError:
-            print("No results returned. Did any trials finish?")
+        self.backend.summary()
+        return self.backend.to_dataframes()
 
     def generate(self):
         """Generate hyperparameter values to test.

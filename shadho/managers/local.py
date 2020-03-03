@@ -143,10 +143,10 @@ class LocalManager(object):
             except ValueError:
                 print("Error: Invalid task result {}".format(result))
                 print("Task results must be of type float")
-                print("or dict with a float in key {}".format(self.opt_val))
+                print("or dict with a float in key {}".format(self.opt_value))
             except KeyError:
                 print("Error: Result {} does not contain the value {} to optimize."
-                      .format(result, self.opt_val))
+                      .format(result, self.opt_value))
                 print("Please check your function to ensure that it returns the")
                 print("correct value.")
 

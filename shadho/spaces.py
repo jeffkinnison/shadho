@@ -36,6 +36,7 @@ pyrameter.domain
 """
 from shadho.scaling import linear, ln, log_10, log_2
 
+import numpy as np
 from pyrameter.domains import *
 from pyrameter.specification import Specification
 import scipy.stats

@@ -411,3 +411,7 @@ def sequential(domains):
     domain : pyrameter.SequenceDomain
     """
     return SequenceDomain(domains)
+
+
+def dependent(domain, callback=None):
+    return DependentDomain(domain, callback=lambda x: x if callback is None else callback)

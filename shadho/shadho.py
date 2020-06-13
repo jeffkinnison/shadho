@@ -27,7 +27,7 @@ def shadho():
     pass
 
 
-class Shadho(object):
+class Shadho(pyrameter.FMin):
     """Optimize hyperparameters using specified hardware.
 
     Parameters
@@ -95,22 +95,23 @@ class Shadho(object):
                  timeout=600, max_queued_tasks=100, await_pending=False,
                  max_evals=None, max_resubmissions=0, save_frequency=10,
                  hyperparameters_per_task=1):
-        self.exp_key = exp_key
+        super().__init__(exp_key, spec, method, backend, max_evals=max_evals)
+        # self.exp_key = exp_key
         self.config = ShadhoConfig()
         self.cmd = cmd
         if not isinstance(cmd, str):
             self.config.manager = 'local'
         else:
             self.config.workqueue.name = exp_key
-        self.spec = spec
-        self.method = method
+        # self.spec = spec
+        # self.method = method
         self.use_complexity = use_complexity
         self.use_uncertainty = use_uncertainty
         self.timeout = timeout if timeout is not None and timeout >= 0 \
                        else float('inf')
         self.max_queued_tasks = max_queued_tasks
         self.max_resubmissions = max_resubmissions
-        self.max_evals = max_evals
+        # self.max_evals = max_evals
         self.await_pending = await_pending
         self.save_frequency = save_frequency
         self.hyperparameters_per_task = hyperparameters_per_task \
@@ -141,7 +142,7 @@ class Shadho(object):
 
         self.config.save_config(self.__tmpdir)
         self.add_input_file(os.path.join(self.__tmpdir, '.shadhorc'))
-        self.backend = backend
+        # self.backend = backend
 
     def __del__(self):
         if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
@@ -211,17 +212,17 @@ class Shadho(object):
         cc.optimizer.method = self.method
         self.ccs[cc.id] = cc
 
-    def load(self):
-        if not hasattr(self, 'backend') or not isinstance(self.backend, FMin):
-            self.backend = FMin(self.exp_key, self.spec, self.method,
-                                self.backend, max_evals=self.max_evals)
-        self.backend.load()
+    # def load(self):
+    #     if not hasattr(self, 'backend') or not isinstance(self.backend, FMin):
+    #         self.backend = FMin(self.exp_key, self.spec, self.method,
+    #                             self.backend, max_evals=self.max_evals)
+    #     self.backend.load()
 
-    def plot_objective(self, show=True, save=False, filename=None):
-        try:
-            self.backend.plot_objective()
-        except AttributeError:
-            print('Could not find trials! Have you run a search or loaded results?')
+    # def plot_objective(self, show=True, save=False, filename=None):
+    #     try:
+    #         self.backend.plot_objective()
+    #     except AttributeError:
+    #         print('Could not find trials! Have you run a search or loaded results?')
 
     def run(self):
         """Search hyperparameter values on remote workers.
@@ -245,14 +246,13 @@ class Shadho(object):
                 tmpdir=self.__tmpdir)
 
         # Set up the backend hyperparameter generation and database
-        if not isinstance(self.backend, FMin):
-            self.backend = FMin(self.exp_key, self.spec, self.method,
-                                self.backend, max_evals=self.max_evals)
+        # if not isinstance(self.backend, FMin):
+        #     self.backend = FMin(self.exp_key, self.spec, self.method,
+        #                         self.backend, max_evals=self.max_evals)
 
         # If no ComputeClass was created, create a dummy class.
         if len(self.ccs) == 0:
-            cc = ComputeClass('all', None, None, self.max_queued_tasks,
-                              self.backend)
+            cc = ComputeClass('all', None, None, self.max_queued_tasks, self)
             self.ccs[cc.id] = cc
         else:
             for cc in self.ccs.values():
@@ -279,15 +279,19 @@ class Shadho(object):
                         else:
                             self.failure(*result)  # Resubmit if asked
                     # Checkpoint the results to file or DB at some frequency
-                    if self.backend.trial_count % self.save_frequency == 0:
-                        self.backend.save()
+                    # if self.backend.trial_count % self.save_frequency == 0:
+                    if self.trial_count % self.save_frequency == 0:
+                        # self.backend.save()
+                        self.save()
                     # Update the time for timeout check
                     elapsed = time.time() - start
-                    exhausted = all([ss.done for ss in self.backend.searchspaces])
+                    # exhausted = all([ss.done for ss in self.backend.searchspaces])
+                    exhausted = all([ss.done for ss in self.searchspaces])
                 else:
                     break
 
-            self.backend.save()
+            # self.backend.save()
+            self.save()
 
             # If requested, continue the loop until all tasks return
             if self.await_pending:
@@ -298,7 +302,8 @@ class Shadho(object):
                             self.success(*result)
                         else:
                             self.failure(*result)
-                self.backend.save()
+                # self.backend.save()
+                self.save()
 
         # On keyboard interrupt, save any results and clean up
         except KeyboardInterrupt:
@@ -306,9 +311,12 @@ class Shadho(object):
                 os.rmdir(self.__tmpdir)
 
         # Save the results and print the optimal set of parameters to  screen
-        self.backend.save()
-        self.backend.summary()
-        return self.backend.to_dataframes()
+        # self.backend.save()
+        self.save()
+        # self.backend.summary()
+        self.summary()
+        # return self.backend.to_dataframes()
+        return self.to_dataframes()
 
     def generate(self):
         """Generate hyperparameter values to test.
@@ -341,6 +349,7 @@ class Shadho(object):
                 # Get bookkeeping ids and hyperparameter values
                 if self.hyperparameters_per_task == 1:
                     trial = cc.generate()
+                    trial = super().generate()
                     if trial is not None:
                         # Encode info to map to db in the task tag
                         tag = '.'.join([str(trial.id),
@@ -402,8 +411,9 @@ class Shadho(object):
         else:
             # Sort models in the search by complexity, priority, or both and
             # get the updated order.
-            self.backend.sort_spaces(use_complexity=self.use_complexity,
-                                     use_uncertainty=self.use_uncertainty)
+            # self.backend.sort_spaces(use_complexity=self.use_complexity,
+            self.sort_spaces(use_complexity=self.use_complexity,
+                             use_uncertainty=self.use_uncertainty)
 
             # Clear the current assignments
             for cc in self.ccs:
@@ -412,11 +422,16 @@ class Shadho(object):
             # Determine if the number of compute classes or the number of
             # model ids is larger
             ccids = list(self.ccs.keys())
-            larger = self.backend.searchspaces \
-                     if len(self.backend.searchspaces) >= len(ccids) \
+            # larger = self.backend.searchspaces \
+            #          if len(self.backend.searchspaces) >= len(ccids) \
+            #          else ccids
+            # smaller = ccids if larger == model_ids \
+            #           else self.backend.searchspaces
+            larger = self.searchspaces \
+                     if len(self.searchspaces) >= len(ccids) \
                      else ccids
             smaller = ccids if larger == model_ids \
-                      else self.backend.searchspaces
+                      else self.searchspaces
 
             # Assign models to CCs such that each model is assigned to at
             # least two CCs.
@@ -493,10 +508,12 @@ class Shadho(object):
 
 
         # Update the DB with the result
-        self.backend.register_result(ss_id, trial_id, loss, results)
+        # self.backend.register_result(ss_id, trial_id, loss, results)
+        self.register_result(ss_id, trial_id, loss, results)
 
         # Reassign models to CCs at some frequency
-        n_completed = sum([1 for trial in self.backend.trials.values()
+        # n_completed = sum([1 for trial in self.backend.trials.values()
+        n_completed = sum([1 for trial in self.trials.values()
                            if trial.status.value == 3])
         if n_completed % 10 == 0:
             self.assign_to_ccs()
@@ -524,8 +541,9 @@ class Shadho(object):
 
         # Determine whether or not to resubmit
         submissions, params = \
-            self.backend.register_result(ss_id, trial_id, objective=None,
-                                         results=None, errmsg='yes')
+            # self.backend.register_result(ss_id, trial_id, objective=None,
+            self.register_result(ss_id, trial_id, objective=None,
+                                 results=None, errmsg='yes')
 
         # Resubmit the task if it should be, otherwise update the number of
         # enqueued items.
@@ -539,3 +557,112 @@ class Shadho(object):
                                   value=cc.value)
         else:
             self.ccs[ccid].current_tasks -= 1
+
+
+class PopulationShadho(Shadho):
+    def __init__(self, exp_key, cmd, spec, generations=50, method='random',
+                 backend='results.json', files=None, use_complexity=True,
+                 use_uncertainty=True, timeout=600, max_queued_tasks=100,
+                 await_pending=False, max_evals=None, max_resubmissions=0,
+                 save_frequency=10, hyperparameters_per_task=1):
+        super().__init__(
+            exp_key,
+            cmd,
+            spec,
+            method='random',
+            backend='results.json',
+            files=None,
+            use_complexity=True,
+            use_uncertainty=True,
+            timeout=600,
+            max_queued_tasks=100,
+            await_pending=False,
+            max_evals=None,
+            max_resubmissions=0,
+            save_frequency=10,
+            hyperparameters_per_task=1)
+
+        self.generations = generations
+
+    def run(self):
+        # Set up the task manager as defined in `shadho.managers`
+        if not hasattr(self, 'manager'):
+            self.manager = create_manager(
+                manager_type=self.config.manager,
+                config=self.config,
+                tmpdir=self.__tmpdir)
+
+        # Set up the backend hyperparameter generation and database
+        # if not isinstance(self.backend, FMin):
+        #     self.backend = FMin(self.exp_key, self.spec, self.method,
+        #                         self.backend, max_evals=self.max_evals)
+
+        # If no ComputeClass was created, create a dummy class.
+        if len(self.ccs) == 0:
+            cc = ComputeClass('all', None, None, self.max_queued_tasks, self)
+            self.ccs[cc.id] = cc
+        else:
+            for cc in self.ccs.values():
+                cc.optimizer = self.backend.copy()
+
+        # Set up intial model/compute class assignments.
+        self.assign_to_ccs()
+
+        start = time.time()
+        elapsed = 0
+        generation = 0
+        exhausted = False
+        try:
+            # Run the search until timeout or until all tasks complete
+            while elapsed < self.timeout and generation < self.generations:
+                # Generate hyperparameters and a flag to continue or stop
+                stop = self.generate()
+                if not stop:
+                    # Run another task and await results
+                    pop_size = len(stop)
+                    result = self.manager.run_task()
+                    if result is not None:
+                        # If a task returned post-process as a success or fail
+                        if len(result) == 3:
+                            self.success(*result)  # Store and move on
+                        else:
+                            self.failure(*result)  # Resubmit if asked
+                    # Checkpoint the results to file or DB at some frequency
+                    # if self.backend.trial_count % self.save_frequency == 0:
+                    if self.trial_count % self.save_frequency == 0:
+                        # self.backend.save()
+                        self.save()
+                    # Update the time for timeout check
+                    elapsed = time.time() - start
+                    # exhausted = all([ss.done for ss in self.backend.searchspaces])
+                    exhausted = all([ss.done for ss in self.searchspaces])
+                else:
+                    break
+
+            # self.backend.save()
+            self.save()
+
+            # If requested, continue the loop until all tasks return
+            if self.await_pending:
+                while not self.manager.empty():
+                    result = self.manager.run_task()
+                    if result is not None:
+                        if len(result) == 3:
+                            self.success(*result)
+                        else:
+                            self.failure(*result)
+                # self.backend.save()
+                self.save()
+
+        # On keyboard interrupt, save any results and clean up
+        except KeyboardInterrupt:
+            if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
+                os.rmdir(self.__tmpdir)
+
+        # Save the results and print the optimal set of parameters to  screen
+        # self.backend.save()
+        self.save()
+        # self.backend.summary()
+        self.summary()
+        # return self.backend.to_dataframes()
+        return self.to_dataframes()

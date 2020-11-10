@@ -17,22 +17,24 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+sys.path.insert(0, os.path.abspath('..'))
+
+import shadho
 
 
 # -- Project information -----------------------------------------------------
 
 # General information about the project.
 project = 'SHADHO'
-copyright = '2017, Jeff Kinnison'
+copyright = '2020, Jeff Kinnison'
 author = 'Jeff Kinnison'
 
 # The short X.Y version.
-version = '0.1a1'
+version = '0.3'
 # The full version, including alpha/beta/rc tags.
-release = '0.1a1'
+release = '0.3'
 
 
 # -- General configuration ------------------------------------------------
@@ -50,11 +52,9 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
+    'sphinx.ext.napoleon',
+    'sphinxcontrib.contentui',
     'numpydoc']
-
-autosummary_generate = True
-autodoc_default_flags = ['members', 'inherited-members']
-numpydoc_class_members_toctree = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -92,7 +92,7 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -104,6 +104,10 @@ html_theme = 'alabaster'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+autosummary_generate = True
+autodoc_default_flags = ['members', 'inherited-members']
+numpydoc_class_members_toctree = False
 
 
 # -- Options for HTMLHelp output ------------------------------------------
@@ -182,3 +186,16 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+
+# Napoleon settings
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+napoleon_include_init_with_doc = False
+napoleon_include_private_with_doc = False
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar = False
+napoleon_use_param = False
+napoleon_use_rtype = True

@@ -1,2 +1,8 @@
+numpy
 numpydoc
+scikit-learn
+scipy
 pyrameter
+sphinx
+sphinxcontrib-contentui
+sphinx-rtd-theme

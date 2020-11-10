@@ -9,7 +9,7 @@ machine/deep learning applications.
 # Installation
 
 **Note:** The post-install step may look like it hangs, but it is just
-compiling Work Queue behind the scenes and my take a few minutes.
+compiling Work Queue behind the scenes and may take a few minutes.
 
 ```
 $ pip install shadho

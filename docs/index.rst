@@ -37,6 +37,10 @@ Install with ``pip``
     pip install shadho
     python -m shadho.installers.install_workqueue
 
+
+**Note** The post-install step may look like it hangs, but it is just
+compiling Work Queue behind the scenes and may take a few minutes.
+
 Install manually
 ----------------
 
@@ -45,6 +49,11 @@ Install manually
     $ git clone https://github.com/jeffkinnison/shadho
     $ cd shadho
     $ pip install .
+    $ python -m shadho.installers.install_workqueue
+
+
+**Note** The post-install step may look like it hangs, but it is just
+compiling Work Queue behind the scenes and may take a few minutes.
 
 Dependencies
 ------------
@@ -53,7 +62,8 @@ Dependencies
 * ``numpy >= 0.12.1``
 * ``scikit-learn >= 0.18.1``
 * ``pandas >= 0.18.1``
-* `Work Queue <https://github.com/nkremerh/cctools/tree/shadho_wq>`_
+* `pyrameter <https://pyrameter.readthedocs.io?`_
+* `Work Queue <https://github.com/cooperative-computing-lab/cctools`_
 
 SHADHO uses parts of the scientific Python stack to manage the search (defining
 search spaces, learning from the searches, and more!). It also uses `Work Queue
@@ -99,7 +109,7 @@ Local Search
   if __name__ == '__main__':
       # The shadho driver is created here, then configured
       # test hyperparameters on the local machine.
-      opt = Shadho(obj, space, timeout=60)
+      opt = Shadho('sin_ex', obj, space, timeout=60)
       opt.config['global']['manager'] = 'local'
       opt.run()
 
@@ -159,7 +169,7 @@ wq_sin.py
 
       # Instead of the objective function, shadho is given a command that gets
       # run on the remote worker.
-      opt = Shadho('bash run_sin.sh', space, timeout=60)
+      opt = Shadho(''sin_ex', 'bash run_sin.sh', space, timeout=60)
 
       # Two input files are also added: the first is run directly by the worker
       # and can be used to set up your runtime environment (module load, anyone?)
@@ -170,5 +180,5 @@ wq_sin.py
 
 Then, run the search with::
 
-    $ shadho-wq-worker &
+    $ python -m shadho.workers.workqueue -M sin_ex &
     $ python wq_sin.py

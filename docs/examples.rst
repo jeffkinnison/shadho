@@ -173,3 +173,19 @@ The command ``bash sin_task.sh`` passed into the driver is run on the Work Queue
 worker, and set up the environment. The objective function is defined in a
 separate file. The scripts ``sin_task.sh`` and ``sin.py`` are sent to each
 worker after adding them as input files.
+
+
+Running the Example
+^^^^^^^^^^^^^^^^^^^
+
+From the terminal, run::
+
+    python sin_local_driver.py
+
+Then, from another terminal, run::
+
+    python -m shadho.workers.workqueue -M sin_distributed_example
+
+The value of ``x`` that minimizes ``sin(x)`` from among all evaluated ``x``
+values will be printed to screen after 60s. An output file, results.json will
+also appear. This file contains a database of all evaluated hyperparameters.

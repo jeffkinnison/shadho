@@ -162,10 +162,6 @@ on each worker.
         opt.add_input_file('sin_task.sh')
         opt.add_input_file('sin.py')
 
-        # Optionally, provide a name for the Work Queue master that tracks the
-        # distributed workers.
-        opt.config.workqueue.name = 'shadho_sin_ex'
-
         # Run the search, and the optimal observed value will be output after 60s.
         opt.run()
 

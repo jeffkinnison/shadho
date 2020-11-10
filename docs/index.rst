@@ -15,7 +15,7 @@ SHADHO: Optimization Optimized
    spec
    ccs
    examples
-   reference
+   api
 
 SHADHO stands for **S**\ calable **H**\ ardware-\ **A**\ ware **D**\ istributed
 **H**\ yperparameter **O**\ ptimizer. All hardware is not created equal, and all

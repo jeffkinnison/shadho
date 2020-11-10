@@ -124,10 +124,7 @@ class Shadho(pyrameter.FMin):
         self.files = []
         if files is not None:
             for f in files:
-                if not isinstance(f, WQFile):
-                    self.add_input_file(f)
-                else:
-                    self.files.append(f)
+                self.files.append(f)
         self.assignments = {}
 
         self.__tmpdir = tempfile.mkdtemp(prefix='shadho_', suffix='_output')
@@ -384,6 +381,7 @@ class Shadho(pyrameter.FMin):
                 # Create a new distributed task if values were generated
                 stop = False  # Ensure that the search continues
             cc.current_tasks = cc.max_queued_tasks  # Update to show full queue
+        return stop
 
     def assign_to_ccs(self):
         """Assign trees to compute classes.
@@ -430,7 +428,7 @@ class Shadho(pyrameter.FMin):
             larger = self.searchspaces \
                      if len(self.searchspaces) >= len(ccids) \
                      else ccids
-            smaller = ccids if larger == model_ids \
+            smaller = ccids if larger == len(self.searchspaces) \
                       else self.searchspaces
 
             # Assign models to CCs such that each model is assigned to at
@@ -540,8 +538,8 @@ class Shadho(pyrameter.FMin):
         trials = trial_id.split('@')
 
         # Determine whether or not to resubmit
+        # self.backend.register_result(ss_id, trial_id, objective=None,
         submissions, params = \
-            # self.backend.register_result(ss_id, trial_id, objective=None,
             self.register_result(ss_id, trial_id, objective=None,
                                  results=None, errmsg='yes')
 
@@ -559,110 +557,110 @@ class Shadho(pyrameter.FMin):
             self.ccs[ccid].current_tasks -= 1
 
 
-class PopulationShadho(Shadho):
-    def __init__(self, exp_key, cmd, spec, generations=50, method='random',
-                 backend='results.json', files=None, use_complexity=True,
-                 use_uncertainty=True, timeout=600, max_queued_tasks=100,
-                 await_pending=False, max_evals=None, max_resubmissions=0,
-                 save_frequency=10, hyperparameters_per_task=1):
-        super().__init__(
-            exp_key,
-            cmd,
-            spec,
-            method='random',
-            backend='results.json',
-            files=None,
-            use_complexity=True,
-            use_uncertainty=True,
-            timeout=600,
-            max_queued_tasks=100,
-            await_pending=False,
-            max_evals=None,
-            max_resubmissions=0,
-            save_frequency=10,
-            hyperparameters_per_task=1)
+# class PopulationShadho(Shadho):
+#     def __init__(self, exp_key, cmd, spec, generations=50, method='random',
+#                  backend='results.json', files=None, use_complexity=True,
+#                  use_uncertainty=True, timeout=600, max_queued_tasks=100,
+#                  await_pending=False, max_evals=None, max_resubmissions=0,
+#                  save_frequency=10, hyperparameters_per_task=1):
+#         super().__init__(
+#             exp_key,
+#             cmd,
+#             spec,
+#             method='random',
+#             backend='results.json',
+#             files=None,
+#             use_complexity=True,
+#             use_uncertainty=True,
+#             timeout=600,
+#             max_queued_tasks=100,
+#             await_pending=False,
+#             max_evals=None,
+#             max_resubmissions=0,
+#             save_frequency=10,
+#             hyperparameters_per_task=1)
 
-        self.generations = generations
+#         self.generations = generations
 
-    def run(self):
-        # Set up the task manager as defined in `shadho.managers`
-        if not hasattr(self, 'manager'):
-            self.manager = create_manager(
-                manager_type=self.config.manager,
-                config=self.config,
-                tmpdir=self.__tmpdir)
+#     def run(self):
+#         # Set up the task manager as defined in `shadho.managers`
+#         if not hasattr(self, 'manager'):
+#             self.manager = create_manager(
+#                 manager_type=self.config.manager,
+#                 config=self.config,
+#                 tmpdir=self.__tmpdir)
 
-        # Set up the backend hyperparameter generation and database
-        # if not isinstance(self.backend, FMin):
-        #     self.backend = FMin(self.exp_key, self.spec, self.method,
-        #                         self.backend, max_evals=self.max_evals)
+#         # Set up the backend hyperparameter generation and database
+#         # if not isinstance(self.backend, FMin):
+#         #     self.backend = FMin(self.exp_key, self.spec, self.method,
+#         #                         self.backend, max_evals=self.max_evals)
 
-        # If no ComputeClass was created, create a dummy class.
-        if len(self.ccs) == 0:
-            cc = ComputeClass('all', None, None, self.max_queued_tasks, self)
-            self.ccs[cc.id] = cc
-        else:
-            for cc in self.ccs.values():
-                cc.optimizer = self.backend.copy()
+#         # If no ComputeClass was created, create a dummy class.
+#         if len(self.ccs) == 0:
+#             cc = ComputeClass('all', None, None, self.max_queued_tasks, self)
+#             self.ccs[cc.id] = cc
+#         else:
+#             for cc in self.ccs.values():
+#                 cc.optimizer = self.backend.copy()
 
-        # Set up intial model/compute class assignments.
-        self.assign_to_ccs()
+#         # Set up intial model/compute class assignments.
+#         self.assign_to_ccs()
 
-        start = time.time()
-        elapsed = 0
-        generation = 0
-        exhausted = False
-        try:
-            # Run the search until timeout or until all tasks complete
-            while elapsed < self.timeout and generation < self.generations:
-                # Generate hyperparameters and a flag to continue or stop
-                stop = self.generate()
-                if not stop:
-                    # Run another task and await results
-                    pop_size = len(stop)
-                    result = self.manager.run_task()
-                    if result is not None:
-                        # If a task returned post-process as a success or fail
-                        if len(result) == 3:
-                            self.success(*result)  # Store and move on
-                        else:
-                            self.failure(*result)  # Resubmit if asked
-                    # Checkpoint the results to file or DB at some frequency
-                    # if self.backend.trial_count % self.save_frequency == 0:
-                    if self.trial_count % self.save_frequency == 0:
-                        # self.backend.save()
-                        self.save()
-                    # Update the time for timeout check
-                    elapsed = time.time() - start
-                    # exhausted = all([ss.done for ss in self.backend.searchspaces])
-                    exhausted = all([ss.done for ss in self.searchspaces])
-                else:
-                    break
+#         start = time.time()
+#         elapsed = 0
+#         generation = 0
+#         exhausted = False
+#         try:
+#             # Run the search until timeout or until all tasks complete
+#             while elapsed < self.timeout and generation < self.generations:
+#                 # Generate hyperparameters and a flag to continue or stop
+#                 stop = self.generate()
+#                 if not stop:
+#                     # Run another task and await results
+#                     pop_size = len(stop)
+#                     result = self.manager.run_task()
+#                     if result is not None:
+#                         # If a task returned post-process as a success or fail
+#                         if len(result) == 3:
+#                             self.success(*result)  # Store and move on
+#                         else:
+#                             self.failure(*result)  # Resubmit if asked
+#                     # Checkpoint the results to file or DB at some frequency
+#                     # if self.backend.trial_count % self.save_frequency == 0:
+#                     if self.trial_count % self.save_frequency == 0:
+#                         # self.backend.save()
+#                         self.save()
+#                     # Update the time for timeout check
+#                     elapsed = time.time() - start
+#                     # exhausted = all([ss.done for ss in self.backend.searchspaces])
+#                     exhausted = all([ss.done for ss in self.searchspaces])
+#                 else:
+#                     break
 
-            # self.backend.save()
-            self.save()
+#             # self.backend.save()
+#             self.save()
 
-            # If requested, continue the loop until all tasks return
-            if self.await_pending:
-                while not self.manager.empty():
-                    result = self.manager.run_task()
-                    if result is not None:
-                        if len(result) == 3:
-                            self.success(*result)
-                        else:
-                            self.failure(*result)
-                # self.backend.save()
-                self.save()
+#             # If requested, continue the loop until all tasks return
+#             if self.await_pending:
+#                 while not self.manager.empty():
+#                     result = self.manager.run_task()
+#                     if result is not None:
+#                         if len(result) == 3:
+#                             self.success(*result)
+#                         else:
+#                             self.failure(*result)
+#                 # self.backend.save()
+#                 self.save()
 
-        # On keyboard interrupt, save any results and clean up
-        except KeyboardInterrupt:
-            if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
-                os.rmdir(self.__tmpdir)
+#         # On keyboard interrupt, save any results and clean up
+#         except KeyboardInterrupt:
+#             if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
+#                 os.rmdir(self.__tmpdir)
 
-        # Save the results and print the optimal set of parameters to  screen
-        # self.backend.save()
-        self.save()
-        # self.backend.summary()
-        self.summary()
-        # return self.backend.to_dataframes()
-        return self.to_dataframes()
+#         # Save the results and print the optimal set of parameters to  screen
+#         # self.backend.save()
+#         self.save()
+#         # self.backend.summary()
+#         self.summary()
+#         # return self.backend.to_dataframes()
+#         return self.to_dataframes()

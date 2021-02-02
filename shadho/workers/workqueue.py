@@ -14,7 +14,7 @@ def parse_args(args=None):
     p = argparse.ArgumentParser(
         description='Start a Work Queue worker and connect to SHADHO.')
 
-    p.add_argument('-M', '--master', type=str,
+    p.add_argument('-M', '--master', type=str, default='',
         help='name of the Work Queue master to connect to')
     p.add_argument('-u', '--user', type=str, default=os.environ['USER'],
         help='name of the user running the Work Queue master')
@@ -38,7 +38,7 @@ def shadho_wq_worker(args=None, config=None):
     if args is None:
         cmd_args = ''
     else:
-        cmd_args = f'-M {args.master} --cores {args.cores}'
+        cmd_args = f'{-M if args.master else ""} {args.master} --cores {args.cores}'
         for feature in args.feature:
             cmd_args += f' --feature {feature}'
 

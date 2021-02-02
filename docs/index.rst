@@ -35,7 +35,7 @@ Install with ``pip``
 ::
 
     pip install shadho
-    python -m shadho.installers.install_workqueue
+    python -m shadho.installers.workqueue
 
 
 **Note** The post-install step may look like it hangs, but it is just
@@ -49,7 +49,7 @@ Install manually
     $ git clone https://github.com/jeffkinnison/shadho
     $ cd shadho
     $ pip install .
-    $ python -m shadho.installers.install_workqueue
+    $ python -m shadho.installers.workqueue
 
 
 **Note** The post-install step may look like it hangs, but it is just

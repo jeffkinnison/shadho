@@ -27,7 +27,7 @@ cd $base
 install_python_major_version="$(python3 -c 'import sys; print(sys.version_info.major)')"
 install_python_minor_version="$(python3 -c 'import sys; print(sys.version_info.minor)')"
 install_python_prefix="$(python3 -c 'import sys; print(sys.base_prefix)')"
-install_python_executable="$(python3 -c 'import sys; print(sys.executable)')"
+install_python_executable="$(python3 -c 'import sys; print(sys.base_exec_prefix + "/bin")')"
 
 python2_version="$(python2 --version)"
 if [ "$?" -eq "0" ] || [ ! -z "$python2_version" ]; then

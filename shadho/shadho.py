@@ -206,7 +206,7 @@ class Shadho(pyrameter.FMin):
             default 100.
         """
         cc = ComputeClass(name, resource, value, 2 * max_queued_tasks, None)
-        cc.optimizer.method = self.method
+        # cc.optimizer.method = self.method
         self.ccs[cc.id] = cc
 
     # def load(self):
@@ -249,11 +249,11 @@ class Shadho(pyrameter.FMin):
 
         # If no ComputeClass was created, create a dummy class.
         if len(self.ccs) == 0:
-            cc = ComputeClass('all', None, None, self.max_queued_tasks, self)
+            cc = ComputeClass('all', None, None, self.max_queued_tasks, super())
             self.ccs[cc.id] = cc
         else:
             for cc in self.ccs.values():
-                cc.optimizer = self.backend.copy()
+                cc.optimizer = self.copy()
 
         # Set up intial model/compute class assignments.
         self.assign_to_ccs()
@@ -402,11 +402,10 @@ class Shadho(pyrameter.FMin):
         `shadho.ComputeClass`
         `pyrameter.ModelGroup`
         """
-        # If only one CC exists, do nothing; otherwise, update assignments
-        if len(self.ccs) == 1:
-            key = list(self.ccs.keys())[0]
-            self.ccs[key].optimizer = self.backend
-        else:
+        # If only one compute class exists, do nothing. If multiple compute
+        # classes exist, heuristically assign search trees to CCs. If no
+        # compute classes exist, create a dummy to wrap the search.
+        if len(self.ccs) > 1:
             # Sort models in the search by complexity, priority, or both and
             # get the updated order.
             # self.backend.sort_spaces(use_complexity=self.use_complexity,
@@ -465,6 +464,9 @@ class Shadho(pyrameter.FMin):
                     else:
                         self.ccs[larger[i - 1]].add_model(
                             self.backend[smaller[j]])
+        elif len(self.ccs) == 0:
+            cc = ComputeClass('all', None, None, self.max_queued_tasks, super())
+            self.ccs[cc.id] = cc
 
     def success(self, tag, loss, results):
         """Handle successful task completion.

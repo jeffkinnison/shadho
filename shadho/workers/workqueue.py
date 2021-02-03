@@ -38,7 +38,7 @@ def shadho_wq_worker(args=None, config=None):
     if args is None:
         cmd_args = ''
     else:
-        cmd_args = f'{-M if args.master else ""} {args.master} --cores {args.cores}'
+        cmd_args = f'{"-M" if args.master else ""} {args.master} --cores {args.cores}'
         for feature in args.feature:
             cmd_args += f' --feature {feature}'
 

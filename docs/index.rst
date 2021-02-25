@@ -110,7 +110,7 @@ Local Search
       # The shadho driver is created here, then configured
       # test hyperparameters on the local machine.
       opt = Shadho('sin_ex', obj, space, timeout=60)
-      opt.config['global']['manager'] = 'local'
+      opt.config.manager = 'local'
       opt.run()
 
   # After shadho is finished, it prints out the optimal loss and hyperparameters.

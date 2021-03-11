@@ -5,9 +5,9 @@ Classes
 Shadho
     Driver class for local and distributed hyperparameter optimization.
 """
-from .configuration import ShadhoConfig
-from .hardware import ComputeClass
-from .managers import create_manager
+from shadho.configuration import ShadhoConfig
+from shadho.hardware import ComputeClass
+from shadho.managers import create_manager
 
 from collections import OrderedDict
 import json

@@ -10,7 +10,7 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md'), 'r') as f:
 
 setup(
     name='shadho',
-    version='0.3.0',
+    version='0.3.0.post3',
     description='Hyperparameter optimizer with distributed hardware at heart',
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',

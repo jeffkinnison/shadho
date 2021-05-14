@@ -92,7 +92,7 @@ class Shadho(pyrameter.FMin):
 
     def __init__(self, exp_key, cmd, spec, method='random', backend='results.json',
                  files=None, use_complexity=True, use_uncertainty=True,
-                 timeout=600, max_queued_tasks=100, await_pending=False,
+                 timeout=600, max_tasks=None, max_queued_tasks=100, await_pending=False,
                  max_evals=None, max_resubmissions=0, save_frequency=10,
                  hyperparameters_per_task=1):
         super().__init__(exp_key, spec, method, backend, max_evals=max_evals)
@@ -109,6 +109,8 @@ class Shadho(pyrameter.FMin):
         self.use_uncertainty = use_uncertainty
         self.timeout = timeout if timeout is not None and timeout >= 0 \
                        else float('inf')
+        self.max_tasks = max_tasks if max_tasks is not None and max_tasks >= 0 \
+                         else float('inf')
         self.max_queued_tasks = max_queued_tasks
         self.max_resubmissions = max_resubmissions
         # self.max_evals = max_evals
@@ -261,9 +263,10 @@ class Shadho(pyrameter.FMin):
         start = time.time()
         elapsed = 0
         exhausted = False
+        completed_tasks = 0
         try:
             # Run the search until timeout or until all tasks complete
-            while elapsed < self.timeout and not exhausted and (elapsed == 0 or not self.manager.empty()):
+            while elapsed < self.timeout and completed_tasks < self.max_tasks and not exhausted and (elapsed == 0 or not self.manager.empty()):
                 # Generate hyperparameters and a flag to continue or stop
                 stop = self.generate()
                 if not stop:
@@ -273,6 +276,7 @@ class Shadho(pyrameter.FMin):
                         # If a task returned post-process as a success or fail
                         if len(result) == 3:
                             self.success(*result)  # Store and move on
+                            completed_tasks += 1
                         else:
                             self.failure(*result)  # Resubmit if asked
                     # Checkpoint the results to file or DB at some frequency

@@ -5,12 +5,14 @@ Classes
 Shadho
     Driver class for local and distributed hyperparameter optimization.
 """
+from shadho.managers.workqueue import WQBuffer
 from shadho.configuration import ShadhoConfig
 from shadho.hardware import ComputeClass
 from shadho.managers import create_manager
 
 from collections import OrderedDict
 import json
+import itertools
 import os
 import tarfile
 import tempfile
@@ -21,6 +23,7 @@ import pyrameter
 import scipy.stats
 
 from pyrameter.optimizer import FMin
+from pyrameter.trial import Trial
 
 
 def shadho():
@@ -211,11 +214,10 @@ class Shadho(pyrameter.FMin):
         # cc.optimizer.method = self.method
         self.ccs[cc.id] = cc
 
-    # def load(self):
-    #     if not hasattr(self, 'backend') or not isinstance(self.backend, FMin):
-    #         self.backend = FMin(self.exp_key, self.spec, self.method,
-    #                             self.backend, max_evals=self.max_evals)
-    #     self.backend.load()
+    def load(self):
+        max_evals = self.max_evals
+        super().load()
+        self.max_evals = max_evals + len(self.trials)
 
     # def plot_objective(self, show=True, save=False, filename=None):
     #     try:
@@ -260,13 +262,14 @@ class Shadho(pyrameter.FMin):
         # Set up intial model/compute class assignments.
         self.assign_to_ccs()
 
-        start = time.time()
+        self.start = time.time()
         elapsed = 0
         exhausted = False
         completed_tasks = 0
         try:
             # Run the search until timeout or until all tasks complete
-            while elapsed < self.timeout and completed_tasks < self.max_tasks and not exhausted and (elapsed == 0 or not self.manager.empty()):
+            # while elapsed < self.timeout and completed_tasks < self.max_tasks and not exhausted and (elapsed == 0 or not self.manager.empty()):
+            while not self.done():
                 # Generate hyperparameters and a flag to continue or stop
                 stop = self.generate()
                 if not stop:
@@ -280,14 +283,12 @@ class Shadho(pyrameter.FMin):
                         else:
                             self.failure(*result)  # Resubmit if asked
                     # Checkpoint the results to file or DB at some frequency
-                    # if self.backend.trial_count % self.save_frequency == 0:
                     if self.trial_count % self.save_frequency == 0:
-                        # self.backend.save()
                         self.save()
                     # Update the time for timeout check
-                    elapsed = time.time() - start
+                    # elapsed = time.time() - start
                     # exhausted = all([ss.done for ss in self.backend.searchspaces])
-                    exhausted = all([ss.done for ss in self.searchspaces])
+                    # exhausted = all([ss.done for ss in self.searchspaces])
                 else:
                     break
 
@@ -311,13 +312,19 @@ class Shadho(pyrameter.FMin):
             if hasattr(self, '__tmpdir') and self.__tmpdir is not None:
                 os.rmdir(self.__tmpdir)
 
-        # Save the results and print the optimal set of parameters to  screen
-        # self.backend.save()
+        self.end = time.time()
+
+        # Save the results and print the optimal set of parameters to screen
         self.save()
-        # self.backend.summary()
         self.summary()
-        # return self.backend.to_dataframes()
         return self.to_dataframes()
+
+    def done(self):
+        elapsed = time.time() - self.start
+        # completed_tasks = sum([int(t.objective is not None)
+        #                        for t in self.trials.values()])
+        exhausted = all([space.done(self.max_tasks) for space in self.searchspaces])
+        return elapsed >= self.timeout or exhausted
 
     def generate(self):
         """Generate hyperparameter values to test.
@@ -350,8 +357,8 @@ class Shadho(pyrameter.FMin):
                 # Get bookkeeping ids and hyperparameter values
                 if self.hyperparameters_per_task == 1:
                     trial = cc.generate()
-                    trial = super().generate()
-                    if trial is not None:
+
+                    if isinstance(trial, Trial):
                         # Encode info to map to db in the task tag
                         tag = '.'.join([str(trial.id),
                                         str(trial.searchspace.id),
@@ -363,11 +370,23 @@ class Shadho(pyrameter.FMin):
                             files=self.files,
                             resource=cc.resource,
                             value=cc.value)
+                    elif isinstance(trial, list) and len(trial) > 0:
+                        for t in trial:
+                            tag = '.'.join([str(t.id),
+                                            str(t.searchspace.id),
+                                            cc_id])
+                            self.manager.add_task(
+                                self.cmd,
+                                tag,
+                                t.parameter_dict,
+                                files=self.files,
+                                resource=cc.resource,
+                                value=cc.value)
 
                 elif self.hyperparameters_per_task > 1:
-                    trial = [cc.generate() for _ in range(self.hyperparameters_per_task)]
+                    trial = list(itertools.chain.from_iterable([cc.generate() for _ in range(self.hyperparameters_per_task)]))
 
-                    if not any([t is None for t in trial]):
+                    if not any([t is None for t in trial]) or len(trial) > 0:
                         # Encode info to map to db in the task tag
                         tag = '.'.join(['@'.join([str(t.id) for t in trial]),
                                         str(trial[0].searchspace().id),

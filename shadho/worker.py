@@ -19,6 +19,7 @@ try:
 except ImportError:
     import pickle
 import tarfile
+from typing import Iterable, Mapping
 
 # If running on a remote system, try to import from the clobbered module name.
 # Otherwise, import from the standard module name.
@@ -103,36 +104,30 @@ def run(task, cfgpath='.shadhorc'):
     cfgpath : str, optional
         The path to the `shadho` configuration file for this task.
     """
-    try:
-        # Load the configuration
-        cfg = load_config(path=cfgpath)
+    # Load the configuration
+    cfg = load_config(path=cfgpath)
 
-        # Load hyperparameters to test
-        spec = {}
-        if os.path.isfile(cfg['global']['param_file']):
-            with open(cfg['global']['param_file'], 'r') as f:
-                spec = json.load(f, cls=ShadhoDecoder)
+    # Load hyperparameters to test
+    spec = {}
+    if os.path.isfile(cfg['global']['param_file']):
+        with open(cfg['global']['param_file'], 'r') as f:
+            spec = json.load(f, cls=ShadhoDecoder)
 
-        # Run the task and save the results in a format `shahdo` recognizes.
-        result = task(spec)
-        if isinstance(result, float):
-            result = {cfg['global']['optimize']: result}
+    # Run the task and save the results in a format `shahdo` recognizes.
+    result = task(spec)
+    if isinstance(result, float) or isinstance(result, Iterable) and all([isinstance(i, float) for i in result]):
+        result = {cfg['global']['optimize']: result}
+    elif not isinstance(result, Mapping):
+        raise ValueError(
+            'Training result mush be a float, sequence of floats, ' +
+            f'or dictionary of JSON-compatible results. Got {type(result)}')
 
-        # Dump the results to file.
-        with open(cfg['global']['result_file'], 'w') as f:
-            json.dump(result, f, cls=ShadhoEncoder)
+    # Dump the results to file.
+    with open(cfg['global']['result_file'], 'w') as f:
+        json.dump(result, f, cls=ShadhoEncoder)
 
-        # Compress into the expected output file.
-        ext = os.path.splitext(cfg['global']['output'])
-        mode = ':'.join(['w', ext]) if ext in ['gz', 'bz2'] else 'w'
-        with tarfile.open(cfg['global']['output'], mode) as f:
-            f.add(cfg['global']['result_file'])
-
-    except IOError as err:
-        print(err)
-    except ValueError as err:
-        print("Error decoding parameters in {}"
-              .format(cfg['global']['param_file']))
-        print(err)
-    except TypeError as err:
-        print(err)
+    # Compress into the expected output file.
+    ext = os.path.splitext(cfg['global']['output'])
+    mode = ':'.join(['w', ext]) if ext in ['gz', 'bz2'] else 'w'
+    with tarfile.open(cfg['global']['output'], mode) as f:
+        f.add(cfg['global']['result_file'])

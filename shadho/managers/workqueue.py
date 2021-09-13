@@ -13,7 +13,16 @@ import os
 import sys
 import tarfile
 
-import work_queue as WORKQUEUE
+try:
+    import work_queue as WORKQUEUE
+except ImportError:
+    print('Work Queue not found, installing.')
+    try:
+        import shadho.installers.workqueue
+        shadho.installers.workqueue.main()
+        import work_queue as WORKQUEUE
+    except OSError:
+        raise
 
 from shadho.utils import ShadhoEncoder, ShadhoDecoder
 

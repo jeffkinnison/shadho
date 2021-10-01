@@ -37,7 +37,7 @@ class ComputeClass(object):
     max_queued_tasks : int
         The maximum number of tasks to queue. Recommended to be 1.5-2x the
         number of expected nodes with this resource.
-
+    
     Attributes
     ----------
     id : str
@@ -53,49 +53,35 @@ class ComputeClass(object):
         number of expected nodes with this resource.
     current_tasks : int
         The current number of queued tasks.
-    model_group : `pyrameter.ModelGroup`
-        The (possibly ordered) list of models assigned to this ComputeClass.
 
     See Also
     --------
     `pyrameter.ModelGroup`
     """
-    def __init__(self, name, resource, value, max_queued_tasks, optimizer):
+    def __init__(self, name, resource, value, max_queued_tasks):
         self.id = str(uuid.uuid4())
         self.name = name
         self.resource = resource
         self.value = value
         self.max_queued_tasks = max_queued_tasks
         self.current_tasks = 0
-        self.optimizer = optimizer
+        self.searchspaces = []
 
     def __hash__(self):
         return hash((self.id, self.name, self.resource, self.value))
-
-    def generate(self, ssid=None):
-        """Generate a set of hyperparameters from a model in this group.
-
-        Hyperparameters are generated from a single model assigned to this
-        compute class. If no model id is provided, the model is selected based
-        on a probability distribution over the models.
-
-        Parameters
-        ----------
-        ssid : optional
-            If a valid id is supplied, generate hyperparameters values from the
-            requested search space. Otherwise, probabilistically select a
-            search space and generate hyperparameter values.
-        """
-        return self.optimizer.generate(ssid=ssid)
 
     def add_searchspace(self, searchspace):
         """Add a search space to this compute class.
 
         Parameters
         ----------
-        searchspace : `pyrameter.searchspace.SearchSpace`
+        searchspace : `pyrameter.searchspace.SearchSpace` or list
+            The search space(s) to add to this compute class.
         """
-        self.optimizer.searchspaces.append(searchspace)
+        if isinstance(searchspace, list):
+            self.searchspaces.extend(searchspace)
+        else:
+            self.searchspaces.append(searchspace)
 
     def remove_searchspace(self, ssid):
         """Remove a search space from this compute class.
@@ -105,27 +91,14 @@ class ComputeClass(object):
         model_id : str
         """
         idx = None
-        for i, ss in enumerate(self.optimizer.searchspaces):
+        for i, ss in enumerate(self.searchspaces):
             if ss.id == ssid:
                 idx = i
                 break
         if idx is not None:
-            self.optimizer.searchspaces.pop(idx)
+            self.searchspaces.pop(idx)
 
     def clear(self):
         """Remove all models from this compute class."""
-        self.optimizer.searchspaces = []
+        self.searchspaces = []
 
-    def register_result(self, ssid, objective, result=None, errmsg=None):
-        """Add a result to a model in this compute class.
-
-        Parameters
-        ----------
-        model_id : str
-            The id of the model to store the result in.
-
-        """
-        trial = self.optimizer.trials[ssid]
-        trial.objective = objective
-        trial.result = result
-        trial.errmsg = errmsg

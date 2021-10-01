@@ -22,7 +22,10 @@ class ShadhoDecoder(json.JSONDecoder):
 
     def object_hook(self, obj):
         if isinstance(obj, dict) and sorted(obj.keys()) == ['__data', '__dtype']:
-            arr = np.array(obj['__data']).astype(obj['__dtype'])
+            if isinstance(obj['__data'], list):
+                arr = np.array(obj['__data']).astype(obj['__dtype'])
+            else:
+                arr = np.dtype(obj['__dtype']).type(obj['__data'])
             return arr
         else:
             return obj

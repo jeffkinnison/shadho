@@ -34,7 +34,7 @@ def parse_args(args=None):
     return p.parse_args(args=None)
 
 
-def install_workqueue(prefix, user=False):
+def install_workqueue(prefix):
     """Install Work Queue and SHADHO supplementary files.
 
     Parameters
@@ -46,8 +46,6 @@ def install_workqueue(prefix, user=False):
     -------
     prefix : str or None
         Identical to ``prefix``. Set to None if intallation failed.
-    site_packages_prefix : str
-        Path to the site-packages directory where work_queue was installed.
     """
     try:
         if os.path.basename(prefix) != '.shadho':
@@ -62,24 +60,7 @@ def install_workqueue(prefix, user=False):
         subprocess.check_output(
             ['sh', installer, tempdir, prefix],
             stderr=subprocess.STDOUT)
-        result = prefix
-
-        maj = sys.version_info.major
-        min = sys.version_info.minor
-
-        sp_prefix = os.path.join('lib',
-                                 'python{}.{}'.format(maj, min),
-                                 'site-packages')
-
-        if user:
-            dest_prefix = os.path.join(site.USER_BASE, sp_prefix)
-        else:
-            dest_prefix = os.path.join(sys.prefix, sp_prefix)
-
-        shutil.copy(os.path.join(prefix, sp_prefix, 'work_queue.py'),
-                    dest_prefix)
-        shutil.copy(os.path.join(prefix, sp_prefix, '_work_queue.so'),
-                    dest_prefix)
+        result = 'not None'
 
     except subprocess.CalledProcessError as e:
         logfile = os.path.abspath('shadho_install.log')
@@ -88,14 +69,12 @@ def install_workqueue(prefix, user=False):
         with open(logfile, 'w') as f:
             f.write(e.output.decode())
         result = None
-        dest_prefix = None
     finally:
         shutil.rmtree(tempdir)
 
-    return result, dest_prefix
+    return result
 
-
-def write_shadhorc(prefix, shadho_dir):
+def write_shadhorc(shadho_dir):
     """Create the .shadhorc config file.
 
     Parameters
@@ -148,15 +127,9 @@ def write_shadhorc(prefix, shadho_dir):
                                str(entry),
                                str(default_config[section][entry]))
 
-    # Make sure the path to the .shadhorc file exists.
-    if os.path.basename(prefix) != '.shadhorc':
-        os.makedirs(prefix, exist_ok=True)
-        prefix = os.path.join(prefix, '.shadhorc')
-    else:
-        os.makedirs(os.path.dirname(prefix), exist_ok=True)
-
     # Write the .shadhorc.
-    with open(prefix, 'w') as f:
+    homedir = str(pathlib.Path().home())
+    with open(os.path.join(homedir, '.shadhorc'), 'w') as f:
         config.write(f)
 
 
@@ -177,23 +150,29 @@ def install_shadho_files(prefix, sp_prefix):
     shutil.copy(os.path.join(source, '_work_queue.so'), sp_prefix)
 
 
-def main():
-    args = parse_args()
+def main(prefix='~', user=False):
+    homedir = str(pathlib.Path().home())
 
-    prefix = args.prefix
     if '~' in prefix:
         prefix = os.path.expanduser(prefix)
+        prefix = os.path.join(prefix, '.shadho')
 
-    if not os.path.isfile(os.path.join(prefix, 'bin', 'work_queue_worker')):
-        prefix, sp_prefix = install_workqueue(prefix, user=args.user)
+    maj = sys.version_info.major
+    min = sys.version_info.minor
+
+    sp_prefix = os.path.join('lib',
+                             'python{}.{}'.format(maj, min),
+                             'site-packages')
+
+    if user:
+        dest_prefix = os.path.join(site.USER_BASE, sp_prefix)
     else:
-        maj = sys.version_info.major
-        min = sys.version_info.minor
+        dest_prefix = os.path.join(sys.prefix, sp_prefix)
 
-        sp_prefix = os.path.join('lib',
-                                 'python{}.{}'.format(maj, min),
-                                 'site-packages')
-        if args.user:
+    if not os.path.isfile(os.path.join(prefix, 'work_queue.py')):
+        prefix, sp_prefix = install_workqueue(prefix, user=user)
+    else:
+        if user:
             sp_prefix = os.path.join(site.USER_BASE, sp_prefix)
         else:
             sp_prefix = os.path.join(sys.prefix, sp_prefix)
@@ -201,9 +180,9 @@ def main():
     if prefix is not None:
         install_shadho_files(prefix, sp_prefix)
 
-    homedir = str(pathlib.Path().home())
-    write_shadhorc(homedir, prefix)
+    write_shadhorc(prefix)
 
 
 if __name__ == '__main__':
-    main()
+    args = parse_args()
+    main(prefix=args.prefix, user=args.user)

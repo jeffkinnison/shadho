@@ -5,7 +5,6 @@ Classes
 Shadho
     Driver class for local and distributed hyperparameter optimization.
 """
-from shadho.managers.workqueue import WQBuffer
 from shadho.configuration import ShadhoConfig
 from shadho.hardware import ComputeClass
 from shadho.managers import create_manager

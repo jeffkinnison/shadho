@@ -16,7 +16,7 @@ else
 fi
 
 # Set some variables for later
-cctools_version="cctools-7.0.16-source"
+cctools_version="cctools-7.4.2-source"
 
 # For reasons known only to Cthulhu himself, SWIG requires a Python 2 install
 # to generate Python 3 bindings. To this day, scholars (read: the SHADHO devs)
@@ -176,10 +176,6 @@ python2_prefix="$(python2 -c 'import sys; print(sys.prefix)')"
     --with-perl-path="$perl_prefix" \
     --with-python-path="$python2_prefix" \
     --with-python3-path="$install_python_prefix" \
-    --without-system-sand \
-    --without-system-allpairs \
-    --without-system-wavefront \
-    --without-system-parrot \
-    --without-system-umbrella
+    --without-system-parrot
 
 make -j8 && make install -j

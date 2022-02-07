@@ -10,6 +10,7 @@ import argparse
 import configparser
 import os
 import pathlib
+import re
 import shutil
 import site
 import subprocess
@@ -48,7 +49,8 @@ def install_workqueue(prefix):
         Identical to ``prefix``. Set to None if intallation failed.
     """
     try:
-        if os.path.basename(prefix) != '.shadho':
+        homedir = str(pathlib.Path().home())
+        if prefix == homedir:
             prefix = os.path.join(prefix, '.shadho')
         tempdir = tempfile.mkdtemp(prefix='shadho_install.')
 
@@ -155,6 +157,8 @@ def main(prefix='~', user=False):
 
     if '~' in prefix:
         prefix = os.path.expanduser(prefix)
+    
+    if prefix == homedir:
         prefix = os.path.join(prefix, '.shadho')
 
     maj = sys.version_info.major
@@ -164,20 +168,15 @@ def main(prefix='~', user=False):
                              'python{}.{}'.format(maj, min),
                              'site-packages')
 
-    if user:
-        dest_prefix = os.path.join(site.USER_BASE, sp_prefix)
-    else:
-        dest_prefix = os.path.join(sys.prefix, sp_prefix)
-
     if not os.path.isfile(os.path.join(prefix, 'work_queue.py')):
-        prefix, sp_prefix = install_workqueue(prefix, user=user)
-    else:
-        if user:
-            sp_prefix = os.path.join(site.USER_BASE, sp_prefix)
-        else:
-            sp_prefix = os.path.join(sys.prefix, sp_prefix)
+        result = install_workqueue(prefix)
 
-    if prefix is not None:
+    if user:
+        sp_prefix = os.path.join(site.USER_BASE, sp_prefix)
+    else:
+        sp_prefix = os.path.join(sys.prefix, sp_prefix)
+
+    if result is not None:
         install_shadho_files(prefix, sp_prefix)
 
     write_shadhorc(prefix)

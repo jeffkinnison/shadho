@@ -53,10 +53,8 @@ class ComputeClass(object):
         number of expected nodes with this resource.
     current_tasks : int
         The current number of queued tasks.
-
-    See Also
-    --------
-    `pyrameter.ModelGroup`
+    searchspaces : list of `pyrameter.searchspace.SearchSpace`
+        The search spaces assigned to this compute class.
     """
     def __init__(self, name, resource, value, max_queued_tasks):
         self.id = str(uuid.uuid4())
@@ -82,6 +80,18 @@ class ComputeClass(object):
             self.searchspaces.extend(searchspace)
         else:
             self.searchspaces.append(searchspace)
+    
+    @property
+    def hungry(self):
+        """Determine if the compute class has room for more tasks.
+
+        Returns
+        -------
+        hungry : bool 
+            True if more tasks may be submitted to this compute class,
+            False if it is full.
+        """
+        return self.current_tasks < self.max_queued_tasks
 
     def remove_searchspace(self, ssid):
         """Remove a search space from this compute class.

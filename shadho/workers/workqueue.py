@@ -18,7 +18,7 @@ def parse_args(args=None):
         help='name of the Work Queue master to connect to')
     p.add_argument('-u', '--user', type=str, default=os.environ['USER'],
         help='name of the user running the Work Queue master')
-    p.add_argument('--timeout', type=int,
+    p.add_argument('-t', '--timeout', type=int, default=900,
         help='amount of time worker idles before exiting')
     p.add_argument('--cores', type=int, default=1,
         help='the number of cores for the worker to use;' +
@@ -38,7 +38,7 @@ def shadho_wq_worker(args=None, config=None):
     if args is None:
         cmd_args = ''
     else:
-        cmd_args = f'{"-M" if args.master else ""} {args.master} --cores {args.cores}'
+        cmd_args = f'{"-M" if args.master else ""} {args.master} --cores {args.cores} --timeout {args.timeout}'
         for feature in args.feature:
             cmd_args += f' --feature {feature}'
 

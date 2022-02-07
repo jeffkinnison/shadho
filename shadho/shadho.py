@@ -10,18 +10,12 @@ from shadho.hardware import ComputeClass
 from shadho.managers import create_manager
 
 from collections import OrderedDict
-import json
-import itertools
 import os
-import tarfile
 import tempfile
 import time
 
 import numpy as np
 import pyrameter
-import scipy.stats
-
-from pyrameter.optimizer import FMin
 from pyrameter.trial import Trial
 
 
@@ -219,12 +213,20 @@ class Shadho(pyrameter.FMin):
 
         # If no ComputeClass was created, create a dummy class.
         if len(self.ccs) == 0:
-            cc = ComputeClass('all', None, None, min(self.max_tasks, self.max_queued_tasks))
+            cc = ComputeClass(
+                'all',
+                None,
+                None,
+                min(self.max_tasks, self.max_queued_tasks)
+            )
             self.ccs[cc.id] = cc
         else:
             for cc in self.ccs.values():
                 cc.optimizer = self.copy()
-                cc.max_queued_tasks = max(cc.max_queued_tasks / len(self.ccs), 1)
+                cc.max_queued_tasks = max(
+                    cc.max_queued_tasks / len(self.ccs),
+                    1
+                )
 
         # Set up intial model/compute class assignments.
         self.assign_to_ccs()
@@ -233,25 +235,23 @@ class Shadho(pyrameter.FMin):
         completed_tasks = 0
         try:
             # Run the search until timeout or until all tasks complete
-            # while elapsed < self.timeout and completed_tasks < self.max_tasks and not exhausted and (elapsed == 0 or not self.manager.empty()):
-            while not self.done():
+            while not self.done:
                 # Generate hyperparameters and a flag to continue or stop
-                stop = self.generate()
-                if not stop:
-                    # Run another task and await results
-                    result = self.manager.run_task()
-                    if result is not None:
-                        # If a task returned post-process as a success or fail
-                        if len(result) == 3:
-                            self.success(*result)  # Store and move on
-                            completed_tasks += 1
-                        else:
-                            self.failure(*result)  # Resubmit if asked
-                    # Checkpoint the results to file or DB at some frequency
-                    if self.trial_count % self.save_frequency == 0:
-                        self.save()
-                else:
-                    break
+                pending = len(self.trials) - completed_tasks
+                if self.manager.hungry(pending_tasks=pending, leeway=len(self.ccs)):
+                    self.generate()
+                # Run another task and await results
+                result = self.manager.run_task()
+                if result is not None:
+                    # If a task returned post-process as a success or fail
+                    if len(result) == 3:
+                        self.success(*result)  # Store and move on
+                        completed_tasks += 1
+                    else:
+                        self.failure(*result)  # Resubmit if asked
+                # Checkpoint the results to file or DB at some frequency
+                if self.trial_count % self.save_frequency == 0:
+                    self.save()
 
             self.save()
 
@@ -278,9 +278,23 @@ class Shadho(pyrameter.FMin):
         self.summary()
         return self.to_dataframes()
 
+    @property
     def done(self):
+        """Determine if the run is complete.
+
+        A search is completed if the specified running time (``timeout``) has
+        elapsed or the specified number of tasks (``max_tasks``) have been
+        evaluated.
+
+        Returns
+        -------
+        done : bool
+            True if either the timeout or trial limit has been reached,
+            False otherwise.
+        """
         elapsed = time.time() - self.start
-        exhausted = all([space.done(self.max_tasks) for space in self.searchspaces])
+        exhausted = all([space.done(self.max_tasks) 
+                         for space in self.searchspaces])
         return elapsed >= self.timeout or exhausted
 
     def generate(self):
@@ -302,69 +316,40 @@ class Shadho(pyrameter.FMin):
         This method will automatically add a new task to the queue after
         generating hyperparameter values.
         """
-        stop = True
-
         # Generate hyperparameters for every compute class with space in queue
-        for cc_id in self.ccs:
-            cc = self.ccs[cc_id]
-            n = cc.max_queued_tasks - cc.current_tasks
-            print(cc.max_queued_tasks, cc.current_tasks, n)
-
-            # Generate enough hyperparameters to fill the queue
-            for i in range(n):
+        for cc_id, cc in self.ccs.items():
+            if cc.hungry:
                 # Get bookkeeping ids and hyperparameter values
-                if self.hyperparameters_per_task == 1:
-                    trial = super().generate(searchspaces=cc.searchspaces)
+                trial = super().generate(searchspaces=cc.searchspaces)
 
-                    if isinstance(trial, Trial):
-                        self.trials[trial.id] = trial
-                        # Encode info to map to db in the task tag
-                        tag = '.'.join([str(trial.id),
-                                        str(trial.searchspace.id),
+                if isinstance(trial, Trial):
+                    self.trials[trial.id] = trial
+                    # Encode info to map to db in the task tag
+                    tag = '.'.join([str(trial.id),
+                                    str(trial.searchspace.id),
+                                    cc_id])
+                    self.manager.add_task(
+                        self.cmd,
+                        tag,
+                        trial.parameter_dict,
+                        files=self.files,
+                        resource=cc.resource,
+                        value=cc.value)
+                    cc.current_tasks += 1
+                elif isinstance(trial, list) and len(trial) > 0:
+                    for t in trial:
+                        self.trials[t.id] = t
+                        tag = '.'.join([str(t.id),
+                                        str(t.searchspace.id),
                                         cc_id])
                         self.manager.add_task(
                             self.cmd,
                             tag,
-                            trial.parameter_dict,
+                            t.parameter_dict,
                             files=self.files,
                             resource=cc.resource,
                             value=cc.value)
-                    elif isinstance(trial, list) and len(trial) > 0:
-                        for t in trial:
-                            self.trials[t.id] = t
-                            tag = '.'.join([str(t.id),
-                                            str(t.searchspace.id),
-                                            cc_id])
-                            self.manager.add_task(
-                                self.cmd,
-                                tag,
-                                t.parameter_dict,
-                                files=self.files,
-                                resource=cc.resource,
-                                value=cc.value)
-
-                # elif self.hyperparameters_per_task > 1:
-                #     trial = list(itertools.chain.from_iterable([cc.generate() for _ in range(self.hyperparameters_per_task)]))
-
-                #     if not any([t is None for t in trial]) or len(trial) > 0:
-                #         self.trials.update({t.id: t for t in trial})
-                #         # Encode info to map to db in the task tag
-                #         tag = '.'.join(['@'.join([str(t.id) for t in trial]),
-                #                         str(trial[0].searchspace().id),
-                #                         cc_id])
-                #         parameters = [t.parameter_dict for t in trial]
-                #         self.manager.add_task(
-                #             self.cmd,
-                #             tag,
-                #             parameters,
-                #             files=self.files,
-                #             resource=cc.resource,
-                #             value=cc.value)
-
-                # Create a new distributed task if values were generated
-                stop = False  # Ensure that the search continues
-            cc.current_tasks = cc.max_queued_tasks  # Update to show full queue
-        return stop
+                    cc.current_tasks += len(trial)
 
     def assign_to_ccs(self):
         """Assign trees to compute classes.

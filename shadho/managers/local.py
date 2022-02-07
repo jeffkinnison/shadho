@@ -12,6 +12,8 @@ import json
 import time
 import uuid
 
+from shadho.managers.workqueue import WQBuffer
+
 
 class TaskFailureError(Exception):
     """Raised when a task fails for any reason."""
@@ -74,6 +76,29 @@ class LocalManager(object):
         # Enqueue the new task
         self.tasks.append(task)
         self.tasks_submitted += 1
+    
+    def hungry(self, pending_tasks=0, leeway=0):
+        """Indicates whether the manager can receive more tasks.
+
+        Parameters
+        ----------
+        pending_tasks : int, optional
+            The number of tasks currently awaiting execution. Default: 0.
+        leeway : int, optional
+            Potential additional space to allow in the manager to prevent
+            an empty pending task list.
+
+        Returns
+        -------
+        hungry : bool
+            True if there is space for more tasks, False otherwise.
+        
+        Notes
+        -----
+        The local manager only performs serial task execution, so it should
+        always have room for more tasks.
+        """
+        return True
 
     def run_task(self):
         """Run the next task on the task list and return its result.

@@ -10,7 +10,6 @@ WQBuffer
 """
 import json
 import os
-import sys
 import tarfile
 
 try:
@@ -153,6 +152,39 @@ class WQManager(WORKQUEUE.WorkQueue):
         self.submit(task)
         self.tasks_submitted = self.stats.tasks_submitted
 
+    def hungry(self, pending_tasks=0, leeway=0):
+        """Indicates whether the manager can receive more tasks.
+
+        Parameters
+        ----------
+        pending_tasks : int, optional
+            The number of tasks currently awaiting execution. Default: 0.
+        leeway : int, optional
+            Potential additional space to allow in the manager to prevent
+            an empty pending task list.
+
+        Returns
+        -------
+        hungry : bool
+            True if there is space for more tasks, False otherwise.
+        
+        Notes
+        -----
+        Work Queue distributes tasks from a central queue to a dynamic
+        worker pool. Due to the soft-serial nature of model-based and
+        population-based hyperparameter optimization, it is best to prevent
+        the queue from filling prematurely; in such a case, the
+        model/population would be working with outdated information while the
+        queue executes the backlog. While ``WorkQueue.hungry`` indicates
+        whether there is room in the queue or not, the queue itself may be
+        much larger than the number of connected workers. Thus, this function
+        restricts the number of tasks in the queue to the number of currently
+        connected workers plus some small leeway so that the queue is never
+        empty.
+        """
+        n_workers = sum(map(lambda w: w['workers'], self.workers_summary()))
+        return pending_tasks < n_workers + leeway
+
     def run_task(self):
         """Await the return of a running task.
 
@@ -166,17 +198,17 @@ class WQManager(WORKQUEUE.WorkQueue):
             Additional results returned by the objective function.
             Only returned on success.
         """
-        task = None
-        while task is None:
-            # Wait for a task to return for 10s
-            task = self.wait(timeout=10)
+        # Wait for a task to return for 10s
+        task = self.wait(timeout=10)
 
-            # Handle task success or failure (no return if `task` is None)
-            if task is not None:
-                if self.task_succeeded(task):
-                    return self.success(task)
-                else:
-                    return self.failure(task)
+        # Handle task success or failure (no return if `task` is None)
+        if task is not None:
+            if self.task_succeeded(task):
+                return self.success(task)
+            else:
+                return self.failure(task)
+        else:
+            return None
 
     def task_succeeded(self, task):
         """Determine whether or not a task succeeded.

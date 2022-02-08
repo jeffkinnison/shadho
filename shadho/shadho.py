@@ -237,8 +237,7 @@ class Shadho(pyrameter.FMin):
             # Run the search until timeout or until all tasks complete
             while not self.done:
                 # Generate hyperparameters and a flag to continue or stop
-                pending = len(self.trials) - completed_tasks
-                if self.manager.hungry(pending_tasks=pending, leeway=len(self.ccs)):
+                if self.manager.hungry(pending_tasks=self.ready_trials, leeway=len(self.ccs)):
                     self.generate()
                 # Run another task and await results
                 result = self.manager.run_task()
@@ -318,38 +317,37 @@ class Shadho(pyrameter.FMin):
         """
         # Generate hyperparameters for every compute class with space in queue
         for cc_id, cc in self.ccs.items():
-            if cc.hungry:
-                # Get bookkeeping ids and hyperparameter values
-                trial = super().generate(searchspaces=cc.searchspaces)
+            # Get bookkeeping ids and hyperparameter values
+            trial = super().generate(searchspaces=cc.searchspaces)
 
-                if isinstance(trial, Trial):
-                    self.trials[trial.id] = trial
-                    # Encode info to map to db in the task tag
-                    tag = '.'.join([str(trial.id),
-                                    str(trial.searchspace.id),
+            if isinstance(trial, Trial):
+                self.trials[trial.id] = trial
+                # Encode info to map to db in the task tag
+                tag = '.'.join([str(trial.id),
+                                str(trial.searchspace.id),
+                                cc_id])
+                self.manager.add_task(
+                    self.cmd,
+                    tag,
+                    trial.parameter_dict,
+                    files=self.files,
+                    resource=cc.resource,
+                    value=cc.value)
+                cc.current_tasks += 1
+            elif isinstance(trial, list) and len(trial) > 0:
+                for t in trial:
+                    self.trials[t.id] = t
+                    tag = '.'.join([str(t.id),
+                                    str(t.searchspace.id),
                                     cc_id])
                     self.manager.add_task(
                         self.cmd,
                         tag,
-                        trial.parameter_dict,
+                        t.parameter_dict,
                         files=self.files,
                         resource=cc.resource,
                         value=cc.value)
-                    cc.current_tasks += 1
-                elif isinstance(trial, list) and len(trial) > 0:
-                    for t in trial:
-                        self.trials[t.id] = t
-                        tag = '.'.join([str(t.id),
-                                        str(t.searchspace.id),
-                                        cc_id])
-                        self.manager.add_task(
-                            self.cmd,
-                            tag,
-                            t.parameter_dict,
-                            files=self.files,
-                            resource=cc.resource,
-                            value=cc.value)
-                    cc.current_tasks += len(trial)
+                cc.current_tasks += len(trial)
 
     def assign_to_ccs(self):
         """Assign trees to compute classes.

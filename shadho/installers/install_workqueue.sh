@@ -40,7 +40,7 @@ fi
 
 echo "$maj $min"
 
-if [ "$maj" -eq "2" ] && [ "$min" -ge "6" ]; then
+if [ "$maj" -eq "2" ] && [ "$min" -eq "7" ]; then
     python2_prefix="$(python2 -c 'import sys; print(sys.exec_prefix)')"
     python2_exec="$(python2 -c 'import sys; print(sys.executable)')"
 else
@@ -134,12 +134,12 @@ else
     min="0"
 fi
 
-if [ "$maj" -ge "3" ] && [ "$min" -ge "0" ]; then
+if [ "$maj" -ge "4" ] && [ "$min" -ge "0" ]; then
     swig_prefix="$(dirname $(dirname $(command -v swig)))"
 else
-    wget http://prdownloads.sourceforge.net/swig/swig-3.0.12.tar.gz
-    tar xzf swig-3.0.12.tar.gz
-    cd swig-3.0.12
+    wget http://prdownloads.sourceforge.net/swig/swig-4.0.2.tar.gz
+    tar xzf swig-4.0.2.tar.gz
+    cd swig-4.0.2
 
     python2_exec="$(python2 -c 'import sys; print(sys.executable)')"
     ./configure \
@@ -174,8 +174,7 @@ python2_prefix="$(python2 -c 'import sys; print(sys.prefix)')"
     --prefix="$shadho_dir" \
     --with-swig-path="$swig_prefix" \
     --with-perl-path="$perl_prefix" \
-    --with-python-path="$python2_prefix" \
-    --with-python3-path="$install_python_prefix" \
+    --with-python-path="$install_python_prefix" \
     --without-system-parrot
 
 make -j8 && make install -j

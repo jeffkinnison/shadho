@@ -99,6 +99,9 @@ class LocalManager(object):
         always have room for more tasks.
         """
         return True
+    
+    def num_workers(self):
+        return 1
 
     def run_task(self):
         """Run the next task on the task list and return its result.

@@ -182,8 +182,10 @@ class WQManager(WORKQUEUE.WorkQueue):
         connected workers plus some small leeway so that the queue is never
         empty.
         """
-        n_workers = sum(map(lambda w: w['workers'], self.workers_summary()))
-        return pending_tasks < n_workers + leeway
+        return pending_tasks < self.num_workers() + leeway
+
+    def num_workers(self):
+        return sum(map(lambda w: w['workers'], self.workers_summary()))
 
     def run_task(self):
         """Await the return of a running task.

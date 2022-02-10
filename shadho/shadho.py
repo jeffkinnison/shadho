@@ -238,7 +238,8 @@ class Shadho(pyrameter.FMin):
             while not self.done:
                 # Generate hyperparameters and a flag to continue or stop
                 if self.manager.hungry(pending_tasks=self.ready_trials, leeway=len(self.ccs)):
-                    self.generate()
+                    for x in range(2 * self.manager.num_workers() - self.ready_trials):
+                        self.generate()
                 # Run another task and await results
                 result = self.manager.run_task()
                 if result is not None:

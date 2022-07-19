@@ -13,6 +13,7 @@ import numpy as np
 from pyrameter.methods import ncqs, random, tpe, bayes, pso, smac, hom
 from shadho import Shadho, spaces
 
+
 # Easy pyrameter methods lookup from args
 METHODS = {
     'bayes': bayes,
@@ -24,6 +25,7 @@ METHODS = {
     'tpe': tpe
 }
 
+
 # Easy nechmarks lookup from args
 BENCHMARKS = {
     'XGBoostBenchmark': XGBoostBenchmark, 
@@ -32,6 +34,7 @@ BENCHMARKS = {
     'LRBenchmark': LRBenchmark, 
     'SVMBenchmark': SVMBenchmark
 }
+
 
 def parse_args(args=None):
     """Parse command line arguments.
@@ -75,6 +78,7 @@ def parse_args(args=None):
     
     return p.parse_args(args)
 
+
 def convert_config_to_shadho(config):
     """Convert HPOBench config to a SHADHO search space.
     Parameters
@@ -113,6 +117,7 @@ def convert_config_to_shadho(config):
     
     return space
 
+
 def run_benchmark(benchmark, hyperparameters):
     """Train an HPOBench benchmark object with one set of hyperparamters.
     Parameters
@@ -139,9 +144,9 @@ def run_benchmark(benchmark, hyperparameters):
     
     return out
 
+
 def driver(benchmark, dataset, exp_key, method, inner_method='random',
            timeout=600, max_tasks=500, seed=None):
-    print(type(seed))
     """Run an HPOBench benchmark through a SHADHO optimizer.
     Parameters
     ----------
@@ -178,7 +183,7 @@ def driver(benchmark, dataset, exp_key, method, inner_method='random',
     # Create the SHADHO object
     if isinstance(method, str):
         try:
-            if re.search('^ncqs', method) or re.search('^hom', method):
+            if re.search('^(ncqs|hom)', method):
                 method = METHODS[method](METHODS[inner_method]())
             else:
                 method = METHODS[method]()
@@ -193,7 +198,8 @@ def driver(benchmark, dataset, exp_key, method, inner_method='random',
         space, 
         method=method,
         timeout=timeout,
-        max_tasks=max_tasks
+        max_tasks=max_tasks,
+        seed=seed
     )
     
     # Run the SHADHO search

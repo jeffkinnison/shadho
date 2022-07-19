@@ -73,8 +73,8 @@ class Shadho(pyrameter.FMin):
                  files=None, use_complexity=True, use_uncertainty=True,
                  timeout=600, max_tasks=None, max_queued_tasks=100, await_pending=False,
                  max_evals=1, max_resubmissions=0, save_frequency=10,
-                 hyperparameters_per_task=1):
-        super().__init__(exp_key, spec, method, backend, max_evals=max_evals)
+                 hyperparameters_per_task=1, seed=None):
+        super().__init__(exp_key, spec, method, backend, max_evals=max_evals, seed=seed)
         self.config = ShadhoConfig()
         self.cmd = cmd
         if not isinstance(cmd, str):

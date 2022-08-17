@@ -55,41 +55,6 @@ fi
 
 maj="0"
 min="0"
-
-# Perl must be v5.X to compile the correct version of SWIG. Note that 6+ is
-# untested.
-cd $base
-perl_version="$(perl -e 'print $^V' | cut -c 2-)"
-if [ "$?" -eq "0" ] || [ ! -z "$perl_version" ]; then
-    maj="$(echo $perl_version | sed -En 's/^([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)$/\1/p')"
-    min="$(echo $perl_version | sed -En 's/^([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)$/\2/p')"
-else
-    maj="0"
-    min="0"
-fi
-
-# If a sufficient Perl version is not found, temporarily install 5.26
-echo "BASE!!!!!!!!!!!! $base"
-echo "$maj $min"
-cd $base
-if [ ! -z "$maj" ] && [ "$maj" -ge "5" ]; then
-    perl_prefix="$(dirname $(dirname $(perl -e 'use Config; my $perl = $Config{perl5}; print $perl;')))"
-else
-    cd $base
-    wget http://www.cpan.org/src/5.0/perl-5.26.0.tar.gz
-    tar xzf perl-5.26.0.tar.gz
-    cd perl-5.26.0
-    ./Configure -des -Dprefix="${base}/perl" -Duseshrplib
-    make -j8 && make install -j8
-    perl_prefix="$base/perl"
-fi
-
-# Save out the path to the Perl executable for SWIG install later.
-perl_exec="$perl_prefix/bin/perl"
-
-maj="0"
-min="0"
-
 # PCRE must be v8.40+ to compile the correct version of SWIG.
 echo "BASE!!!!!!!!!!!! $base"
 cd $base
@@ -145,7 +110,7 @@ else
     ./configure \
         --prefix="$base/swig" \
         --with-pcre-prefix="$pcre_prefix" \
-        --with-perl5="$perl_exec" \
+        --without-perl5 \
         --with-python="$python2_exec" \
         --with-python3="$install_python_executable"
     make -j8 && make install -j
@@ -173,7 +138,7 @@ python2_prefix="$(python2 -c 'import sys; print(sys.prefix)')"
 ./configure \
     --prefix="$shadho_dir" \
     --with-swig-path="$swig_prefix" \
-    --with-perl-path="$perl_prefix" \
+    --with-perl-path=no \
     --with-python-path="$install_python_prefix" \
     --without-system-parrot
 

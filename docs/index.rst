@@ -33,7 +33,6 @@ Install with ``pip``
 --------------------
 
 ::
-
     pip install shadho
     python -m shadho.installers.workqueue
 
@@ -57,6 +56,9 @@ compiling Work Queue behind the scenes and may take a few minutes.
 
 Dependencies
 ------------
+
+To use the lastest features, SHADHO requires Python 3.9 or greater. It also requires the following Python
+packages:
 
 * ``scipy >= 0.18.1``
 * ``numpy >= 0.12.1``
